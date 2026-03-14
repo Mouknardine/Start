@@ -996,19 +996,20 @@
 
   /* ===== CITY AUTOCOMPLETE DROPDOWN ===== */
   .search-field-location {
-    position: static;
+    position: relative;
   }
 
   .city-dropdown {
     display: none;
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 4px);
     left: 0;
     right: 0;
+    min-width: 280px;
     background: white;
     border-radius: var(--radius-sm);
     box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
-    max-height: 260px;
+    max-height: 240px;
     overflow-y: auto;
     z-index: 9999;
     padding: 6px;
