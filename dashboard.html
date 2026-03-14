@@ -224,14 +224,88 @@
   .btn-abo { display:block; margin-top:14px; padding:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:50px; font-size:12px; font-weight:600; text-align:center; text-decoration:none; transition:all 0.2s; cursor:pointer; }
   .btn-abo:hover { background:rgba(255,255,255,0.15); }
 
+  /* Scroll wrapper for agenda grid (enables horizontal scroll on mobile) */
+  .agenda-grid-scroll { overflow:visible; }
+
   @media (max-width:1024px) {
-    .dashboard { padding:80px 16px; }
-    .stats-grid { grid-template-columns:repeat(2,1fr); }
-    .content-grid { grid-template-columns:1fr; }
-    .agenda-grid { font-size:11px; grid-template-columns:50px repeat(7,1fr); }
+    /* Nav */
     nav { padding:12px 16px; }
     .nav-links { display:none; }
-    .dash-header { flex-direction:column; align-items:flex-start; gap:12px; }
+    .nav-user-name { display:none; }
+
+    /* Layout */
+    .dashboard { padding:80px 16px 60px; }
+    .dash-header { flex-direction:column; align-items:flex-start; gap:8px; }
+    .dash-hello { font-size:24px; }
+
+    /* Stats: 2 columns */
+    .stats-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
+    .stat-card { padding:14px; }
+    .stat-value { font-size:22px; }
+
+    /* Tabs: full width */
+    .dash-tabs { width:100%; }
+    .dash-tab { flex:1; text-align:center; padding:10px 12px; font-size:13px; }
+
+    /* Content: single column, sidebar below */
+    .content-grid { grid-template-columns:1fr; }
+
+    /* Agenda grid: smaller time column, scrollable */
+    .agenda-grid-scroll {
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    .agenda-grid {
+      font-size:11px;
+      grid-template-columns:50px repeat(7,1fr);
+      min-width:700px;
+    }
+
+    /* Agenda header: stack on mobile */
+    .agenda-header { flex-direction:column; gap:12px; align-items:stretch; }
+    .agenda-actions { flex-wrap:wrap; }
+    .agenda-nav { justify-content:center; }
+    .agenda-week { font-size:14px; text-align:center; }
+
+    /* Custom slot form: stack fields */
+    .custom-slot-row { flex-direction:column; }
+    .custom-slot-field { width:100%; }
+    .custom-slot-field select,
+    .custom-slot-field input[type="time"] { width:100%; min-width:auto; }
+    .custom-slot-add-btn { width:100%; }
+
+    /* Demandes: stack layout */
+    .demande-item { flex-direction:column; gap:12px; }
+    .demande-actions { flex-wrap:wrap; gap:6px; width:100%; }
+    .demande-actions .btn-sm { flex:1; text-align:center; justify-content:center; min-width:0; }
+    .demande-desc { white-space:normal; }
+
+    /* Modal */
+    .modal-card { margin:16px; width:calc(100% - 32px); max-width:440px; }
+
+    /* Agenda info */
+    .agenda-info { font-size:12px; padding:12px 16px; flex-direction:column; text-align:center; }
+
+    /* Agenda legend */
+    .agenda-legend { justify-content:center; }
+  }
+
+  @media (max-width:500px) {
+    .stats-grid { grid-template-columns:1fr; }
+    .stat-value { font-size:20px; }
+    .dash-hello { font-size:20px; }
+    .agenda-grid { min-width:600px; }
+    .agenda-week { font-size:12px; }
+    .agenda-actions { flex-direction:column; }
+    .agenda-publish,
+    .agenda-sync { width:100%; justify-content:center; }
+    .modal-card { padding:20px; }
+    .modal-actions { flex-direction:column; }
+    .modal-btn { width:100%; text-align:center; }
+    .custom-slot-section { padding:16px; }
+    .custom-slot-toggle { width:100%; justify-content:center; font-size:12px; padding:10px 14px; }
+    .card { padding:16px; }
+    .card-header { flex-direction:column; gap:8px; }
   }
 </style>
 </head>
@@ -361,7 +435,8 @@
           Cliquez sur un créneau ou glissez pour sélectionner plusieurs créneaux, puis choisissez le statut dans le menu contextuel. Utilisez le formulaire ci-dessous pour définir des plages horaires personnalisées (ex : 9h15 - 10h22).
         </div>
 
-        <div class="agenda-grid" id="agendaGrid">
+        <div class="agenda-grid-scroll">
+          <div class="agenda-grid" id="agendaGrid">
           <!-- HEADER ROW -->
           <div class="agenda-corner"></div>
           <div class="agenda-day-header">Lundi<div class="day-num">16</div></div>
@@ -561,8 +636,8 @@
           <div class="agenda-cell" data-col="4" data-row="19"></div>
           <div class="agenda-cell" data-col="5" data-row="19"></div>
           <div class="agenda-cell" data-col="6" data-row="19"></div>
-        </div>
-
+          </div>
+        </div><!-- /.agenda-grid-scroll -->
         <div class="agenda-legend">
           <div class="legend-item"><div class="legend-dot avail"></div> Disponible</div>
           <div class="legend-item"><div class="legend-dot unavail"></div> Indisponible</div>

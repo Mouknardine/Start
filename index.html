@@ -927,22 +927,52 @@
     }
     .nav-links.open { display: flex; }
     .hero { padding: 120px 20px 60px; }
+    .hero h1 { font-size: 32px; }
+    .hero p { font-size: 16px; margin-bottom: 32px; }
+    .hero-badge { font-size: 12px; padding: 6px 14px; margin-bottom: 20px; }
+    .hero-stats { flex-wrap: wrap; gap: 24px; margin-top: 40px; }
+    .hero-stat-number { font-size: 24px; }
     .search-box { flex-direction: column; padding: 12px; }
     .search-divider { width: 100%; height: 1px; }
     .search-btn { width: 100%; justify-content: center; }
+    .search-field input { font-size: 16px; } /* prevents zoom on iOS */
+    .section-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .section-header h2 { font-size: 26px; }
     .metiers { padding: 60px 20px; }
     .metiers-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    .featured { padding: 60px 20px; }
+    .metier-card { padding: 20px 16px; }
+    .metier-icon { width: 48px; height: 48px; font-size: 22px; }
+    .featured { padding: 40px 16px; }
     .artisan-grid { grid-template-columns: 1fr; }
+    .artisan-info { padding: 16px; }
+    .artisan-tags { gap: 6px; }
+    .artisan-bottom { flex-direction: column; gap: 12px; align-items: stretch; }
+    .btn-profile { text-align: center; }
+    .artisan-img { height: 160px; }
     .steps { grid-template-columns: repeat(2, 1fr); }
     .steps::before { display: none; }
     .how-it-works { padding: 60px 20px; }
+    .how-it-works h2 { font-size: 26px; }
+    .how-subtitle { font-size: 15px; margin-bottom: 40px; }
+    .step-number { width: 44px; height: 44px; font-size: 16px; }
     .cta { margin: 0 20px 60px; padding: 48px 24px; }
-    .cta h2 { font-size: 28px; }
+    .cta h2 { font-size: 24px; }
+    .cta p { font-size: 15px; }
     .cta-buttons { flex-direction: column; align-items: center; }
+    .btn-cta-primary, .btn-cta-secondary { padding: 14px 28px; font-size: 14px; width: 100%; text-align: center; }
+    .ai-btn { font-size: 13px; padding: 10px 18px; }
     .hero-stats { gap: 32px; }
-    footer { flex-direction: column; gap: 20px; text-align: center; }
+    footer { flex-direction: column; gap: 20px; text-align: center; padding: 32px 20px; }
     .footer-left { flex-direction: column; }
+    .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+  }
+
+  /* ===== EXTRA SMALL SCREENS ===== */
+  @media (max-width: 400px) {
+    .metiers-grid { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr; }
+    .hero-stats { flex-direction: column; gap: 16px; }
+    .hero { padding: 100px 16px 40px; min-height: auto; }
   }
 
   /* ===== SCROLL ANIMATIONS ===== */
@@ -980,7 +1010,7 @@
     box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
     max-height: 260px;
     overflow-y: auto;
-    z-index: 999;
+    z-index: 9999;
     padding: 6px;
   }
 
@@ -1037,6 +1067,94 @@
   .city-dropdown::-webkit-scrollbar-thumb {
     background: var(--gray-300);
     border-radius: 3px;
+  }
+
+  /* ===== TOUCH-FRIENDLY IMPROVEMENTS ===== */
+  .search-btn, .ai-btn, .btn-nav, .btn-profile, .btn-cta-primary, .btn-cta-secondary {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ===== MOBILE CITY OVERLAY ===== */
+  .city-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    background: white;
+    padding: 0;
+    flex-direction: column;
+    animation: cityOverlayIn 0.25s ease-out;
+  }
+
+  .city-overlay.open {
+    display: flex;
+  }
+
+  @keyframes cityOverlayIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .city-overlay-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--gray-200);
+    flex-shrink: 0;
+  }
+
+  .city-overlay-back {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .city-overlay-back:hover {
+    background: var(--gray-100);
+  }
+
+  .city-overlay-back svg {
+    width: 24px;
+    height: 24px;
+    color: var(--dark);
+  }
+
+  .city-overlay-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 18px;
+    color: var(--dark);
+    background: transparent;
+  }
+
+  .city-overlay-input::placeholder {
+    color: var(--gray-500);
+  }
+
+  .city-overlay-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .city-overlay-list .city-dropdown-item {
+    padding: 14px 16px;
+    font-size: 16px;
+    border-radius: var(--radius-xs);
   }
 </style>
 </head>
@@ -1189,6 +1307,17 @@
     </div>
   </footer>
 
+  <!-- MOBILE CITY OVERLAY -->
+  <div class="city-overlay" id="city-overlay">
+    <div class="city-overlay-header">
+      <button class="city-overlay-back" id="city-overlay-back" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      </button>
+      <input type="text" class="city-overlay-input" id="city-overlay-input" placeholder="Rechercher une ville..." autocomplete="off">
+    </div>
+    <div class="city-overlay-list" id="city-overlay-list"></div>
+  </div>
+
   <script>
     // =============================================
     // 1. SCROLL REVEAL (enhanced)
@@ -1228,7 +1357,7 @@
       });
     }
 
-    // City autocomplete
+    // City autocomplete (desktop + mobile overlay)
     (function() {
       const cities = [
         'Lausanne', 'Renens', 'Pully', 'Prilly', 'Morges', 'Nyon',
@@ -1239,12 +1368,21 @@
 
       const input = document.getElementById('city-input');
       const dropdown = document.getElementById('city-dropdown');
+      const overlay = document.getElementById('city-overlay');
+      const overlayInput = document.getElementById('city-overlay-input');
+      const overlayList = document.getElementById('city-overlay-list');
+      const overlayBack = document.getElementById('city-overlay-back');
       let activeIndex = -1;
+
+      function isMobile() {
+        return window.innerWidth <= 900;
+      }
 
       function pinIcon() {
         return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>';
       }
 
+      // ---- DESKTOP dropdown logic ----
       function renderDropdown(filtered) {
         activeIndex = -1;
         if (filtered.length === 0) {
@@ -1267,11 +1405,11 @@
         closeDropdown();
       }
 
-      function getFiltered() {
-        var query = input.value.trim().toLowerCase();
-        if (query === '') return cities.slice();
+      function getFiltered(query) {
+        var q = (query !== undefined ? query : input.value).trim().toLowerCase();
+        if (q === '') return cities.slice();
         return cities.filter(function(c) {
-          return c.toLowerCase().indexOf(query) !== -1;
+          return c.toLowerCase().indexOf(q) !== -1;
         });
       }
 
@@ -1285,12 +1423,64 @@
         activeIndex = index;
       }
 
+      // ---- MOBILE overlay logic ----
+      function openOverlay() {
+        overlayInput.value = input.value;
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        renderOverlayList(getFiltered(overlayInput.value));
+        setTimeout(function() { overlayInput.focus(); }, 100);
+      }
+
+      function closeOverlay() {
+        overlay.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+
+      function renderOverlayList(filtered) {
+        if (filtered.length === 0) {
+          overlayList.innerHTML = '<div class="city-dropdown-empty">Aucune ville trouvée</div>';
+        } else {
+          overlayList.innerHTML = filtered.map(function(city, i) {
+            return '<div class="city-dropdown-item" data-index="' + i + '" data-city="' + city + '">' + pinIcon() + '<span>' + city + '</span></div>';
+          }).join('');
+        }
+      }
+
+      function selectCityFromOverlay(city) {
+        input.value = city;
+        closeOverlay();
+      }
+
+      overlayBack.addEventListener('click', function() {
+        closeOverlay();
+      });
+
+      overlayInput.addEventListener('input', function() {
+        renderOverlayList(getFiltered(overlayInput.value));
+      });
+
+      overlayList.addEventListener('click', function(e) {
+        var item = e.target.closest('.city-dropdown-item');
+        if (item) {
+          selectCityFromOverlay(item.dataset.city);
+        }
+      });
+
+      // ---- Focus handler: choose mobile or desktop ----
       input.addEventListener('focus', function() {
-        renderDropdown(getFiltered());
+        if (isMobile()) {
+          input.blur(); // prevent keyboard on original input
+          openOverlay();
+        } else {
+          renderDropdown(getFiltered());
+        }
       });
 
       input.addEventListener('input', function() {
-        renderDropdown(getFiltered());
+        if (!isMobile()) {
+          renderDropdown(getFiltered());
+        }
       });
 
       input.addEventListener('keydown', function(e) {
@@ -1327,6 +1517,13 @@
       document.addEventListener('click', function(e) {
         if (!e.target.closest('.search-field-location')) {
           closeDropdown();
+        }
+      });
+
+      // Close overlay on Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && overlay.classList.contains('open')) {
+          closeOverlay();
         }
       });
     })();

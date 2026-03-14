@@ -69,7 +69,48 @@
   .verified-badge { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:20px; padding:14px; background:var(--green-light); border-radius:var(--radius-sm); font-size:13px; font-weight:600; color:var(--green); }
   .verified-badge svg { width:16px; height:16px; }
 
-  @media (max-width:500px) { .review-card { padding:32px 24px; } nav { padding:16px 20px; } .star-btn { width:44px; height:44px; font-size:20px; } }
+  @media (max-width:600px) {
+    nav { padding:12px 16px; }
+    .logo { font-size:24px; }
+
+    /* Card takes full width minus small padding */
+    .review-container { padding:0 12px 40px; }
+    .review-card { padding:24px 16px; max-width:100%; border-radius:16px; }
+
+    /* Title / subtitle */
+    .review-title { font-size:20px; }
+    .review-subtitle { font-size:14px; margin-bottom:20px; }
+
+    /* Artisan block */
+    .artisan-block { padding:16px; gap:12px; margin-bottom:24px; }
+    .artisan-block-avatar { width:48px; height:48px; border-radius:14px; }
+    .artisan-block-avatar svg { width:22px; height:22px; }
+    .artisan-block-name { font-size:16px; }
+    .artisan-block-trade { font-size:12px; }
+    .artisan-block-date { font-size:11px; }
+
+    /* Stars - properly sized and tappable (min 44px touch target) */
+    .stars-section { margin-bottom:24px; }
+    .stars-label { font-size:15px; margin-bottom:12px; }
+    .stars-row { gap:6px; }
+    .star-btn { width:48px; height:48px; font-size:22px; border-radius:12px; min-height:44px; }
+
+    /* Textarea - full width, prevent iOS zoom */
+    textarea {
+      font-size:16px;
+      min-height:100px;
+      padding:12px 14px;
+    }
+
+    /* Submit button - full width, touch-friendly */
+    .btn-submit { min-height:44px; font-size:15px; padding:14px; }
+
+    /* Verified badge */
+    .verified-badge { padding:12px; font-size:12px; margin-top:16px; }
+
+    /* Char count */
+    .char-count { font-size:11px; }
+  }
 </style>
 </head>
 <body>

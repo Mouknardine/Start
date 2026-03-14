@@ -656,6 +656,8 @@
   }
 
   /* ===== RESPONSIVE ===== */
+
+  /* --- Tablet / narrow desktop (960px) --- */
   @media (max-width: 960px) {
     nav { padding: 12px 16px; }
     .nav-search { margin: 0 12px; }
@@ -678,6 +680,7 @@
       flex-wrap: wrap;
       justify-content: center;
       padding: 16px;
+      width: 100%;
     }
 
     .card-side .card-avail {
@@ -693,11 +696,182 @@
       overflow-x: auto;
       flex-wrap: nowrap;
       padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
     }
 
     .filter-btn {
       flex-shrink: 0;
     }
+  }
+
+  /* --- Mobile (900px and below) --- */
+  @media (max-width: 900px) {
+    /* Nav */
+    nav { padding: 12px 16px; }
+    .nav-search { display: none; }
+    .btn-nav { padding: 8px 18px; font-size: 13px; }
+
+    /* Search header */
+    .search-header-inner { padding: 16px; }
+    .breadcrumb { font-size: 12px; margin-bottom: 12px; }
+    .search-title { font-size: 22px; }
+    .search-count { font-size: 13px; }
+
+    .search-title-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    /* Results layout */
+    .results-layout {
+      padding: 16px 16px 60px;
+      gap: 16px;
+    }
+
+    /* Sort bar */
+    .sort-bar {
+      flex-direction: column;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .sort-select {
+      justify-content: flex-start;
+    }
+
+    .sort-select select {
+      font-size: 16px; /* prevent iOS zoom */
+    }
+
+    /* Cards: single-column stacked */
+    .artisan-card {
+      grid-template-columns: 1fr;
+      min-height: auto;
+    }
+
+    .card-img {
+      min-height: 140px;
+      width: 100%;
+    }
+
+    .card-body {
+      padding: 16px;
+    }
+
+    .card-side {
+      border-left: none;
+      border-top: 1px solid var(--gray-200);
+      flex-direction: column;
+      width: 100%;
+      padding: 16px;
+      gap: 10px;
+    }
+
+    .card-side .card-avail {
+      width: 100%;
+    }
+
+    .card-side .btn-voir-profil,
+    .card-side .btn-devis {
+      width: 100%;
+      text-align: center;
+      padding: 12px;
+    }
+
+    .card-next-slots {
+      justify-content: flex-start;
+    }
+
+    /* Filters: horizontal scroll */
+    .filters-row {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .filter-btn {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      font-size: 13px;
+    }
+
+    /* Pagination */
+    .pagination {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .page-btn {
+      width: 36px;
+      height: 36px;
+      font-size: 13px;
+    }
+
+    /* Prevent iOS zoom on inputs */
+    .nav-search-field input,
+    .sort-select select,
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
+
+    /* Results info box */
+    .results-info {
+      padding: 16px;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .results-info p {
+      font-size: 13px;
+    }
+  }
+
+  /* --- Small mobile (500px and below) --- */
+  @media (max-width: 500px) {
+    nav { padding: 10px 12px; }
+    .logo { font-size: 20px; }
+    .btn-nav { padding: 7px 14px; font-size: 12px; }
+
+    .search-header-inner { padding: 12px; }
+    .search-title { font-size: 19px; }
+    .search-count { font-size: 12px; }
+    .breadcrumb { font-size: 11px; gap: 4px; }
+
+    .results-layout { padding: 12px 12px 48px; gap: 12px; }
+
+    .card-body { padding: 12px; }
+    .card-name { font-size: 16px; }
+    .card-tags { gap: 4px; }
+    .card-tag { font-size: 11px; padding: 4px 8px; }
+    .card-rating { font-size: 13px; }
+    .card-stars { font-size: 13px; }
+    .card-score { font-size: 13px; }
+    .card-reviews { font-size: 11px; }
+    .card-trade { font-size: 11px; }
+    .card-location { font-size: 12px; }
+    .card-description { font-size: 12px; }
+
+    .card-side { padding: 12px; gap: 8px; }
+    .card-slot { font-size: 11px; padding: 4px 10px; }
+    .card-avail-label { font-size: 11px; }
+    .card-avail-value { font-size: 13px; }
+
+    .btn-voir-profil { font-size: 13px; padding: 10px; }
+    .btn-devis { font-size: 12px; padding: 9px; }
+
+    .sort-bar-left { font-size: 12px; }
+    .sort-select { font-size: 12px; }
+
+    .pagination { gap: 4px; margin-top: 20px; }
+    .page-btn { width: 32px; height: 32px; font-size: 12px; border-radius: 8px; }
+
+    .filter-btn { padding: 6px 12px; font-size: 12px; }
+    .filter-btn svg { width: 14px; height: 14px; }
   }
 
   /* ===== ANIMATION ===== */
