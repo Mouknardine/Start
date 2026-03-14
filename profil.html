@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Müller & Fils — Plombier à Lausanne | Artisano</title>
+<meta name="description" content="Profil de Müller & Fils, plombier chauffagiste à Lausanne. 4.8/5 étoiles, avis vérifiés. Prenez rendez-vous en ligne.">
+<meta name="theme-color" content="#E8700A">
+<link rel="canonical" href="https://artisano.ch/profil">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23E8700A'/></svg>">
+<meta property="og:type" content="profile">
+<meta property="og:title" content="Müller & Fils — Plombier à Lausanne | Artisano">
+<meta property="og:description" content="Profil de Müller & Fils, plombier chauffagiste à Lausanne. 4.8/5 étoiles.">
+<meta property="og:url" content="https://artisano.ch/profil">
+<meta property="og:site_name" content="Artisano">
+<meta property="og:locale" content="fr_CH">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -148,7 +158,7 @@
     width: 120px;
     height: 120px;
     background: linear-gradient(135deg, var(--dark) 0%, var(--dark-mid) 100%);
-    border-radius: 50%;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -867,13 +877,13 @@
 
   <!-- NAV -->
   <nav>
-    <a href="artisano-homepage.html" class="logo">artisano<span class="logo-dot"></span></a>
+    <a href="index.html" class="logo">artisano<span class="logo-dot"></span></a>
     <div class="nav-right">
-      <a href="artisano-resultats-recherche.html" class="nav-back">
+      <a href="recherche.html" class="nav-back">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         Retour aux résultats
       </a>
-      <a href="artisano-connexion.html" class="btn-nav">Connexion</a>
+      <a href="connexion.html" class="btn-nav">Connexion</a>
     </div>
   </nav>
 
@@ -881,11 +891,11 @@
   <section class="profile-hero">
     <div class="profile-hero-inner">
       <div class="breadcrumb">
-        <a href="artisano-homepage.html">Accueil</a>
+        <a href="index.html">Accueil</a>
         <span>›</span>
-        <a href="artisano-resultats-recherche.html">Plombier</a>
+        <a href="recherche.html">Plombier</a>
         <span>›</span>
-        <a href="artisano-resultats-recherche.html">Lausanne</a>
+        <a href="recherche.html">Lausanne</a>
         <span>›</span>
         <span style="color:var(--dark); font-weight:500;">Müller & Fils</span>
       </div>
@@ -929,11 +939,11 @@
         </div>
 
         <div class="profile-actions">
-          <a href="artisano-formulaire-demande.html" class="btn-primary">
+          <a href="demande.html" class="btn-primary">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
             Prendre rendez-vous
           </a>
-          <a href="artisano-formulaire-demande.html" class="btn-secondary">
+          <a href="demande.html" class="btn-secondary">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             Demander un devis
           </a>
@@ -1245,8 +1255,8 @@
 
   <!-- FLOATING CTA MOBILE -->
   <div class="floating-cta">
-    <a href="artisano-formulaire-demande.html" class="btn-primary">Prendre rendez-vous</a>
-    <a href="artisano-formulaire-demande.html" class="btn-secondary">Demander un devis</a>
+    <a href="demande.html" class="btn-primary">Prendre rendez-vous</a>
+    <a href="demande.html" class="btn-secondary">Demander un devis</a>
   </div>
 
   <script>
@@ -1271,7 +1281,7 @@
         const date = this.closest('.avail-day').querySelector('.avail-day-date').textContent;
         const time = this.textContent;
         // Navigate to contact form
-        window.location.href = 'artisano-formulaire-demande.html';
+        window.location.href = 'demande.html';
       });
     });
 

@@ -4,6 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Artisano — Trouve ton artisan en 2 clics</title>
+<meta name="description" content="Trouve un plombier, électricien ou serrurier près de chez toi dans le canton de Vaud. Des vrais avis, des vrais pros, zéro prise de tête.">
+<meta name="theme-color" content="#E8700A">
+<link rel="canonical" href="https://artisano.ch/">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23E8700A'/></svg>">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Artisano — Trouve ton artisan en 2 clics">
+<meta property="og:description" content="Trouve un plombier, électricien ou serrurier près de chez toi dans le canton de Vaud.">
+<meta property="og:url" content="https://artisano.ch/">
+<meta property="og:site_name" content="Artisano">
+<meta property="og:locale" content="fr_CH">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -102,7 +113,7 @@
   .nav-links a:hover { color: var(--dark); }
 
   .btn-nav {
-    background: var(--dark);
+    background: var(--orange);
     color: white;
     padding: 10px 24px;
     border-radius: 50px;
@@ -113,7 +124,7 @@
   }
 
   .btn-nav:hover {
-    background: var(--orange);
+    background: var(--orange-dark);
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(232,112,10,0.3);
   }
@@ -129,144 +140,8 @@
     padding: 140px 24px 80px;
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, var(--white) 0%, #FFF8F0 25%, #FFFBF5 50%, #FFF5E6 75%, var(--white) 100%);
-    background-size: 400% 400%;
-    animation: heroGradient 12s ease infinite;
+    background: #FFFAF5;
   }
-
-  @keyframes heroGradient {
-    0% { background-position: 0% 50%; }
-    25% { background-position: 100% 25%; }
-    50% { background-position: 100% 50%; }
-    75% { background-position: 0% 75%; }
-    100% { background-position: 0% 50%; }
-  }
-
-  /* ===== FLOATING GEOMETRIC SHAPES ===== */
-  .hero-shapes {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    overflow: hidden;
-  }
-
-  .hero-shape {
-    position: absolute;
-    border-radius: 50%;
-    opacity: 0;
-    animation: shapeFloat 20s ease-in-out infinite;
-  }
-
-  .hero-shape:nth-child(1) {
-    width: 8px; height: 8px;
-    background: var(--orange);
-    top: 15%; left: 10%;
-    animation-delay: 0s;
-    animation-duration: 18s;
-    opacity: 0.4;
-  }
-  .hero-shape:nth-child(2) {
-    width: 14px; height: 14px;
-    border: 2px solid var(--orange-light);
-    background: transparent;
-    top: 25%; right: 15%;
-    animation-delay: 2s;
-    animation-duration: 22s;
-    opacity: 0.3;
-  }
-  .hero-shape:nth-child(3) {
-    width: 6px; height: 6px;
-    background: var(--yellow);
-    top: 60%; left: 8%;
-    animation-delay: 4s;
-    animation-duration: 16s;
-    opacity: 0.5;
-  }
-  .hero-shape:nth-child(4) {
-    width: 20px; height: 20px;
-    border: 2px solid var(--yellow-light);
-    background: transparent;
-    top: 70%; right: 10%;
-    animation-delay: 1s;
-    animation-duration: 24s;
-    opacity: 0.2;
-  }
-  .hero-shape:nth-child(5) {
-    width: 10px; height: 10px;
-    background: var(--orange-light);
-    top: 40%; left: 5%;
-    animation-delay: 3s;
-    animation-duration: 20s;
-    opacity: 0.3;
-  }
-  .hero-shape:nth-child(6) {
-    width: 5px; height: 5px;
-    background: var(--yellow);
-    top: 20%; left: 30%;
-    animation-delay: 5s;
-    animation-duration: 15s;
-    opacity: 0.4;
-  }
-  .hero-shape:nth-child(7) {
-    width: 12px; height: 12px;
-    border: 2px solid rgba(232,112,10,0.25);
-    background: transparent;
-    top: 80%; left: 25%;
-    animation-delay: 2.5s;
-    animation-duration: 19s;
-    opacity: 0.3;
-  }
-  .hero-shape:nth-child(8) {
-    width: 7px; height: 7px;
-    background: var(--orange);
-    top: 50%; right: 25%;
-    animation-delay: 6s;
-    animation-duration: 21s;
-    opacity: 0.35;
-  }
-  .hero-shape:nth-child(9) {
-    width: 16px; height: 16px;
-    border: 2px solid var(--yellow);
-    background: transparent;
-    bottom: 20%; right: 30%;
-    animation-delay: 1.5s;
-    animation-duration: 17s;
-    opacity: 0.2;
-  }
-  .hero-shape:nth-child(10) {
-    width: 4px; height: 4px;
-    background: var(--orange-dark);
-    top: 35%; right: 8%;
-    animation-delay: 4.5s;
-    animation-duration: 23s;
-    opacity: 0.45;
-  }
-
-  @keyframes shapeFloat {
-    0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
-    10% { opacity: var(--shape-opacity, 0.3); }
-    25% { transform: translate(30px, -40px) rotate(90deg); }
-    50% { transform: translate(-20px, -80px) rotate(180deg); }
-    75% { transform: translate(40px, -30px) rotate(270deg); }
-    90% { opacity: var(--shape-opacity, 0.3); }
-    100% { transform: translate(0, 0) rotate(360deg); opacity: 0; }
-  }
-
-  /* ===== HERO MOUSE GLOW ===== */
-  .hero-glow {
-    position: absolute;
-    width: 350px;
-    height: 350px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(232,112,10,0.08) 0%, rgba(240,180,41,0.04) 40%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-    transform: translate(-50%, -50%);
-    transition: left 0.3s ease-out, top 0.3s ease-out, opacity 0.4s;
-    opacity: 0;
-  }
-  .hero-glow.active { opacity: 1; }
 
   .hero::before {
     content: '';
@@ -369,26 +244,15 @@
     gap: 4px;
     max-width: 720px;
     width: 100%;
-    animation: fadeUp 0.8s ease-out 0.8s both, searchFloat 4s ease-in-out 2s infinite;
+    animation: fadeUp 0.8s ease-out 0.8s both;
     transition: box-shadow 0.4s, transform 0.4s;
     position: relative;
     z-index: 2;
   }
 
-  @keyframes searchFloat {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
-  }
-
   .search-box:focus-within {
-    box-shadow: 0 8px 60px rgba(232,112,10,0.15), 0 0 0 2px var(--orange), 0 0 80px rgba(232,112,10,0.08);
-    animation: searchGlow 2s ease-in-out infinite, fadeUp 0.8s ease-out 0.8s both;
+    box-shadow: 0 8px 60px rgba(232,112,10,0.15), 0 0 0 2px var(--orange);
     transform: translateY(-4px);
-  }
-
-  @keyframes searchGlow {
-    0%, 100% { box-shadow: 0 8px 60px rgba(232,112,10,0.15), 0 0 0 2px var(--orange), 0 0 40px rgba(232,112,10,0.06); }
-    50% { box-shadow: 0 12px 80px rgba(232,112,10,0.2), 0 0 0 3px var(--orange-light), 0 0 100px rgba(232,112,10,0.1); }
   }
 
   .search-field {
@@ -626,23 +490,6 @@
     color: var(--gray-500);
   }
 
-  /* Staggered entrance for metier cards */
-  .metier-card {
-    opacity: 0;
-    transform: translateY(40px) scale(0.95);
-  }
-  .metier-card.card-visible {
-    animation: cardEntrance 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  }
-  .metier-card.card-visible:nth-child(1) { animation-delay: 0s; }
-  .metier-card.card-visible:nth-child(2) { animation-delay: 0.12s; }
-  .metier-card.card-visible:nth-child(3) { animation-delay: 0.24s; }
-  .metier-card.card-visible:nth-child(4) { animation-delay: 0.36s; }
-
-  @keyframes cardEntrance {
-    from { opacity: 0; transform: translateY(40px) scale(0.95); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
 
   /* ===== ARTISANS EN VEDETTE ===== */
   .featured {
@@ -852,12 +699,6 @@
     background: linear-gradient(90deg, var(--orange), var(--yellow), var(--orange));
     opacity: 0.3;
     z-index: 0;
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-
-  .steps.line-visible::before {
     transform: scaleX(1);
   }
 
@@ -865,21 +706,6 @@
     text-align: center;
     position: relative;
     z-index: 1;
-    opacity: 0;
-    transform: translateY(30px);
-  }
-
-  .step.step-visible {
-    animation: stepEntrance 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  }
-  .step.step-visible:nth-child(1) { animation-delay: 0.1s; }
-  .step.step-visible:nth-child(2) { animation-delay: 0.3s; }
-  .step.step-visible:nth-child(3) { animation-delay: 0.5s; }
-  .step.step-visible:nth-child(4) { animation-delay: 0.7s; }
-
-  @keyframes stepEntrance {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
   }
 
   .step-number {
@@ -899,26 +725,6 @@
     position: relative;
   }
 
-  .step-number::before {
-    content: '';
-    position: absolute;
-    inset: -6px;
-    border-radius: 50%;
-    border: 2px solid var(--orange);
-    opacity: 0;
-    animation: stepRingPulse 2.5s ease-in-out infinite;
-  }
-
-  .step:nth-child(1) .step-number::before { animation-delay: 0s; }
-  .step:nth-child(2) .step-number::before { animation-delay: 0.5s; }
-  .step:nth-child(3) .step-number::before { animation-delay: 1s; }
-  .step:nth-child(4) .step-number::before { animation-delay: 1.5s; }
-
-  @keyframes stepRingPulse {
-    0% { transform: scale(1); opacity: 0.5; }
-    50% { transform: scale(1.3); opacity: 0; }
-    100% { transform: scale(1); opacity: 0; }
-  }
 
   .step:hover .step-number {
     background: var(--orange);
@@ -962,7 +768,6 @@
     height: 400px;
     background: radial-gradient(circle, rgba(232,112,10,0.15) 0%, transparent 70%);
     border-radius: 50%;
-    animation: ctaOrbFloat 8s ease-in-out infinite;
   }
 
   .cta::after {
@@ -974,36 +779,6 @@
     height: 300px;
     background: radial-gradient(circle, rgba(240,180,41,0.1) 0%, transparent 70%);
     border-radius: 50%;
-    animation: ctaOrbFloat 8s ease-in-out 3s infinite reverse;
-  }
-
-  @keyframes ctaOrbFloat {
-    0%, 100% { transform: translate(0, 0); }
-    33% { transform: translate(20px, -15px); }
-    66% { transform: translate(-10px, 10px); }
-  }
-
-  /* CTA Particles */
-  .cta-particles {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    overflow: hidden;
-  }
-
-  .cta-particle {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.15);
-    animation: particleFloat linear infinite;
-  }
-
-  @keyframes particleFloat {
-    0% { transform: translateY(100%) scale(0); opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { transform: translateY(-100px) scale(1); opacity: 0; }
   }
 
   .cta h2 {
@@ -1182,17 +957,6 @@
     transform: translateY(0) scale(1);
   }
 
-  /* Letter stagger animation for hero title */
-  .hero h1 .char {
-    display: inline-block;
-    opacity: 0;
-    transform: translateY(40px) rotateX(-40deg);
-    animation: charReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  @keyframes charReveal {
-    to { opacity: 1; transform: translateY(0) rotateX(0deg); }
-  }
 
   /* hero content z-index */
   .hero-badge, .hero h1, .hero > p, .search-box, .ai-assist, .hero-stats {
@@ -1202,22 +966,21 @@
 
   /* ===== CITY AUTOCOMPLETE DROPDOWN ===== */
   .search-field-location {
-    position: relative;
+    position: static;
   }
 
   .city-dropdown {
     display: none;
     position: absolute;
-    top: 100%;
+    top: calc(100% + 8px);
     left: 0;
     right: 0;
-    margin-top: 6px;
     background: white;
     border-radius: var(--radius-sm);
     box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
     max-height: 260px;
     overflow-y: auto;
-    z-index: 200;
+    z-index: 999;
     padding: 6px;
   }
 
@@ -1281,36 +1044,20 @@
 
   <!-- NAV -->
   <nav>
-    <a href="artisano-homepage.html" class="logo">artisano<span class="logo-dot"></span></a>
+    <a href="index.html" class="logo">artisano<span class="logo-dot"></span></a>
     <button class="hamburger" aria-label="Menu">
       <span></span><span></span><span></span>
     </button>
     <ul class="nav-links">
-      <li><a href="artisano-resultats-recherche.html">Rechercher</a></li>
+      <li><a href="recherche.html">Rechercher</a></li>
       <li><a href="#how-it-works">Comment ça marche</a></li>
-      <li><a href="artisano-inscription-pro.html">Pour les artisans</a></li>
-      <li><a href="artisano-connexion.html" class="btn-nav">Connexion</a></li>
+      <li><a href="inscription.html">Pour les artisans</a></li>
+      <li><a href="connexion.html" class="btn-nav">Connexion</a></li>
     </ul>
   </nav>
 
   <!-- HERO -->
   <section class="hero" id="hero">
-    <!-- Floating geometric shapes -->
-    <div class="hero-shapes">
-      <div class="hero-shape"></div>
-      <div class="hero-shape"></div>
-      <div class="hero-shape"></div>
-      <div class="hero-shape"></div>
-      <div class="hero-shape"></div>
-      <div class="hero-shape"></div>
-      <div class="hero-shape"></div>
-      <div class="hero-shape"></div>
-      <div class="hero-shape"></div>
-      <div class="hero-shape"></div>
-    </div>
-    <!-- Mouse-following glow -->
-    <div class="hero-glow" id="hero-glow"></div>
-
     <div class="hero-badge">
       <span>Nouveau</span> Disponible dans le canton de Vaud
     </div>
@@ -1343,15 +1090,15 @@
 
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="hero-stat-number" data-target="120" data-suffix="+">0</div>
+        <div class="hero-stat-number">120+</div>
         <div class="hero-stat-label">artisans inscrits</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-number" data-target="4.8" data-suffix="" data-decimal="true">0</div>
+        <div class="hero-stat-number">4.8</div>
         <div class="hero-stat-label">note moyenne</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-number" data-target="100" data-suffix="%">0</div>
+        <div class="hero-stat-number">100%</div>
         <div class="hero-stat-label">avis vérifiés</div>
       </div>
     </div>
@@ -1361,25 +1108,25 @@
   <section class="metiers reveal">
     <div class="section-header">
       <h2>Explore par métier</h2>
-      <a href="artisano-resultats-recherche.html">Voir tout →</a>
+      <a href="recherche.html">Voir tout →</a>
     </div>
     <div class="metiers-grid">
-      <a class="metier-card" href="artisano-resultats-recherche.html" style="text-decoration:none;color:inherit;">
+      <a class="metier-card" href="recherche.html" style="text-decoration:none;color:inherit;">
         <div class="metier-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
         <h3>Plombier</h3>
         <p>42 pros disponibles</p>
       </a>
-      <a class="metier-card" href="artisano-resultats-recherche.html" style="text-decoration:none;color:inherit;">
+      <a class="metier-card" href="recherche.html" style="text-decoration:none;color:inherit;">
         <div class="metier-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
         <h3>Électricien</h3>
         <p>35 pros disponibles</p>
       </a>
-      <a class="metier-card" href="artisano-resultats-recherche.html" style="text-decoration:none;color:inherit;">
+      <a class="metier-card" href="recherche.html" style="text-decoration:none;color:inherit;">
         <div class="metier-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
         <h3>Serrurier</h3>
         <p>18 pros disponibles</p>
       </a>
-      <a class="metier-card" href="artisano-resultats-recherche.html" style="text-decoration:none;color:inherit;">
+      <a class="metier-card" href="recherche.html" style="text-decoration:none;color:inherit;">
         <div class="metier-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c1 3 4 6 4 10a4 4 0 11-8 0c0-4 3-7 4-10z"/></svg></div>
         <h3>Chauffagiste</h3>
         <p>24 pros disponibles</p>
@@ -1418,23 +1165,21 @@
 
   <!-- CTA ARTISAN -->
   <section class="cta reveal" id="cta-section">
-    <!-- Animated particles -->
-    <div class="cta-particles" id="cta-particles"></div>
     <h2>T'es artisan ?<br>Rejoins-nous.</h2>
     <p>Reçois des demandes locales, gère tes rendez-vous, et construis ta réputation en ligne. Dès 25 CHF/mois.</p>
     <div class="cta-buttons">
-      <a href="artisano-inscription-pro.html" class="btn-cta-primary">Créer mon profil</a>
-      <a href="artisano-inscription-pro.html" class="btn-cta-secondary">En savoir plus</a>
+      <a href="inscription.html" class="btn-cta-primary">Créer mon profil</a>
+      <a href="inscription.html" class="btn-cta-secondary">En savoir plus</a>
     </div>
   </section>
 
   <!-- FOOTER -->
   <footer>
     <div class="footer-left">
-      <a href="artisano-homepage.html" class="logo" style="font-size:20px;">artisano<span class="logo-dot"></span></a>
+      <a href="index.html" class="logo" style="font-size:20px;">artisano<span class="logo-dot"></span></a>
       <div class="footer-links">
-        <a href="artisano-homepage.html">À propos</a>
-        <a href="artisano-formulaire-demande.html">Contact</a>
+        <a href="index.html">À propos</a>
+        <a href="demande.html">Contact</a>
         <a href="#">CGU</a>
         <a href="#">Confidentialité</a>
       </div>
@@ -1458,193 +1203,12 @@
     }, { threshold: 0.1 });
     reveals.forEach(el => revealObserver.observe(el));
 
-    // =============================================
-    // 2. HERO TITLE LETTER-BY-LETTER STAGGER
-    // =============================================
-    (function() {
-      const h1 = document.querySelector('.hero h1');
-      if (!h1) return;
-      // Remove the CSS fadeUp animation since we're doing char-by-char
-      h1.style.animation = 'none';
-      h1.style.opacity = '1';
-
-      const html = h1.innerHTML;
-      // Split text nodes into individual characters, preserve HTML tags
-      let charIndex = 0;
-      const newHTML = html.replace(/(<[^>]+>)|([^<])/g, function(match, tag, char) {
-        if (tag) return tag;
-        if (char === ' ') return ' ';
-        const delay = 0.4 + (charIndex * 0.03);
-        charIndex++;
-        return '<span class="char" style="animation-delay:' + delay.toFixed(2) + 's">' + char + '</span>';
-      });
-      h1.innerHTML = newHTML;
-    })();
-
-    // =============================================
-    // 3. ANIMATED COUNTERS
-    // =============================================
-    (function() {
-      const counters = document.querySelectorAll('.hero-stat-number[data-target]');
-      let countersAnimated = false;
-
-      function animateCounter(el) {
-        const target = parseFloat(el.dataset.target);
-        const suffix = el.dataset.suffix || '';
-        const isDecimal = el.dataset.decimal === 'true';
-        const duration = 2000;
-        const startTime = performance.now();
-
-        function easeOutCubic(t) {
-          return 1 - Math.pow(1 - t, 3);
-        }
-
-        function update(currentTime) {
-          const elapsed = currentTime - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          const easedProgress = easeOutCubic(progress);
-          const current = easedProgress * target;
-
-          if (isDecimal) {
-            el.textContent = current.toFixed(1) + suffix;
-          } else {
-            el.textContent = Math.round(current) + suffix;
-          }
-
-          if (progress < 1) {
-            requestAnimationFrame(update);
-          }
-        }
-
-        requestAnimationFrame(update);
-      }
-
-      const statsObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting && !countersAnimated) {
-            countersAnimated = true;
-            counters.forEach(c => animateCounter(c));
-          }
-        });
-      }, { threshold: 0.3 });
-
-      const statsContainer = document.querySelector('.hero-stats');
-      if (statsContainer) statsObserver.observe(statsContainer);
-    })();
-
-    // =============================================
-    // 4. HERO MOUSE-FOLLOWING GLOW
-    // =============================================
-    (function() {
-      const hero = document.getElementById('hero');
-      const glow = document.getElementById('hero-glow');
-      if (!hero || !glow) return;
-
-      hero.addEventListener('mouseenter', function() {
-        glow.classList.add('active');
-      });
-      hero.addEventListener('mouseleave', function() {
-        glow.classList.remove('active');
-      });
-      hero.addEventListener('mousemove', function(e) {
-        const rect = hero.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        glow.style.left = x + 'px';
-        glow.style.top = y + 'px';
-      });
-    })();
-
-    // =============================================
-    // 5. METIER CARDS STAGGER ENTRANCE
-    // =============================================
-    (function() {
-      const cards = document.querySelectorAll('.metier-card');
-      const cardObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            // Add visible class to all cards in the grid
-            cards.forEach(c => c.classList.add('card-visible'));
-            cardObserver.disconnect();
-          }
-        });
-      }, { threshold: 0.15 });
-
-      const grid = document.querySelector('.metiers-grid');
-      if (grid) cardObserver.observe(grid);
-    })();
-
-    // =============================================
-    // 6. STEPS STAGGER + CONNECTING LINE ANIMATION
-    // =============================================
-    (function() {
-      const stepsContainer = document.querySelector('.steps');
-      const steps = document.querySelectorAll('.step');
-      if (!stepsContainer) return;
-
-      const stepsObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            stepsContainer.classList.add('line-visible');
-            steps.forEach(s => s.classList.add('step-visible'));
-            stepsObserver.disconnect();
-          }
-        });
-      }, { threshold: 0.15 });
-
-      stepsObserver.observe(stepsContainer);
-    })();
-
-    // =============================================
-    // 7. CTA PARTICLES
-    // =============================================
-    (function() {
-      const container = document.getElementById('cta-particles');
-      if (!container) return;
-
-      for (let i = 0; i < 20; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'cta-particle';
-        const size = Math.random() * 4 + 2;
-        particle.style.width = size + 'px';
-        particle.style.height = size + 'px';
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.bottom = '-10px';
-        particle.style.animationDuration = (Math.random() * 6 + 4) + 's';
-        particle.style.animationDelay = (Math.random() * 8) + 's';
-        particle.style.opacity = Math.random() * 0.3 + 0.1;
-        container.appendChild(particle);
-      }
-    })();
-
-    // =============================================
-    // 8. CTA PARALLAX ON SCROLL
-    // =============================================
-    (function() {
-      const cta = document.getElementById('cta-section');
-      if (!cta) return;
-      const ctaH2 = cta.querySelector('h2');
-      const ctaP = cta.querySelector('p');
-      const ctaBtns = cta.querySelector('.cta-buttons');
-
-      window.addEventListener('scroll', function() {
-        const rect = cta.getBoundingClientRect();
-        const windowH = window.innerHeight;
-        if (rect.top < windowH && rect.bottom > 0) {
-          const progress = (windowH - rect.top) / (windowH + rect.height);
-          const offset = (progress - 0.5) * 30;
-          if (ctaH2) ctaH2.style.transform = 'translateY(' + (offset * -0.6) + 'px)';
-          if (ctaP) ctaP.style.transform = 'translateY(' + (offset * -0.3) + 'px)';
-          if (ctaBtns) ctaBtns.style.transform = 'translateY(' + (offset * -0.15) + 'px)';
-        }
-      }, { passive: true });
-    })();
 
     // =============================================
     // 9. SEARCH FUNCTIONALITY
     // =============================================
     function doSearch() {
-      window.location.href = 'artisano-resultats-recherche.html';
+      window.location.href = 'recherche.html';
     }
     document.querySelectorAll('.search-field input').forEach(input => {
       input.addEventListener('keydown', function(e) {

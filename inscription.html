@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Créer mon profil artisan | Artisano</title>
+<meta name="description" content="Inscrivez-vous gratuitement sur Artisano. Recevez des demandes locales, gérez vos rendez-vous et construisez votre réputation en ligne.">
+<meta name="theme-color" content="#E8700A">
+<link rel="canonical" href="https://artisano.ch/inscription">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23E8700A'/></svg>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Créer mon profil artisan | Artisano">
+<meta property="og:description" content="Inscrivez-vous gratuitement sur Artisano et recevez des demandes locales.">
+<meta property="og:url" content="https://artisano.ch/inscription">
+<meta property="og:site_name" content="Artisano">
+<meta property="og:locale" content="fr_CH">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -262,6 +272,9 @@
   .step-dot {
     width: 36px;
     height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    flex-shrink: 0;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -275,16 +288,18 @@
   .step-dot.active {
     background: var(--orange);
     color: white;
+    box-shadow: 0 0 0 4px rgba(232,112,10,0.15);
   }
 
   .step-dot.completed {
-    background: var(--green);
+    background: var(--orange);
     color: white;
   }
 
   .step-dot.inactive {
-    background: var(--gray-200);
+    background: white;
     color: var(--gray-500);
+    border: 2px solid var(--gray-300);
   }
 
   .step-label {
@@ -292,6 +307,7 @@
     font-weight: 600;
     color: var(--gray-500);
     transition: color 0.3s;
+    white-space: nowrap;
   }
 
   .step-indicator.current .step-label {
@@ -307,7 +323,7 @@
   }
 
   .step-line.completed {
-    background: var(--green);
+    background: var(--orange);
   }
 
   /* FORM SECTIONS */
@@ -1098,9 +1114,9 @@
 
   <!-- NAV -->
   <nav>
-    <a href="artisano-homepage.html" class="logo">artisano<span class="logo-dot"></span></a>
+    <a href="index.html" class="logo">artisano<span class="logo-dot"></span></a>
     <div class="nav-help">
-      Vous avez déjà un compte ? <a href="artisano-connexion.html">Se connecter</a>
+      Vous avez déjà un compte ? <a href="connexion.html">Se connecter</a>
     </div>
   </nav>
 
@@ -1544,7 +1560,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             Retour
           </button>
-          <button class="btn-submit" onclick="saveContactPrefs(); alert('Profil créé avec succès ! Redirection vers votre tableau de bord...'); setTimeout(function(){ window.location.href='artisano-dashboard-artisan.html'; }, 1000);">
+          <button class="btn-submit" onclick="saveContactPrefs(); alert('Profil créé avec succès ! Redirection vers votre tableau de bord...'); setTimeout(function(){ window.location.href='dashboard.html'; }, 1000);">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
             Créer mon profil et payer
           </button>

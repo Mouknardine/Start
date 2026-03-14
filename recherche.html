@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Plombier à Lausanne — Résultats | Artisano</title>
+<meta name="description" content="Comparez les meilleurs artisans plombiers à Lausanne. Avis vérifiés, tarifs transparents, prise de rendez-vous en ligne.">
+<meta name="theme-color" content="#E8700A">
+<link rel="canonical" href="https://artisano.ch/recherche">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23E8700A'/></svg>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Plombier à Lausanne — Résultats | Artisano">
+<meta property="og:description" content="Comparez les meilleurs artisans plombiers à Lausanne.">
+<meta property="og:url" content="https://artisano.ch/recherche">
+<meta property="og:site_name" content="Artisano">
+<meta property="og:locale" content="fr_CH">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -326,43 +336,27 @@
     transform: translateY(-2px);
   }
 
-  /* Card image - round avatar */
+  /* Card image */
   .card-img {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    flex-direction: column;
-    gap: 10px;
-    padding: 24px 16px;
-    background: var(--gray-100);
-  }
-
-  .card-img-circle {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
     background: linear-gradient(135deg, var(--dark) 0%, var(--dark-mid) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
+    position: relative;
   }
 
-  .card-img-circle svg {
-    width: 40px; height: 40px;
-    color: rgba(255,255,255,0.2);
-  }
-
-  .card-img > svg {
-    display: none;
+  .card-img svg {
+    width: 48px; height: 48px;
+    color: rgba(255,255,255,0.15);
   }
 
   .card-img-badge {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    align-items: center;
   }
 
   .badge-available {
@@ -727,7 +721,7 @@
 
   <!-- NAV WITH INLINE SEARCH -->
   <nav>
-    <a href="artisano-homepage.html" class="logo">artisano<span class="logo-dot"></span></a>
+    <a href="index.html" class="logo">artisano<span class="logo-dot"></span></a>
 
     <div class="nav-search">
       <div class="nav-search-field">
@@ -745,7 +739,7 @@
     </div>
 
     <div class="nav-right">
-      <a href="artisano-connexion.html" class="btn-nav">Connexion</a>
+      <a href="connexion.html" class="btn-nav">Connexion</a>
     </div>
   </nav>
 
@@ -753,9 +747,9 @@
   <section class="search-header">
     <div class="search-header-inner">
       <div class="breadcrumb">
-        <a href="artisano-homepage.html">Accueil</a>
+        <a href="index.html">Accueil</a>
         <span>›</span>
-        <a href="artisano-resultats-recherche.html">Plombier</a>
+        <a href="recherche.html">Plombier</a>
         <span>›</span>
         <span style="color:var(--dark); font-weight:500;">Lausanne</span>
       </div>
@@ -807,9 +801,9 @@
     </div>
 
     <!-- CARD 1 -->
-    <div class="artisan-card" onclick="window.location.href='artisano-profil-artisan.html'">
+    <div class="artisan-card" onclick="window.location.href='profil.html'">
       <div class="card-img">
-        <div class="card-img-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
         <div class="card-img-badge">
           <span class="badge-available">Disponible</span>
           <span class="badge-verified"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Vérifié</span>
@@ -848,15 +842,15 @@
           <span class="card-slot">Mardi 14h00</span>
           <span class="card-slot">Mercredi 8h00</span>
         </div>
-        <a href="artisano-profil-artisan.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="artisano-formulaire-demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
+        <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
+        <a href="demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
       </div>
     </div>
 
     <!-- CARD 2 -->
-    <div class="artisan-card" onclick="window.location.href='artisano-profil-artisan.html'">
+    <div class="artisan-card" onclick="window.location.href='profil.html'">
       <div class="card-img">
-        <div class="card-img-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
         <div class="card-img-badge">
           <span class="badge-available">Disponible</span>
         </div>
@@ -892,15 +886,15 @@
           <span class="card-slot">Mercredi 9h00</span>
           <span class="card-slot">Jeudi 14h00</span>
         </div>
-        <a href="artisano-profil-artisan.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="artisano-formulaire-demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
+        <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
+        <a href="demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
       </div>
     </div>
 
     <!-- CARD 3 -->
-    <div class="artisan-card" onclick="window.location.href='artisano-profil-artisan.html'">
+    <div class="artisan-card" onclick="window.location.href='profil.html'">
       <div class="card-img">
-        <div class="card-img-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
         <div class="card-img-badge">
           <span class="badge-available">Disponible</span>
           <span class="badge-verified"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Vérifié</span>
@@ -938,15 +932,15 @@
           <span class="card-slot">Lundi 14h00</span>
           <span class="card-slot">Vendredi 9h00</span>
         </div>
-        <a href="artisano-profil-artisan.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="artisano-formulaire-demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
+        <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
+        <a href="demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
       </div>
     </div>
 
     <!-- CARD 4 -->
-    <div class="artisan-card" onclick="window.location.href='artisano-profil-artisan.html'">
+    <div class="artisan-card" onclick="window.location.href='profil.html'">
       <div class="card-img">
-        <div class="card-img-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
         <div class="card-img-badge">
           <span class="badge-available">Disponible</span>
         </div>
@@ -982,15 +976,15 @@
           <span class="card-slot">Aujourd'hui 15h00</span>
           <span class="card-slot">Demain 8h00</span>
         </div>
-        <a href="artisano-profil-artisan.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="artisano-formulaire-demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
+        <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
+        <a href="demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
       </div>
     </div>
 
     <!-- CARD 5 -->
-    <div class="artisan-card" onclick="window.location.href='artisano-profil-artisan.html'">
+    <div class="artisan-card" onclick="window.location.href='profil.html'">
       <div class="card-img">
-        <div class="card-img-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
         <div class="card-img-badge">
           <span class="badge-available">Disponible</span>
           <span class="badge-verified"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Vérifié</span>
@@ -1028,8 +1022,8 @@
           <span class="card-slot">Lundi 16 mars</span>
           <span class="card-slot">Mardi 17 mars</span>
         </div>
-        <a href="artisano-profil-artisan.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="artisano-formulaire-demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
+        <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
+        <a href="demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
       </div>
     </div>
 

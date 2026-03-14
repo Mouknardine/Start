@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Fichiers à ne pas indexer
+Disallow: /dashboard
+Disallow: /connexion
+Disallow: /*.md$
+
+# Sitemap
+Sitemap: https://artisano.ch/sitemap.xml

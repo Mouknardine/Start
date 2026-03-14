@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tableau de bord | Artisano</title>
+<meta name="description" content="Gérez vos demandes, votre agenda et vos disponibilités depuis votre tableau de bord Artisano.">
+<meta name="theme-color" content="#E8700A">
+<meta name="robots" content="noindex, nofollow">
+<link rel="canonical" href="https://artisano.ch/dashboard">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23E8700A'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -99,19 +104,61 @@
   .agenda-cell:hover { background:rgba(232,112,10,0.03); }
   .agenda-cell.available { background:var(--green-light); }
   .agenda-cell.available::after { content:''; }
-  .agenda-cell.booked { background:rgba(232,112,10,0.08); cursor:default; }
-  .agenda-cell.booked::after { content:'Réservé'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:9px; font-weight:700; color:var(--orange); white-space:nowrap; }
   .agenda-cell.unavailable { background:repeating-linear-gradient(135deg, var(--red-light), var(--red-light) 3px, #fff 3px, #fff 6px); cursor:pointer; }
   .agenda-cell.unavailable::after { content:''; }
   .agenda-cell.past { background:var(--gray-100); cursor:default; opacity:0.5; }
   .agenda-cell.drag-preview { outline:2px solid var(--orange); outline-offset:-2px; }
+  .agenda-cell.selected-cell { outline:2px solid var(--blue); outline-offset:-2px; background:rgba(21,101,192,0.06); }
+  .agenda-cell.selected-cell.available { background:linear-gradient(rgba(21,101,192,0.08), rgba(21,101,192,0.08)), var(--green-light); outline:2px solid var(--blue); outline-offset:-2px; }
+  .agenda-cell.selected-cell.unavailable { outline:2px solid var(--blue); outline-offset:-2px; }
+
+  /* CELL POPUP */
+  .cell-popup { display:none; position:absolute; z-index:150; background:white; border-radius:var(--radius-sm); box-shadow:0 8px 30px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08); padding:12px; min-width:180px; border:1px solid var(--gray-200); }
+  .cell-popup.active { display:block; }
+  .cell-popup-title { font-family:'Sora',sans-serif; font-size:11px; font-weight:700; color:var(--gray-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; }
+  .cell-popup-btn { display:flex; align-items:center; gap:8px; width:100%; padding:8px 12px; border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.15s; background:transparent; text-align:left; }
+  .cell-popup-btn:hover { background:var(--gray-100); }
+  .cell-popup-btn .popup-dot { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+  .cell-popup-btn.popup-available .popup-dot { background:var(--green-light); border:1.5px solid var(--green); }
+  .cell-popup-btn.popup-available { color:var(--green); }
+  .cell-popup-btn.popup-unavailable .popup-dot { background:repeating-linear-gradient(135deg, var(--red-light), var(--red-light) 2px, #fff 2px, #fff 4px); border:1.5px solid var(--red); }
+  .cell-popup-btn.popup-unavailable { color:var(--red); }
+  .cell-popup-btn.popup-clear .popup-dot { background:white; border:1.5px solid var(--gray-300); }
+  .cell-popup-btn.popup-clear { color:var(--gray-700); }
+  .cell-popup-divider { height:1px; background:var(--gray-200); margin:6px 0; }
+
+  /* CUSTOM SLOT FORM */
+  .custom-slot-section { padding:20px 24px; border-top:1px solid var(--gray-200); }
+  .custom-slot-toggle { display:flex; align-items:center; gap:8px; background:none; border:1px solid var(--gray-200); border-radius:50px; padding:10px 20px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; color:var(--gray-700); cursor:pointer; transition:all 0.2s; }
+  .custom-slot-toggle:hover { border-color:var(--gray-300); background:var(--gray-100); }
+  .custom-slot-toggle svg { width:16px; height:16px; }
+  .custom-slot-form { display:none; margin-top:16px; background:var(--gray-100); border-radius:var(--radius-sm); padding:20px; }
+  .custom-slot-form.active { display:block; }
+  .custom-slot-form-title { font-family:'Sora',sans-serif; font-size:14px; font-weight:700; margin-bottom:14px; }
+  .custom-slot-row { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
+  .custom-slot-field { display:flex; flex-direction:column; gap:4px; }
+  .custom-slot-field label { font-size:11px; font-weight:700; color:var(--gray-500); text-transform:uppercase; letter-spacing:0.4px; }
+  .custom-slot-field select, .custom-slot-field input[type="time"] { padding:8px 12px; border:1px solid var(--gray-200); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; background:white; color:var(--dark); min-width:140px; }
+  .custom-slot-field select:focus, .custom-slot-field input[type="time"]:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.1); }
+  .custom-slot-status-group { display:flex; gap:6px; }
+  .custom-slot-status-btn { padding:8px 16px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; border:2px solid var(--gray-200); background:white; transition:all 0.15s; font-family:'DM Sans',sans-serif; }
+  .custom-slot-status-btn:hover { border-color:var(--gray-300); }
+  .custom-slot-status-btn.cs-available { color:var(--green); }
+  .custom-slot-status-btn.cs-available.active { background:var(--green-light); border-color:var(--green); }
+  .custom-slot-status-btn.cs-unavailable { color:var(--red); }
+  .custom-slot-status-btn.cs-unavailable.active { background:var(--red-light); border-color:var(--red); }
+  .custom-slot-add-btn { padding:8px 20px; border-radius:50px; background:var(--orange); color:white; font-family:'Sora',sans-serif; font-weight:700; font-size:13px; border:none; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+  .custom-slot-add-btn:hover { background:var(--orange-dark); }
+  .custom-slot-add-btn:disabled { background:var(--gray-300); cursor:not-allowed; }
+  .custom-slot-feedback { margin-top:10px; font-size:12px; font-weight:600; padding:8px 12px; border-radius:8px; display:none; }
+  .custom-slot-feedback.success { display:block; background:var(--green-light); color:var(--green); }
+  .custom-slot-feedback.error { display:block; background:var(--red-light); color:var(--red); }
 
   .agenda-legend { padding:16px 24px; border-top:1px solid var(--gray-200); display:flex; gap:20px; flex-wrap:wrap; }
   .legend-item { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--gray-500); }
   .legend-dot { width:12px; height:12px; border-radius:3px; }
   .legend-dot.avail { background:var(--green-light); border:1px solid var(--green); }
   .legend-dot.unavail { background:repeating-linear-gradient(135deg, var(--red-light), var(--red-light) 2px, #fff 2px, #fff 4px); border:1px solid var(--red); }
-  .legend-dot.booked { background:rgba(232,112,10,0.15); border:1px solid var(--orange); }
   .legend-dot.empty { background:white; border:1px solid var(--gray-300); }
 
   /* DEMANDES */
@@ -190,11 +237,11 @@
 </head>
 <body>
   <nav>
-    <a href="artisano-homepage.html" class="logo">artisano<span class="logo-dot"></span></a>
+    <a href="index.html" class="logo">artisano<span class="logo-dot"></span></a>
     <ul class="nav-links">
-      <li><a href="artisano-dashboard-artisan.html" class="active">Tableau de bord</a></li>
+      <li><a href="dashboard.html" class="active">Tableau de bord</a></li>
       <li><a href="#" onclick="switchDashTab('demandes'); return false;">Demandes</a></li>
-      <li><a href="artisano-profil-artisan.html">Mon profil</a></li>
+      <li><a href="profil.html">Mon profil</a></li>
       <li><a href="#" onclick="switchDashTab('agenda'); return false;">Agenda</a></li>
     </ul>
     <div class="nav-user">
@@ -311,7 +358,7 @@
 
         <div class="agenda-info">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          Cliquez pour basculer entre 3 états : vide → disponible (vert) → indisponible (rouge) → vide. Glissez pour sélectionner plusieurs créneaux d'un coup sur la même journée.
+          Cliquez sur un créneau ou glissez pour sélectionner plusieurs créneaux, puis choisissez le statut dans le menu contextuel. Utilisez le formulaire ci-dessous pour définir des plages horaires personnalisées (ex : 9h15 - 10h22).
         </div>
 
         <div class="agenda-grid" id="agendaGrid">
@@ -327,36 +374,36 @@
 
           <!-- 8h00 -->
           <div class="agenda-time">8h00</div>
-          <div class="agenda-cell available" data-col="0" data-row="0"></div>
+          <div class="agenda-cell" data-col="0" data-row="0"></div>
           <div class="agenda-cell" data-col="1" data-row="0"></div>
-          <div class="agenda-cell available" data-col="2" data-row="0"></div>
+          <div class="agenda-cell" data-col="2" data-row="0"></div>
           <div class="agenda-cell" data-col="3" data-row="0"></div>
-          <div class="agenda-cell available" data-col="4" data-row="0"></div>
+          <div class="agenda-cell" data-col="4" data-row="0"></div>
           <div class="agenda-cell" data-col="5" data-row="0"></div>
           <div class="agenda-cell" data-col="6" data-row="0"></div>
           <!-- 8h30 -->
           <div class="agenda-time half-hour"></div>
-          <div class="agenda-cell available" data-col="0" data-row="1"></div>
+          <div class="agenda-cell" data-col="0" data-row="1"></div>
           <div class="agenda-cell" data-col="1" data-row="1"></div>
-          <div class="agenda-cell available" data-col="2" data-row="1"></div>
+          <div class="agenda-cell" data-col="2" data-row="1"></div>
           <div class="agenda-cell" data-col="3" data-row="1"></div>
-          <div class="agenda-cell available" data-col="4" data-row="1"></div>
+          <div class="agenda-cell" data-col="4" data-row="1"></div>
           <div class="agenda-cell" data-col="5" data-row="1"></div>
           <div class="agenda-cell" data-col="6" data-row="1"></div>
 
           <!-- 9h00 -->
           <div class="agenda-time">9h00</div>
-          <div class="agenda-cell booked hour-start" data-col="0" data-row="2"></div>
-          <div class="agenda-cell available hour-start" data-col="1" data-row="2"></div>
+          <div class="agenda-cell hour-start" data-col="0" data-row="2"></div>
+          <div class="agenda-cell hour-start" data-col="1" data-row="2"></div>
           <div class="agenda-cell hour-start" data-col="2" data-row="2"></div>
-          <div class="agenda-cell available hour-start" data-col="3" data-row="2"></div>
+          <div class="agenda-cell hour-start" data-col="3" data-row="2"></div>
           <div class="agenda-cell hour-start" data-col="4" data-row="2"></div>
           <div class="agenda-cell hour-start" data-col="5" data-row="2"></div>
           <div class="agenda-cell hour-start" data-col="6" data-row="2"></div>
           <!-- 9h30 -->
           <div class="agenda-time half-hour"></div>
-          <div class="agenda-cell booked" data-col="0" data-row="3"></div>
-          <div class="agenda-cell available" data-col="1" data-row="3"></div>
+          <div class="agenda-cell" data-col="0" data-row="3"></div>
+          <div class="agenda-cell" data-col="1" data-row="3"></div>
           <div class="agenda-cell" data-col="2" data-row="3"></div>
           <div class="agenda-cell" data-col="3" data-row="3"></div>
           <div class="agenda-cell" data-col="4" data-row="3"></div>
@@ -365,36 +412,36 @@
 
           <!-- 10h00 -->
           <div class="agenda-time">10h00</div>
-          <div class="agenda-cell available hour-start" data-col="0" data-row="4"></div>
+          <div class="agenda-cell hour-start" data-col="0" data-row="4"></div>
           <div class="agenda-cell hour-start" data-col="1" data-row="4"></div>
-          <div class="agenda-cell booked hour-start" data-col="2" data-row="4"></div>
+          <div class="agenda-cell hour-start" data-col="2" data-row="4"></div>
           <div class="agenda-cell hour-start" data-col="3" data-row="4"></div>
-          <div class="agenda-cell available hour-start" data-col="4" data-row="4"></div>
-          <div class="agenda-cell available hour-start" data-col="5" data-row="4"></div>
+          <div class="agenda-cell hour-start" data-col="4" data-row="4"></div>
+          <div class="agenda-cell hour-start" data-col="5" data-row="4"></div>
           <div class="agenda-cell hour-start" data-col="6" data-row="4"></div>
           <!-- 10h30 -->
           <div class="agenda-time half-hour"></div>
-          <div class="agenda-cell available" data-col="0" data-row="5"></div>
+          <div class="agenda-cell" data-col="0" data-row="5"></div>
           <div class="agenda-cell" data-col="1" data-row="5"></div>
-          <div class="agenda-cell booked" data-col="2" data-row="5"></div>
+          <div class="agenda-cell" data-col="2" data-row="5"></div>
           <div class="agenda-cell" data-col="3" data-row="5"></div>
-          <div class="agenda-cell available" data-col="4" data-row="5"></div>
-          <div class="agenda-cell available" data-col="5" data-row="5"></div>
+          <div class="agenda-cell" data-col="4" data-row="5"></div>
+          <div class="agenda-cell" data-col="5" data-row="5"></div>
           <div class="agenda-cell" data-col="6" data-row="5"></div>
 
           <!-- 11h00 -->
           <div class="agenda-time">11h00</div>
           <div class="agenda-cell hour-start" data-col="0" data-row="6"></div>
-          <div class="agenda-cell available hour-start" data-col="1" data-row="6"></div>
+          <div class="agenda-cell hour-start" data-col="1" data-row="6"></div>
           <div class="agenda-cell hour-start" data-col="2" data-row="6"></div>
-          <div class="agenda-cell available hour-start" data-col="3" data-row="6"></div>
+          <div class="agenda-cell hour-start" data-col="3" data-row="6"></div>
           <div class="agenda-cell hour-start" data-col="4" data-row="6"></div>
           <div class="agenda-cell hour-start" data-col="5" data-row="6"></div>
           <div class="agenda-cell hour-start" data-col="6" data-row="6"></div>
           <!-- 11h30 -->
           <div class="agenda-time half-hour"></div>
           <div class="agenda-cell" data-col="0" data-row="7"></div>
-          <div class="agenda-cell available" data-col="1" data-row="7"></div>
+          <div class="agenda-cell" data-col="1" data-row="7"></div>
           <div class="agenda-cell" data-col="2" data-row="7"></div>
           <div class="agenda-cell" data-col="3" data-row="7"></div>
           <div class="agenda-cell" data-col="4" data-row="7"></div>
@@ -403,20 +450,20 @@
 
           <!-- 12h00 -->
           <div class="agenda-time">12h00</div>
-          <div class="agenda-cell unavailable hour-start" data-col="0" data-row="8"></div>
-          <div class="agenda-cell unavailable hour-start" data-col="1" data-row="8"></div>
-          <div class="agenda-cell unavailable hour-start" data-col="2" data-row="8"></div>
-          <div class="agenda-cell unavailable hour-start" data-col="3" data-row="8"></div>
-          <div class="agenda-cell unavailable hour-start" data-col="4" data-row="8"></div>
+          <div class="agenda-cell hour-start" data-col="0" data-row="8"></div>
+          <div class="agenda-cell hour-start" data-col="1" data-row="8"></div>
+          <div class="agenda-cell hour-start" data-col="2" data-row="8"></div>
+          <div class="agenda-cell hour-start" data-col="3" data-row="8"></div>
+          <div class="agenda-cell hour-start" data-col="4" data-row="8"></div>
           <div class="agenda-cell hour-start" data-col="5" data-row="8"></div>
           <div class="agenda-cell hour-start" data-col="6" data-row="8"></div>
           <!-- 12h30 -->
           <div class="agenda-time half-hour"></div>
-          <div class="agenda-cell unavailable" data-col="0" data-row="9"></div>
-          <div class="agenda-cell unavailable" data-col="1" data-row="9"></div>
-          <div class="agenda-cell unavailable" data-col="2" data-row="9"></div>
-          <div class="agenda-cell unavailable" data-col="3" data-row="9"></div>
-          <div class="agenda-cell unavailable" data-col="4" data-row="9"></div>
+          <div class="agenda-cell" data-col="0" data-row="9"></div>
+          <div class="agenda-cell" data-col="1" data-row="9"></div>
+          <div class="agenda-cell" data-col="2" data-row="9"></div>
+          <div class="agenda-cell" data-col="3" data-row="9"></div>
+          <div class="agenda-cell" data-col="4" data-row="9"></div>
           <div class="agenda-cell" data-col="5" data-row="9"></div>
           <div class="agenda-cell" data-col="6" data-row="9"></div>
 
@@ -424,7 +471,7 @@
           <div class="agenda-time">13h00</div>
           <div class="agenda-cell hour-start" data-col="0" data-row="10"></div>
           <div class="agenda-cell hour-start" data-col="1" data-row="10"></div>
-          <div class="agenda-cell available hour-start" data-col="2" data-row="10"></div>
+          <div class="agenda-cell hour-start" data-col="2" data-row="10"></div>
           <div class="agenda-cell hour-start" data-col="3" data-row="10"></div>
           <div class="agenda-cell hour-start" data-col="4" data-row="10"></div>
           <div class="agenda-cell hour-start" data-col="5" data-row="10"></div>
@@ -433,7 +480,7 @@
           <div class="agenda-time half-hour"></div>
           <div class="agenda-cell" data-col="0" data-row="11"></div>
           <div class="agenda-cell" data-col="1" data-row="11"></div>
-          <div class="agenda-cell available" data-col="2" data-row="11"></div>
+          <div class="agenda-cell" data-col="2" data-row="11"></div>
           <div class="agenda-cell" data-col="3" data-row="11"></div>
           <div class="agenda-cell" data-col="4" data-row="11"></div>
           <div class="agenda-cell" data-col="5" data-row="11"></div>
@@ -441,19 +488,19 @@
 
           <!-- 14h00 -->
           <div class="agenda-time">14h00</div>
-          <div class="agenda-cell available hour-start" data-col="0" data-row="12"></div>
-          <div class="agenda-cell booked hour-start" data-col="1" data-row="12"></div>
+          <div class="agenda-cell hour-start" data-col="0" data-row="12"></div>
+          <div class="agenda-cell hour-start" data-col="1" data-row="12"></div>
           <div class="agenda-cell hour-start" data-col="2" data-row="12"></div>
-          <div class="agenda-cell available hour-start" data-col="3" data-row="12"></div>
+          <div class="agenda-cell hour-start" data-col="3" data-row="12"></div>
           <div class="agenda-cell hour-start" data-col="4" data-row="12"></div>
           <div class="agenda-cell hour-start" data-col="5" data-row="12"></div>
           <div class="agenda-cell hour-start" data-col="6" data-row="12"></div>
           <!-- 14h30 -->
           <div class="agenda-time half-hour"></div>
-          <div class="agenda-cell available" data-col="0" data-row="13"></div>
-          <div class="agenda-cell booked" data-col="1" data-row="13"></div>
+          <div class="agenda-cell" data-col="0" data-row="13"></div>
+          <div class="agenda-cell" data-col="1" data-row="13"></div>
           <div class="agenda-cell" data-col="2" data-row="13"></div>
-          <div class="agenda-cell available" data-col="3" data-row="13"></div>
+          <div class="agenda-cell" data-col="3" data-row="13"></div>
           <div class="agenda-cell" data-col="4" data-row="13"></div>
           <div class="agenda-cell" data-col="5" data-row="13"></div>
           <div class="agenda-cell" data-col="6" data-row="13"></div>
@@ -462,36 +509,36 @@
           <div class="agenda-time">15h00</div>
           <div class="agenda-cell hour-start" data-col="0" data-row="14"></div>
           <div class="agenda-cell hour-start" data-col="1" data-row="14"></div>
-          <div class="agenda-cell available hour-start" data-col="2" data-row="14"></div>
+          <div class="agenda-cell hour-start" data-col="2" data-row="14"></div>
           <div class="agenda-cell hour-start" data-col="3" data-row="14"></div>
-          <div class="agenda-cell available hour-start" data-col="4" data-row="14"></div>
+          <div class="agenda-cell hour-start" data-col="4" data-row="14"></div>
           <div class="agenda-cell hour-start" data-col="5" data-row="14"></div>
           <div class="agenda-cell hour-start" data-col="6" data-row="14"></div>
           <!-- 15h30 -->
           <div class="agenda-time half-hour"></div>
           <div class="agenda-cell" data-col="0" data-row="15"></div>
           <div class="agenda-cell" data-col="1" data-row="15"></div>
-          <div class="agenda-cell available" data-col="2" data-row="15"></div>
+          <div class="agenda-cell" data-col="2" data-row="15"></div>
           <div class="agenda-cell" data-col="3" data-row="15"></div>
-          <div class="agenda-cell available" data-col="4" data-row="15"></div>
+          <div class="agenda-cell" data-col="4" data-row="15"></div>
           <div class="agenda-cell" data-col="5" data-row="15"></div>
           <div class="agenda-cell" data-col="6" data-row="15"></div>
 
           <!-- 16h00 -->
           <div class="agenda-time">16h00</div>
           <div class="agenda-cell hour-start" data-col="0" data-row="16"></div>
-          <div class="agenda-cell available hour-start" data-col="1" data-row="16"></div>
+          <div class="agenda-cell hour-start" data-col="1" data-row="16"></div>
           <div class="agenda-cell hour-start" data-col="2" data-row="16"></div>
-          <div class="agenda-cell booked hour-start" data-col="3" data-row="16"></div>
+          <div class="agenda-cell hour-start" data-col="3" data-row="16"></div>
           <div class="agenda-cell hour-start" data-col="4" data-row="16"></div>
           <div class="agenda-cell hour-start" data-col="5" data-row="16"></div>
           <div class="agenda-cell hour-start" data-col="6" data-row="16"></div>
           <!-- 16h30 -->
           <div class="agenda-time half-hour"></div>
           <div class="agenda-cell" data-col="0" data-row="17"></div>
-          <div class="agenda-cell available" data-col="1" data-row="17"></div>
+          <div class="agenda-cell" data-col="1" data-row="17"></div>
           <div class="agenda-cell" data-col="2" data-row="17"></div>
-          <div class="agenda-cell booked" data-col="3" data-row="17"></div>
+          <div class="agenda-cell" data-col="3" data-row="17"></div>
           <div class="agenda-cell" data-col="4" data-row="17"></div>
           <div class="agenda-cell" data-col="5" data-row="17"></div>
           <div class="agenda-cell" data-col="6" data-row="17"></div>
@@ -519,9 +566,65 @@
         <div class="agenda-legend">
           <div class="legend-item"><div class="legend-dot avail"></div> Disponible</div>
           <div class="legend-item"><div class="legend-dot unavail"></div> Indisponible</div>
-          <div class="legend-item"><div class="legend-dot booked"></div> Réservé</div>
           <div class="legend-item"><div class="legend-dot empty"></div> Non défini</div>
         </div>
+
+        <!-- CUSTOM SLOT FORM -->
+        <div class="custom-slot-section">
+          <button class="custom-slot-toggle" id="customSlotToggle" onclick="toggleCustomSlotForm()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Ajouter un créneau personnalisé
+          </button>
+          <div class="custom-slot-form" id="customSlotForm">
+            <div class="custom-slot-form-title">Créneau personnalisé</div>
+            <div class="custom-slot-row">
+              <div class="custom-slot-field">
+                <label for="csDay">Jour</label>
+                <select id="csDay">
+                  <option value="0">Lundi</option>
+                  <option value="1">Mardi</option>
+                  <option value="2">Mercredi</option>
+                  <option value="3">Jeudi</option>
+                  <option value="4">Vendredi</option>
+                  <option value="5">Samedi</option>
+                  <option value="6">Dimanche</option>
+                </select>
+              </div>
+              <div class="custom-slot-field">
+                <label for="csStart">Heure de début</label>
+                <input type="time" id="csStart" value="09:15" min="08:00" max="17:30">
+              </div>
+              <div class="custom-slot-field">
+                <label for="csEnd">Heure de fin</label>
+                <input type="time" id="csEnd" value="10:22" min="08:00" max="18:00">
+              </div>
+              <div class="custom-slot-field">
+                <label>Statut</label>
+                <div class="custom-slot-status-group">
+                  <button class="custom-slot-status-btn cs-available active" id="csBtnAvailable" onclick="setCustomSlotStatus('available')">Disponible</button>
+                  <button class="custom-slot-status-btn cs-unavailable" id="csBtnUnavailable" onclick="setCustomSlotStatus('unavailable')">Indisponible</button>
+                </div>
+              </div>
+              <button class="custom-slot-add-btn" onclick="addCustomSlot()">Appliquer</button>
+            </div>
+            <div class="custom-slot-feedback" id="csFeedback"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CELL POPUP (positioned absolutely, hidden by default) -->
+      <div class="cell-popup" id="cellPopup">
+        <div class="cell-popup-title">Définir le statut</div>
+        <button class="cell-popup-btn popup-available" onclick="applyPopupState('available')">
+          <span class="popup-dot"></span> Disponible
+        </button>
+        <button class="cell-popup-btn popup-unavailable" onclick="applyPopupState('unavailable')">
+          <span class="popup-dot"></span> Indisponible
+        </button>
+        <div class="cell-popup-divider"></div>
+        <button class="cell-popup-btn popup-clear" onclick="applyPopupState('clear')">
+          <span class="popup-dot"></span> Effacer
+        </button>
       </div>
     </div>
 
@@ -578,96 +681,106 @@
       }
     }
 
-    /* ========== AGENDA: 3-STATE TOGGLE ========== */
-    function cycleCell(cell) {
-      if (cell.classList.contains('booked') || cell.classList.contains('past')) return;
-      if (!cell.classList.contains('available') && !cell.classList.contains('unavailable')) {
-        // empty -> available
-        cell.classList.add('available');
-      } else if (cell.classList.contains('available')) {
-        // available -> unavailable
-        cell.classList.remove('available');
-        cell.classList.add('unavailable');
-      } else {
-        // unavailable -> empty
-        cell.classList.remove('unavailable');
-      }
+    /* ========== AGENDA: POPUP-BASED SELECTION SYSTEM ========== */
+    var selectedCells = [];
+    var cellPopup = document.getElementById('cellPopup');
+
+    function clearSelection() {
+      selectedCells.forEach(function(c) { c.classList.remove('selected-cell'); });
+      selectedCells = [];
     }
 
-    /* ========== AGENDA: DRAG SELECTION ========== */
+    function hidePopup() {
+      cellPopup.classList.remove('active');
+    }
+
+    function showPopup(anchorCell, e) {
+      if (selectedCells.length === 0) return;
+      var popup = cellPopup;
+      popup.classList.add('active');
+
+      // Position popup near the click / last selected cell
+      var rect = anchorCell.getBoundingClientRect();
+      var popupW = 180;
+      var popupH = 160;
+
+      var left = rect.right + 8;
+      var top = rect.top + window.scrollY;
+
+      // If popup would go off-screen right, show on left side
+      if (left + popupW > window.innerWidth - 16) {
+        left = rect.left - popupW - 8;
+      }
+      // If popup would go off-screen bottom
+      if (rect.top + popupH > window.innerHeight) {
+        top = rect.bottom + window.scrollY - popupH;
+      }
+      // Ensure not negative
+      if (left < 8) left = 8;
+
+      popup.style.position = 'absolute';
+      popup.style.left = left + 'px';
+      popup.style.top = top + 'px';
+    }
+
+    function applyPopupState(state) {
+      selectedCells.forEach(function(cell) {
+        cell.classList.remove('available', 'unavailable');
+        if (state === 'available') cell.classList.add('available');
+        else if (state === 'unavailable') cell.classList.add('unavailable');
+        // 'clear' leaves no class
+      });
+      hidePopup();
+      clearSelection();
+    }
+
+    /* ========== AGENDA: DRAG-TO-SELECT + POPUP ========== */
     (function() {
       var isDragging = false;
       var dragCol = null;
       var dragStartRow = null;
       var dragCurrentRow = null;
-      var startState = null; // state at mousedown cell to determine what to apply
+      var lastMouseEvent = null;
 
       var grid = document.getElementById('agendaGrid');
       if (!grid) return;
 
-      function getCellsInColumn(col) {
-        return Array.from(grid.querySelectorAll('.agenda-cell[data-col="' + col + '"]'));
-      }
-
-      function getCellState(cell) {
-        if (cell.classList.contains('booked')) return 'booked';
-        if (cell.classList.contains('available')) return 'available';
-        if (cell.classList.contains('unavailable')) return 'unavailable';
-        return 'empty';
-      }
-
-      function getNextState(state) {
-        if (state === 'empty') return 'available';
-        if (state === 'available') return 'unavailable';
-        return 'empty'; // unavailable -> empty
-      }
-
-      function clearDragPreview() {
-        grid.querySelectorAll('.drag-preview').forEach(function(c) {
-          c.classList.remove('drag-preview');
+      function getCellsInRange(col, rowMin, rowMax) {
+        return Array.from(grid.querySelectorAll('.agenda-cell[data-col="' + col + '"]')).filter(function(c) {
+          var r = parseInt(c.dataset.row);
+          return r >= rowMin && r <= rowMax && !c.classList.contains('past');
         });
       }
 
-      function applyDragPreview() {
-        clearDragPreview();
+      function updateDragPreview() {
+        clearSelection();
         if (dragCol === null || dragStartRow === null || dragCurrentRow === null) return;
         var minRow = Math.min(dragStartRow, dragCurrentRow);
         var maxRow = Math.max(dragStartRow, dragCurrentRow);
-        var cells = getCellsInColumn(dragCol);
+        var cells = getCellsInRange(dragCol, minRow, maxRow);
         cells.forEach(function(c) {
-          var r = parseInt(c.dataset.row);
-          if (r >= minRow && r <= maxRow && getCellState(c) !== 'booked') {
-            c.classList.add('drag-preview');
-          }
+          c.classList.add('selected-cell');
         });
-      }
-
-      function applyDragState() {
-        if (dragCol === null || dragStartRow === null || dragCurrentRow === null) return;
-        var minRow = Math.min(dragStartRow, dragCurrentRow);
-        var maxRow = Math.max(dragStartRow, dragCurrentRow);
-        var targetState = getNextState(startState);
-        var cells = getCellsInColumn(dragCol);
-        cells.forEach(function(c) {
-          var r = parseInt(c.dataset.row);
-          if (r >= minRow && r <= maxRow && getCellState(c) !== 'booked') {
-            c.classList.remove('available', 'unavailable');
-            if (targetState === 'available') c.classList.add('available');
-            else if (targetState === 'unavailable') c.classList.add('unavailable');
-          }
-        });
+        selectedCells = cells;
       }
 
       grid.addEventListener('mousedown', function(e) {
         var cell = e.target.closest('.agenda-cell');
-        if (!cell || cell.classList.contains('booked') || cell.classList.contains('past')) return;
+        if (!cell || cell.classList.contains('past')) return;
         e.preventDefault();
+
+        // Close popup if open and clicking a new cell
+        hidePopup();
+        clearSelection();
+
         isDragging = true;
         dragCol = cell.dataset.col;
         dragStartRow = parseInt(cell.dataset.row);
         dragCurrentRow = dragStartRow;
-        startState = getCellState(cell);
-        applyDragPreview();
+        lastMouseEvent = e;
+
+        cell.classList.add('selected-cell');
+        selectedCells = [cell];
       });
 
       grid.addEventListener('mousemove', function(e) {
@@ -677,35 +790,126 @@
         var row = parseInt(cell.dataset.row);
         if (row !== dragCurrentRow) {
           dragCurrentRow = row;
-          applyDragPreview();
+          lastMouseEvent = e;
+          updateDragPreview();
         }
       });
 
       document.addEventListener('mouseup', function(e) {
         if (!isDragging) return;
-        clearDragPreview();
-        if (dragStartRow === dragCurrentRow) {
-          // single click: cycle the one cell
-          var cells = getCellsInColumn(dragCol);
-          cells.forEach(function(c) {
-            if (parseInt(c.dataset.row) === dragStartRow) cycleCell(c);
-          });
-        } else {
-          // drag: apply the computed next-state to range
-          applyDragState();
-        }
         isDragging = false;
+
+        // Show popup near the last cell in the selection
+        if (selectedCells.length > 0) {
+          var anchor = selectedCells[selectedCells.length - 1];
+          showPopup(anchor, lastMouseEvent || e);
+        }
+
         dragCol = null;
         dragStartRow = null;
         dragCurrentRow = null;
-        startState = null;
+        lastMouseEvent = null;
       });
 
-      // prevent text selection while dragging
+      // Prevent text selection while dragging
       grid.addEventListener('selectstart', function(e) {
         if (isDragging) e.preventDefault();
       });
+
+      // Close popup when clicking outside of it and outside the grid
+      document.addEventListener('mousedown', function(e) {
+        if (cellPopup.classList.contains('active')) {
+          if (!cellPopup.contains(e.target) && !e.target.closest('.agenda-cell')) {
+            hidePopup();
+            clearSelection();
+          }
+        }
+      });
     })();
+
+    /* ========== CUSTOM SLOT FORM ========== */
+    var customSlotStatus = 'available';
+
+    function toggleCustomSlotForm() {
+      var form = document.getElementById('customSlotForm');
+      form.classList.toggle('active');
+    }
+
+    function setCustomSlotStatus(status) {
+      customSlotStatus = status;
+      document.getElementById('csBtnAvailable').classList.toggle('active', status === 'available');
+      document.getElementById('csBtnUnavailable').classList.toggle('active', status === 'unavailable');
+    }
+
+    function addCustomSlot() {
+      var dayCol = parseInt(document.getElementById('csDay').value);
+      var startTime = document.getElementById('csStart').value;
+      var endTime = document.getElementById('csEnd').value;
+      var feedback = document.getElementById('csFeedback');
+
+      // Validate
+      if (!startTime || !endTime) {
+        feedback.className = 'custom-slot-feedback error';
+        feedback.textContent = 'Veuillez remplir les heures de début et de fin.';
+        return;
+      }
+
+      var startParts = startTime.split(':');
+      var endParts = endTime.split(':');
+      var startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+      var endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+
+      if (endMinutes <= startMinutes) {
+        feedback.className = 'custom-slot-feedback error';
+        feedback.textContent = 'L\'heure de fin doit être après l\'heure de début.';
+        return;
+      }
+
+      // Grid starts at 8:00 (row 0), each row is 30 min
+      // Row 0 = 8:00-8:30, Row 1 = 8:30-9:00, etc.
+      var gridStartMinutes = 8 * 60; // 480
+      var gridEndMinutes = 18 * 60; // 1080 (17:30 + 30min = 18:00)
+
+      if (startMinutes < gridStartMinutes || endMinutes > gridEndMinutes) {
+        feedback.className = 'custom-slot-feedback error';
+        feedback.textContent = 'Les horaires doivent être entre 8h00 et 18h00.';
+        return;
+      }
+
+      // Calculate which rows overlap with the time range
+      // Each row covers 30 minutes: row N covers (gridStart + N*30) to (gridStart + (N+1)*30)
+      var grid = document.getElementById('agendaGrid');
+      var totalRows = 20; // rows 0-19
+      var affectedCount = 0;
+
+      for (var row = 0; row < totalRows; row++) {
+        var rowStart = gridStartMinutes + row * 30;
+        var rowEnd = rowStart + 30;
+
+        // Check if this row overlaps with the custom time range
+        if (rowStart < endMinutes && rowEnd > startMinutes) {
+          var cell = grid.querySelector('.agenda-cell[data-col="' + dayCol + '"][data-row="' + row + '"]');
+          if (cell && !cell.classList.contains('past')) {
+            cell.classList.remove('available', 'unavailable');
+            if (customSlotStatus === 'available') cell.classList.add('available');
+            else if (customSlotStatus === 'unavailable') cell.classList.add('unavailable');
+            affectedCount++;
+          }
+        }
+      }
+
+      // Format time for display
+      var dayNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+      var statusLabel = customSlotStatus === 'available' ? 'disponible' : 'indisponible';
+      feedback.className = 'custom-slot-feedback success';
+      feedback.textContent = dayNames[dayCol] + ' ' + startTime + ' - ' + endTime + ' : marqué comme ' + statusLabel + ' (' + affectedCount + ' créneau' + (affectedCount > 1 ? 'x' : '') + ')';
+
+      // Auto-hide feedback after 4 seconds
+      setTimeout(function() {
+        feedback.className = 'custom-slot-feedback';
+        feedback.textContent = '';
+      }, 4000);
+    }
 
     /* ========== DEMANDES: ACCEPT ========== */
     function acceptDemande(btn) {
