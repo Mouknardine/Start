@@ -989,9 +989,17 @@
 
 
   /* hero content z-index */
-  .hero-badge, .hero h1, .hero > p, .search-box, .ai-assist, .hero-stats {
+  .hero-badge, .hero h1, .hero > p {
     position: relative;
     z-index: 2;
+  }
+  .search-box {
+    position: relative;
+    z-index: 10;
+  }
+  .ai-assist, .hero-stats {
+    position: relative;
+    z-index: 1;
   }
 
   /* ===== CITY AUTOCOMPLETE DROPDOWN ===== */
