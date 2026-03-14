@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laisser un avis | Artisano</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #E8700A; --orange-light: #F08A2E; --orange-dark: #CC5F00;
+    --yellow: #F0B429; --dark: #1A2744; --dark-mid: #213052;
+    --white: #FAFAF8; --gray-100: #F2F1EE; --gray-200: #E5E3DE;
+    --gray-300: #D1CEC7; --gray-500: #8A8680; --gray-700: #55524D;
+    --green: #2E7D32; --green-light: #E8F5E9;
+    --radius: 16px; --radius-sm: 10px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--gray-100); color:var(--dark); -webkit-font-smoothing:antialiased; min-height:100vh; display:flex; flex-direction:column; }
+
+  nav { padding:20px 40px; display:flex; align-items:center; justify-content:center; }
+  .logo { font-family:'Sora',sans-serif; font-weight:800; font-size:28px; color:var(--dark); text-decoration:none; display:flex; align-items:center; gap:6px; }
+  .logo-dot { width:10px; height:10px; background:var(--orange); border-radius:50%; }
+
+  .review-container { flex:1; display:flex; align-items:center; justify-content:center; padding:0 20px 60px; }
+  .review-card { background:white; border-radius:20px; padding:48px 44px; width:100%; max-width:520px; border:1px solid var(--gray-200); box-shadow:0 4px 24px rgba(0,0,0,0.04); }
+
+  .review-title { font-family:'Sora',sans-serif; font-size:24px; font-weight:800; text-align:center; margin-bottom:8px; }
+  .review-subtitle { text-align:center; font-size:15px; color:var(--gray-500); margin-bottom:28px; line-height:1.5; }
+
+  /* ARTISAN INFO */
+  .artisan-block { display:flex; gap:16px; align-items:center; background:var(--gray-100); padding:20px; border-radius:var(--radius-sm); margin-bottom:32px; }
+  .artisan-block-avatar { width:60px; height:60px; background:linear-gradient(135deg,var(--dark),var(--dark-mid)); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .artisan-block-avatar svg { width:26px; height:26px; color:rgba(255,255,255,0.3); }
+  .artisan-block-name { font-family:'Sora',sans-serif; font-weight:700; font-size:18px; }
+  .artisan-block-trade { font-size:13px; color:var(--orange); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+  .artisan-block-date { font-size:12px; color:var(--gray-500); margin-top:2px; }
+
+  /* STARS */
+  .stars-section { text-align:center; margin-bottom:32px; }
+  .stars-label { font-family:'Sora',sans-serif; font-size:16px; font-weight:700; margin-bottom:16px; }
+  .stars-row { display:flex; justify-content:center; gap:8px; }
+  .star-btn { width:52px; height:52px; background:none; border:2px solid var(--gray-200); border-radius:14px; font-size:24px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; color:var(--gray-300); }
+  .star-btn:hover { border-color:var(--yellow); color:var(--yellow); transform:scale(1.1); }
+  .star-btn.active { border-color:var(--yellow); background:rgba(240,180,41,0.08); color:var(--yellow); }
+  .stars-text { margin-top:10px; font-size:14px; color:var(--gray-500); min-height:20px; }
+
+  /* COMMENT */
+  .form-group { margin-bottom:20px; }
+  label { display:block; font-size:14px; font-weight:600; color:var(--dark); margin-bottom:6px; }
+  .label-optional { color:var(--gray-500); font-weight:400; }
+  textarea { width:100%; padding:14px 16px; border:2px solid var(--gray-200); border-radius:var(--radius-sm); font-family:'DM Sans',sans-serif; font-size:15px; color:var(--dark); background:white; transition:all 0.2s; outline:none; resize:vertical; min-height:120px; }
+  textarea:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.1); }
+  textarea::placeholder { color:var(--gray-500); }
+  .char-count { font-size:12px; color:var(--gray-500); text-align:right; margin-top:4px; }
+
+  .btn-submit { background:var(--orange); color:white; padding:16px; border-radius:50px; font-family:'Sora',sans-serif; font-weight:700; font-size:16px; border:none; cursor:pointer; transition:all 0.3s; width:100%; margin-top:8px; display:flex; align-items:center; justify-content:center; gap:10px; }
+  .btn-submit:hover { background:var(--orange-dark); transform:translateY(-2px); box-shadow:0 8px 24px rgba(232,112,10,0.3); }
+
+  .verified-badge { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:20px; padding:14px; background:var(--green-light); border-radius:var(--radius-sm); font-size:13px; font-weight:600; color:var(--green); }
+  .verified-badge svg { width:16px; height:16px; }
+
+  @media (max-width:500px) { .review-card { padding:32px 24px; } nav { padding:16px 20px; } .star-btn { width:44px; height:44px; font-size:20px; } }
+</style>
+</head>
+<body>
+  <nav><a href="artisano-homepage.html" class="logo">artisano<span class="logo-dot"></span></a></nav>
+
+  <div class="review-container">
+    <div class="review-card">
+      <h1 class="review-title">Comment s'est passée l'intervention ?</h1>
+      <p class="review-subtitle">Votre avis aide les autres clients à choisir le bon artisan, et l'artisan à améliorer son service.</p>
+
+      <div class="artisan-block">
+        <div class="artisan-block-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
+        <div>
+          <div class="artisan-block-name">Müller & Fils</div>
+          <div class="artisan-block-trade">Plombier · Chauffagiste</div>
+          <div class="artisan-block-date">Intervention du 10 mars 2026</div>
+        </div>
+      </div>
+
+      <div class="stars-section">
+        <div class="stars-label">Votre note</div>
+        <div class="stars-row">
+          <button class="star-btn" data-value="1" onclick="setRating(1)">★</button>
+          <button class="star-btn" data-value="2" onclick="setRating(2)">★</button>
+          <button class="star-btn" data-value="3" onclick="setRating(3)">★</button>
+          <button class="star-btn" data-value="4" onclick="setRating(4)">★</button>
+          <button class="star-btn" data-value="5" onclick="setRating(5)">★</button>
+        </div>
+        <div class="stars-text" id="stars-text">Cliquez sur une étoile pour noter</div>
+      </div>
+
+      <div class="form-group">
+        <label>Votre commentaire <span class="label-optional">(facultatif)</span></label>
+        <textarea id="comment-box" placeholder="Racontez comment s'est passée l'intervention : la ponctualité, la qualité du travail, la propreté, le prix par rapport au devis..." oninput="updateCount()"></textarea>
+        <div class="char-count"><span id="char-count">0</span> / 1000 caractères</div>
+      </div>
+
+      <button class="btn-submit" onclick="alert('Merci ! Votre avis a été publié.'); setTimeout(function(){ window.location.href='artisano-profil-artisan.html'; }, 800);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Publier mon avis
+      </button>
+
+      <div class="verified-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Cet avis sera marqué comme vérifié car l'intervention a été confirmée sur Artisano
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const labels = ['', 'Très insatisfait', 'Insatisfait', 'Correct', 'Satisfait', 'Très satisfait'];
+    function setRating(n) {
+      document.querySelectorAll('.star-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i < n);
+      });
+      document.getElementById('stars-text').textContent = labels[n];
+    }
+    function updateCount() {
+      const len = document.getElementById('comment-box').value.length;
+      document.getElementById('char-count').textContent = Math.min(len, 1000);
+    }
+  </script>
+</body>
+</html>

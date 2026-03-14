@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Créer mon profil artisan | Artisano</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #E8700A;
+    --orange-light: #F08A2E;
+    --orange-dark: #CC5F00;
+    --yellow: #F0B429;
+    --yellow-light: #F7C948;
+    --dark: #1A2744;
+    --dark-mid: #213052;
+    --dark-light: #2B3D68;
+    --white: #FAFAF8;
+    --gray-100: #F2F1EE;
+    --gray-200: #E5E3DE;
+    --gray-300: #D1CEC7;
+    --gray-500: #8A8680;
+    --gray-700: #55524D;
+    --green: #2E7D32;
+    --green-light: #E8F5E9;
+    --red: #D32F2F;
+    --red-light: #FFEBEE;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--gray-100);
+    color: var(--dark);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  /* ===== NAV ===== */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 16px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(250,250,248,0.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+
+  .logo {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    color: var(--dark);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .logo-dot {
+    width: 8px; height: 8px;
+    background: var(--orange);
+    border-radius: 50%;
+  }
+
+  .nav-help {
+    font-size: 14px;
+    color: var(--gray-500);
+  }
+
+  .nav-help a {
+    color: var(--orange);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .nav-help a:hover { text-decoration: underline; }
+
+  /* ===== LAYOUT ===== */
+  .page {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    min-height: 100vh;
+    padding-top: 65px;
+  }
+
+  /* ===== LEFT PANEL ===== */
+  .left-panel {
+    background: var(--dark);
+    padding: 48px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: sticky;
+    top: 65px;
+    height: calc(100vh - 65px);
+    overflow: hidden;
+  }
+
+  .left-panel::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 350px;
+    height: 350px;
+    background: radial-gradient(circle, rgba(232,112,10,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .left-panel::after {
+    content: '';
+    position: absolute;
+    bottom: -80px;
+    left: -80px;
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, rgba(240,180,41,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .left-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .left-panel h1 {
+    font-family: 'Sora', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: white;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+
+  .left-panel h1 span {
+    color: var(--orange-light);
+  }
+
+  .left-panel > .left-content > p {
+    color: rgba(255,255,255,0.6);
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+
+  /* AVANTAGES */
+  .avantages {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .avantage {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .avantage-icon {
+    width: 44px;
+    height: 44px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .avantage-icon svg {
+    width: 22px; height: 22px;
+    color: var(--orange-light);
+  }
+
+  .avantage-text h3 {
+    font-family: 'Sora', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 4px;
+  }
+
+  .avantage-text p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.5;
+  }
+
+  /* PRICING TEASER */
+  .pricing-teaser {
+    position: relative;
+    z-index: 1;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-top: 40px;
+  }
+
+  .pricing-teaser .price {
+    font-family: 'Sora', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: white;
+  }
+
+  .pricing-teaser .price span {
+    font-size: 16px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .pricing-teaser .price-note {
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 6px;
+  }
+
+  .pricing-teaser .price-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(240,180,41,0.15);
+    color: var(--yellow-light);
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 12px;
+  }
+
+  /* ===== RIGHT PANEL (FORM) ===== */
+  .right-panel {
+    padding: 48px 60px 80px;
+    max-width: 720px;
+  }
+
+  /* STEPPER */
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 40px;
+  }
+
+  .step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .step-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    transition: all 0.3s;
+  }
+
+  .step-dot.active {
+    background: var(--orange);
+    color: white;
+  }
+
+  .step-dot.completed {
+    background: var(--green);
+    color: white;
+  }
+
+  .step-dot.inactive {
+    background: var(--gray-200);
+    color: var(--gray-500);
+  }
+
+  .step-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-500);
+    transition: color 0.3s;
+  }
+
+  .step-indicator.current .step-label {
+    color: var(--dark);
+  }
+
+  .step-line {
+    flex: 1;
+    height: 2px;
+    background: var(--gray-200);
+    margin: 0 16px;
+    position: relative;
+  }
+
+  .step-line.completed {
+    background: var(--green);
+  }
+
+  /* FORM SECTIONS */
+  .form-section {
+    display: none;
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .form-section.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .form-title {
+    font-family: 'Sora', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  .form-subtitle {
+    font-size: 15px;
+    color: var(--gray-500);
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+
+  /* FORM ELEMENTS */
+  .form-group {
+    margin-bottom: 24px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 8px;
+  }
+
+  .label-optional {
+    color: var(--gray-500);
+    font-weight: 400;
+  }
+
+  .label-required {
+    color: var(--red);
+    font-weight: 400;
+    margin-left: 2px;
+  }
+
+  .form-error {
+    font-size: 13px;
+    color: var(--red);
+    margin-top: 6px;
+    display: none;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .form-error.visible {
+    display: flex;
+  }
+
+  .form-error svg {
+    width: 14px; height: 14px;
+    flex-shrink: 0;
+  }
+
+  input.error,
+  select.error,
+  textarea.error {
+    border-color: var(--red) !important;
+    box-shadow: 0 0 0 3px rgba(211,47,47,0.1) !important;
+  }
+
+  .tag-input-wrapper.error {
+    border-color: var(--red) !important;
+    box-shadow: 0 0 0 3px rgba(211,47,47,0.1) !important;
+  }
+
+  .required-note {
+    font-size: 13px;
+    color: var(--gray-500);
+    margin-bottom: 24px;
+  }
+
+  .required-note span {
+    color: var(--red);
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="url"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--dark);
+    background: white;
+    transition: all 0.2s;
+    outline: none;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(232,112,10,0.1);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--gray-500);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%238A8680' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    padding-right: 44px;
+  }
+
+  .form-hint {
+    font-size: 13px;
+    color: var(--gray-500);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  /* CHECKBOX GRID (spécialités, communes) */
+  .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .checkbox-item:hover {
+    border-color: var(--gray-300);
+    background: var(--gray-100);
+  }
+
+  .checkbox-item.selected {
+    border-color: var(--orange);
+    background: rgba(232,112,10,0.04);
+  }
+
+  .checkbox-item input[type="checkbox"] {
+    display: none;
+  }
+
+  .check-box {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--gray-300);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .checkbox-item.selected .check-box {
+    background: var(--orange);
+    border-color: var(--orange);
+  }
+
+  .check-box svg {
+    width: 14px; height: 14px;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .checkbox-item.selected .check-box svg {
+    opacity: 1;
+  }
+
+  .checkbox-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--dark);
+  }
+
+  /* HORAIRES */
+  .horaires-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .horaire-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+  }
+
+  .horaire-day {
+    font-weight: 600;
+    font-size: 14px;
+    min-width: 100px;
+    color: var(--dark);
+  }
+
+  .horaire-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .horaire-inputs input {
+    width: 100px;
+    padding: 10px 12px;
+    text-align: center;
+    font-size: 14px;
+  }
+
+  .horaire-sep {
+    color: var(--gray-500);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .horaire-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toggle {
+    width: 44px;
+    height: 24px;
+    background: var(--gray-300);
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .toggle.active {
+    background: var(--green);
+  }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+
+  .toggle.active::after {
+    transform: translateX(20px);
+  }
+
+  .toggle-label {
+    font-size: 13px;
+    color: var(--gray-500);
+    font-weight: 500;
+    min-width: 55px;
+  }
+
+  /* FILE UPLOAD */
+  .upload-zone {
+    border: 2px dashed var(--gray-300);
+    border-radius: var(--radius);
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+  }
+
+  .upload-zone:hover {
+    border-color: var(--orange);
+    background: rgba(232,112,10,0.02);
+  }
+
+  .upload-zone svg {
+    width: 40px; height: 40px;
+    color: var(--gray-500);
+    margin-bottom: 12px;
+  }
+
+  .upload-zone p {
+    font-size: 15px;
+    color: var(--gray-700);
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .upload-zone .upload-hint {
+    font-size: 13px;
+    color: var(--gray-500);
+  }
+
+  /* PLAN SELECTOR */
+  .plan-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .plan-card {
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    background: white;
+  }
+
+  .plan-card:hover {
+    border-color: var(--gray-300);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  }
+
+  .plan-card.selected {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(232,112,10,0.1);
+  }
+
+  .plan-card.recommended {
+    position: relative;
+  }
+
+  .plan-badge {
+    position: absolute;
+    top: -12px;
+    right: 16px;
+    background: var(--yellow);
+    color: var(--dark);
+    padding: 4px 14px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 800;
+    font-family: 'Sora', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .plan-price {
+    font-family: 'Sora', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 2px;
+  }
+
+  .plan-price span {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-500);
+  }
+
+  .plan-period {
+    font-size: 14px;
+    color: var(--gray-500);
+    margin-bottom: 16px;
+  }
+
+  .plan-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .plan-features li {
+    font-size: 13px;
+    color: var(--gray-700);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .plan-features li svg {
+    width: 16px; height: 16px;
+    color: var(--green);
+    flex-shrink: 0;
+  }
+
+  .plan-saving {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--gray-200);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  /* BUTTONS */
+  .form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--gray-200);
+  }
+
+  .btn-back {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: var(--gray-500);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 12px 0;
+    transition: color 0.2s;
+  }
+
+  .btn-back:hover { color: var(--dark); }
+
+  .btn-back svg {
+    width: 18px; height: 18px;
+  }
+
+  .btn-next {
+    background: var(--orange);
+    color: white;
+    padding: 14px 36px;
+    border-radius: 50px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-next:hover {
+    background: var(--orange-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(232,112,10,0.3);
+  }
+
+  .btn-next svg {
+    width: 18px; height: 18px;
+  }
+
+  .btn-submit {
+    background: var(--green);
+    color: white;
+    padding: 16px 40px;
+    border-radius: 50px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-submit:hover {
+    background: #257a2e;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(46,125,50,0.3);
+  }
+
+  /* INFO BOX */
+  .info-box {
+    background: rgba(232,112,10,0.05);
+    border: 1px solid rgba(232,112,10,0.15);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+
+  .info-box svg {
+    width: 20px; height: 20px;
+    color: var(--orange);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .info-box p {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--gray-700);
+  }
+
+  /* SECTION DIVIDER */
+  .form-divider {
+    border: none;
+    border-top: 1px solid var(--gray-200);
+    margin: 32px 0;
+  }
+
+  /* TAG INPUT SYSTEM */
+  .tag-input-wrapper {
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    background: white;
+    cursor: text;
+    transition: all 0.2s;
+    min-height: 50px;
+  }
+
+  .tag-input-wrapper:focus-within {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(232,112,10,0.1);
+  }
+
+  .tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tag-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(232,112,10,0.08);
+    border: 1px solid rgba(232,112,10,0.2);
+    color: var(--dark);
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    animation: tagIn 0.2s ease-out;
+  }
+
+  @keyframes tagIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .tag-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--gray-500);
+    display: flex;
+    align-items: center;
+    padding: 0;
+    transition: color 0.2s;
+  }
+
+  .tag-remove:hover { color: var(--red); }
+
+  .tag-input {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 4px 0 !important;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    flex: 1;
+    min-width: 180px;
+    background: transparent;
+  }
+
+  .tag-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .tag-suggestion {
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 13px;
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+
+  .tag-suggestion:hover {
+    background: var(--gray-200);
+    border-color: var(--gray-300);
+  }
+
+  .tag-suggestion.used {
+    opacity: 0.4;
+    pointer-events: none;
+    text-decoration: line-through;
+  }
+
+  /* HORAIRES - DAY BLOCKS */
+  .horaire-day-block {
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    margin-bottom: 10px;
+    background: white;
+    transition: all 0.2s;
+  }
+
+  .horaire-day-block.open {
+    border-color: var(--orange);
+    background: rgba(232,112,10,0.02);
+  }
+
+  .horaire-day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .horaire-slots {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--gray-200);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .horaire-slot-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-remove-slot {
+    background: none;
+    border: none;
+    color: var(--gray-500);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+  }
+
+  .btn-remove-slot:hover {
+    color: var(--red);
+    background: var(--red-light);
+  }
+
+  .btn-add-slot {
+    background: none;
+    border: 1px dashed var(--gray-300);
+    color: var(--gray-500);
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    width: 100%;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .btn-add-slot:hover {
+    border-color: var(--orange);
+    color: var(--orange);
+    background: rgba(232,112,10,0.02);
+  }
+
+  .btn-skip {
+    background: none;
+    border: none;
+    color: var(--gray-500);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 14px 20px;
+    transition: color 0.2s;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .btn-skip:hover { color: var(--dark); }
+
+  .form-section-label {
+    font-family: 'Sora', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .form-section-label svg {
+    width: 20px; height: 20px;
+    color: var(--orange);
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 960px) {
+    .page {
+      grid-template-columns: 1fr;
+    }
+    .left-panel {
+      position: static;
+      height: auto;
+      padding: 32px 24px;
+    }
+    .right-panel {
+      padding: 32px 24px 80px;
+    }
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+    .checkbox-grid {
+      grid-template-columns: 1fr;
+    }
+    .plan-cards {
+      grid-template-columns: 1fr;
+    }
+    .stepper {
+      overflow-x: auto;
+    }
+    nav { padding: 14px 20px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="artisano-homepage.html" class="logo">artisano<span class="logo-dot"></span></a>
+    <div class="nav-help">
+      Vous avez déjà un compte ? <a href="artisano-connexion.html">Se connecter</a>
+    </div>
+  </nav>
+
+  <div class="page">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+      <div class="left-content">
+        <h1>Recevez des <span>demandes locales</span> qualifiées</h1>
+        <p>Créez votre profil professionnel en quelques minutes et commencez à recevoir des demandes de clients dans votre zone.</p>
+
+        <div class="avantages">
+          <div class="avantage">
+            <div class="avantage-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div class="avantage-text">
+              <h3>Visibilité locale</h3>
+              <p>Apparaissez quand un client cherche un artisan dans votre zone</p>
+            </div>
+          </div>
+
+          <div class="avantage">
+            <div class="avantage-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="avantage-text">
+              <h3>Avis vérifiés</h3>
+              <p>Construisez votre réputation avec des avis que seuls les vrais clients peuvent laisser</p>
+            </div>
+          </div>
+
+          <div class="avantage">
+            <div class="avantage-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            </div>
+            <div class="avantage-text">
+              <h3>Gestion simple</h3>
+              <p>Un tableau de bord clair pour vos demandes, rendez-vous et disponibilités</p>
+            </div>
+          </div>
+
+          <div class="avantage">
+            <div class="avantage-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="avantage-text">
+              <h3>Sans engagement</h3>
+              <p>Résiliez à tout moment, sans frais cachés</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="pricing-teaser">
+          <div class="price">25 CHF <span>/ mois</span></div>
+          <div class="price-note">ou 30 CHF par mois sans engagement annuel</div>
+          <div class="price-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Offre de lancement
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+
+      <!-- STEPPER -->
+      <div class="stepper">
+        <div class="step-indicator current" data-step="1">
+          <div class="step-dot active">1</div>
+          <span class="step-label">Votre entreprise</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-indicator" data-step="2">
+          <div class="step-dot inactive">2</div>
+          <span class="step-label">Votre activité</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-indicator" data-step="3">
+          <div class="step-dot inactive">3</div>
+          <span class="step-label">Disponibilités</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-indicator" data-step="4">
+          <div class="step-dot inactive">4</div>
+          <span class="step-label">Abonnement</span>
+        </div>
+      </div>
+
+      <!-- STEP 1 : ENTREPRISE -->
+      <div class="form-section active" id="step-1">
+        <h2 class="form-title">Votre entreprise</h2>
+        <p class="form-subtitle">Ces informations seront visibles sur votre profil public. Remplissez-les avec soin, c'est la première chose que les clients verront.</p>
+
+        <div class="form-group">
+          <div class="form-row">
+            <div>
+              <label>Prénom </label>
+              <input type="text" placeholder="Jean">
+            </div>
+            <div>
+              <label>Nom </label>
+              <input type="text" placeholder="Müller">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Nom de l'entreprise </label>
+          <input type="text" placeholder="Müller & Fils Sàrl">
+          <div class="form-hint">C'est le nom qui apparaîtra sur votre profil</div>
+        </div>
+
+        <div class="form-group">
+          <label>Adresse email professionnelle </label>
+          <input type="email" placeholder="contact@muller-fils.ch">
+        </div>
+
+        <div class="form-group">
+          <label>Numéro de téléphone </label>
+          <input type="tel" placeholder="021 123 45 67">
+        </div>
+
+        <div class="form-group">
+          <label>Adresse de l'entreprise </label>
+          <input type="text" placeholder="Rue du Lac 15, 1003 Lausanne">
+        </div>
+
+        <div class="form-group">
+          <label>Site internet <span class="label-optional">(facultatif)</span></label>
+          <input type="url" placeholder="https://www.muller-fils.ch">
+        </div>
+
+        <hr class="form-divider">
+
+        <div class="form-group">
+          <label>Mot de passe </label>
+          <input type="password" placeholder="Minimum 8 caractères">
+        </div>
+
+        <div class="form-group">
+          <label>Confirmez le mot de passe </label>
+          <input type="password" placeholder="Retapez votre mot de passe">
+        </div>
+
+        <div class="form-actions">
+          <div></div>
+          <button class="btn-next" onclick="goToStep(2)">
+            Continuer
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2 : ACTIVITÉ -->
+      <div class="form-section" id="step-2">
+        <h2 class="form-title">Votre activité</h2>
+        <p class="form-subtitle">Décrivez ce que vous faites et où vous intervenez. Plus votre profil est complet, plus les clients vous font confiance.</p>
+
+        <div class="form-group">
+          <label>Métier principal </label>
+          <select id="metier-select" onchange="handleMetierChange(this)">
+            <option value="">Sélectionnez votre métier</option>
+            <option>Plombier</option>
+            <option>Électricien</option>
+            <option>Serrurier</option>
+            <option>Chauffagiste</option>
+            <option value="autre">Autre (précisez)</option>
+          </select>
+          <div id="metier-custom" style="display:none; margin-top:10px;">
+            <input type="text" placeholder="Tapez votre métier, par exemple : carreleur, peintre, menuisier...">
+          </div>
+          <div class="form-hint">Si votre métier n'est pas dans la liste, choisissez "Autre" et écrivez-le</div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-section-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            Spécialités <span class="label-optional">(facultatif)</span>
+          </div>
+          <div class="tag-input-wrapper" id="specialites-wrapper">
+            <div class="tags-container" id="specialites-tags"></div>
+            <input type="text" class="tag-input" id="specialites-input" placeholder="Tapez une spécialité et appuyez sur Entrée" onkeydown="handleTagInput(event, 'specialites')">
+          </div>
+          <div class="form-hint">Ajoutez vos spécialités une par une. Par exemple : dépannage urgent, installation chauffage, rénovation salle de bain, pose de sanitaire...</div>
+          <div class="tag-suggestions" id="specialites-suggestions">
+            <span class="tag-suggestion" onclick="addSuggestion('specialites', this)">Dépannage urgent</span>
+            <span class="tag-suggestion" onclick="addSuggestion('specialites', this)">Installation</span>
+            <span class="tag-suggestion" onclick="addSuggestion('specialites', this)">Rénovation</span>
+            <span class="tag-suggestion" onclick="addSuggestion('specialites', this)">Entretien</span>
+            <span class="tag-suggestion" onclick="addSuggestion('specialites', this)">Salle de bain</span>
+            <span class="tag-suggestion" onclick="addSuggestion('specialites', this)">Chauffage</span>
+          </div>
+        </div>
+
+        <hr class="form-divider">
+
+        <div class="form-group">
+          <div class="form-section-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Communes desservies 
+          </div>
+          <div class="tag-input-wrapper" id="communes-wrapper">
+            <div class="tags-container" id="communes-tags"></div>
+            <input type="text" class="tag-input" id="communes-input" placeholder="Tapez le nom d'une commune et appuyez sur Entrée" onkeydown="handleTagInput(event, 'communes')">
+          </div>
+          <div class="form-hint">Ajoutez toutes les communes où vous vous déplacez, une par une. Par exemple : Lausanne, Pully, Morges, Renens...</div>
+        </div>
+
+        <hr class="form-divider">
+
+        <div class="form-group">
+          <label>Description de votre activité <span class="label-optional">(facultatif)</span></label>
+          <textarea placeholder="Décrivez votre entreprise, votre expérience et ce qui vous distingue. Par exemple : depuis combien de temps vous exercez, vos points forts, le type de travaux que vous réalisez le plus souvent..."></textarea>
+          <div class="form-hint">Cette description sera visible sur votre profil. Écrivez comme si vous parliez directement à un futur client.</div>
+        </div>
+
+        <hr class="form-divider">
+
+        <div class="form-group">
+          <div class="form-section-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 013.12 4.18 2 2 0 015.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+            Comment les clients peuvent vous contacter 
+          </div>
+          <div class="form-hint" style="margin-top:-12px; margin-bottom:14px;">Choisissez les modes de contact que vous souhaitez activer sur votre profil. Vous pourrez les modifier à tout moment.</div>
+
+          <div class="checkbox-grid" style="grid-template-columns:1fr;">
+            <label class="checkbox-item selected" onclick="toggleCheck(this)">
+              <input type="checkbox" id="contact-complete" checked>
+              <div class="check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div>
+                <span class="checkbox-label">Demande complète (rendez-vous ou devis)</span>
+                <span style="display:block; font-size:12px; color:var(--gray-500); margin-top:2px;">Le client remplit un formulaire avec ses coordonnées, son problème et le créneau souhaité. Toujours activé.</span>
+              </div>
+            </label>
+            <label class="checkbox-item" onclick="toggleCheck(this)">
+              <input type="checkbox" id="contact-message">
+              <div class="check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div>
+                <span class="checkbox-label">Message rapide (le client décrit son problème, vous le rappelez)</span>
+                <span style="display:block; font-size:12px; color:var(--gray-500); margin-top:2px;">Le client envoie un court message avec son numéro de téléphone. Vous devrez le recontacter vous-même.</span>
+              </div>
+            </label>
+            <label class="checkbox-item" onclick="toggleCheck(this)">
+              <input type="checkbox" id="contact-appel">
+              <div class="check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div>
+                <span class="checkbox-label">Appel téléphonique direct</span>
+                <span style="display:block; font-size:12px; color:var(--gray-500); margin-top:2px;">Votre numéro de téléphone sera visible et les clients pourront vous appeler directement depuis votre profil.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <hr class="form-divider">
+
+        <div class="form-group">
+          <label>Photo de profil ou logo <span class="label-optional">(facultatif)</span></label>
+          <div class="upload-zone">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p>Cliquez ou glissez un fichier ici</p>
+            <span class="upload-hint">Format accepté : JPG ou PNG, maximum 5 Mo</span>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-back" onclick="goToStep(1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Retour
+          </button>
+          <button class="btn-next" onclick="goToStep(3)">
+            Continuer
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3 : HORAIRES D'OUVERTURE -->
+      <div class="form-section" id="step-3">
+        <h2 class="form-title">Horaires d'ouverture <span class="label-optional">(facultatif)</span></h2>
+        <p class="form-subtitle">Indiquez les jours et heures où votre entreprise est joignable. Ce sont vos horaires généraux, pas vos disponibilités pour les rendez-vous.</p>
+
+        <div class="info-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <p>Vos disponibilités précises pour les rendez-vous se gèrent depuis votre agenda dans le tableau de bord, une fois inscrit. Ici, indiquez simplement quand vous êtes joignable.</p>
+        </div>
+
+        <div class="horaires-list" id="horaires-list">
+          <div class="horaire-day-block" data-day="Lundi">
+            <div class="horaire-day-header">
+              <span class="horaire-day">Lundi</span>
+              <div class="horaire-toggle"><div class="toggle active" onclick="toggleDay(this)"></div><span class="toggle-label">Ouvert</span></div>
+            </div>
+            <div class="horaire-slots">
+              <div class="horaire-slot-row"><div class="horaire-inputs"><input type="text" value="07:30" placeholder="07:30"><span class="horaire-sep">à</span><input type="text" value="18:00" placeholder="18:00"></div></div>
+            </div>
+          </div>
+          <div class="horaire-day-block" data-day="Mardi">
+            <div class="horaire-day-header">
+              <span class="horaire-day">Mardi</span>
+              <div class="horaire-toggle"><div class="toggle active" onclick="toggleDay(this)"></div><span class="toggle-label">Ouvert</span></div>
+            </div>
+            <div class="horaire-slots">
+              <div class="horaire-slot-row"><div class="horaire-inputs"><input type="text" value="07:30" placeholder="07:30"><span class="horaire-sep">à</span><input type="text" value="18:00" placeholder="18:00"></div></div>
+            </div>
+          </div>
+          <div class="horaire-day-block" data-day="Mercredi">
+            <div class="horaire-day-header">
+              <span class="horaire-day">Mercredi</span>
+              <div class="horaire-toggle"><div class="toggle active" onclick="toggleDay(this)"></div><span class="toggle-label">Ouvert</span></div>
+            </div>
+            <div class="horaire-slots">
+              <div class="horaire-slot-row"><div class="horaire-inputs"><input type="text" value="07:30" placeholder="07:30"><span class="horaire-sep">à</span><input type="text" value="18:00" placeholder="18:00"></div></div>
+            </div>
+          </div>
+          <div class="horaire-day-block" data-day="Jeudi">
+            <div class="horaire-day-header">
+              <span class="horaire-day">Jeudi</span>
+              <div class="horaire-toggle"><div class="toggle active" onclick="toggleDay(this)"></div><span class="toggle-label">Ouvert</span></div>
+            </div>
+            <div class="horaire-slots">
+              <div class="horaire-slot-row"><div class="horaire-inputs"><input type="text" value="07:30" placeholder="07:30"><span class="horaire-sep">à</span><input type="text" value="18:00" placeholder="18:00"></div></div>
+            </div>
+          </div>
+          <div class="horaire-day-block" data-day="Vendredi">
+            <div class="horaire-day-header">
+              <span class="horaire-day">Vendredi</span>
+              <div class="horaire-toggle"><div class="toggle active" onclick="toggleDay(this)"></div><span class="toggle-label">Ouvert</span></div>
+            </div>
+            <div class="horaire-slots">
+              <div class="horaire-slot-row"><div class="horaire-inputs"><input type="text" value="07:30" placeholder="07:30"><span class="horaire-sep">à</span><input type="text" value="18:00" placeholder="18:00"></div></div>
+            </div>
+          </div>
+          <div class="horaire-day-block" data-day="Samedi">
+            <div class="horaire-day-header">
+              <span class="horaire-day">Samedi</span>
+              <div class="horaire-toggle"><div class="toggle" onclick="toggleDay(this)"></div><span class="toggle-label">Fermé</span></div>
+            </div>
+            <div class="horaire-slots" style="display:none;">
+              <div class="horaire-slot-row"><div class="horaire-inputs"><input type="text" value="08:00" placeholder="08:00"><span class="horaire-sep">à</span><input type="text" value="12:00" placeholder="12:00"></div></div>
+            </div>
+          </div>
+          <div class="horaire-day-block" data-day="Dimanche">
+            <div class="horaire-day-header">
+              <span class="horaire-day">Dimanche</span>
+              <div class="horaire-toggle"><div class="toggle" onclick="toggleDay(this)"></div><span class="toggle-label">Fermé</span></div>
+            </div>
+            <div class="horaire-slots" style="display:none;">
+              <div class="horaire-slot-row"><div class="horaire-inputs"><input type="text" value="" placeholder="—"><span class="horaire-sep">à</span><input type="text" value="" placeholder="—"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-back" onclick="goToStep(2)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Retour
+          </button>
+          <div style="display:flex; gap:12px; align-items:center;">
+            <button class="btn-skip" onclick="goToStep(4)">Passer cette étape</button>
+            <button class="btn-next" onclick="goToStep(4)">
+              Continuer
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4 : ABONNEMENT -->
+      <div class="form-section" id="step-4">
+        <h2 class="form-title">Choisissez votre abonnement</h2>
+        <p class="form-subtitle">Les deux formules donnent accès à toutes les fonctionnalités. La seule différence, c'est le prix.</p>
+
+        <div class="plan-cards">
+          <div class="plan-card" onclick="selectPlan(this)">
+            <div class="plan-price">30 CHF <span>/ mois</span></div>
+            <div class="plan-period">Facturation mensuelle</div>
+            <ul class="plan-features">
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Profil professionnel complet
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Réception de demandes illimitées
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Avis vérifiés
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Sans engagement, résiliable à tout moment
+              </li>
+            </ul>
+          </div>
+
+          <div class="plan-card recommended selected" onclick="selectPlan(this)">
+            <div class="plan-badge">Recommandé</div>
+            <div class="plan-price">25 CHF <span>/ mois</span></div>
+            <div class="plan-period">Facturation annuelle (300 CHF par an)</div>
+            <ul class="plan-features">
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Profil professionnel complet
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Réception de demandes illimitées
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Avis vérifiés
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Sans engagement, résiliable à tout moment
+              </li>
+            </ul>
+            <div class="plan-saving">Vous économisez 60 CHF par an</div>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <p>Le paiement est sécurisé par Stripe. Vous pouvez résilier à tout moment depuis votre tableau de bord. Aucun frais de résiliation, aucune surprise.</p>
+        </div>
+
+        <hr class="form-divider">
+
+        <div class="form-group">
+          <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="cgu-checkbox" style="width:auto; margin-top:4px; flex-shrink:0;">
+            <span>J'accepte les <a href="#" style="color:var(--orange); font-weight:600;">conditions générales d'utilisation</a> et la <a href="#" style="color:var(--orange); font-weight:600;">politique de confidentialité</a> </span>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-back" onclick="goToStep(3)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Retour
+          </button>
+          <button class="btn-submit" onclick="saveContactPrefs(); alert('Profil créé avec succès ! Redirection vers votre tableau de bord...'); setTimeout(function(){ window.location.href='artisano-dashboard-artisan.html'; }, 1000);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Créer mon profil et payer
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // === STEP NAVIGATION ===
+    function goToStep(step) {
+      document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+      document.getElementById('step-' + step).classList.add('active');
+
+      document.querySelectorAll('.step-indicator').forEach((ind, i) => {
+        const dot = ind.querySelector('.step-dot');
+        const num = i + 1;
+        dot.classList.remove('active', 'completed', 'inactive');
+        ind.classList.remove('current');
+
+        if (num < step) {
+          dot.classList.add('completed');
+          dot.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+        } else if (num === step) {
+          dot.classList.add('active');
+          dot.textContent = num;
+          ind.classList.add('current');
+        } else {
+          dot.classList.add('inactive');
+          dot.textContent = num;
+        }
+      });
+
+      document.querySelectorAll('.step-line').forEach((line, i) => {
+        line.classList.toggle('completed', i < step - 1);
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // === MÉTIER PRINCIPAL ===
+    function handleMetierChange(select) {
+      const custom = document.getElementById('metier-custom');
+      if (select.value === 'autre') {
+        custom.style.display = 'block';
+        custom.querySelector('input').focus();
+      } else {
+        custom.style.display = 'none';
+      }
+    }
+
+    // === TAG INPUT SYSTEM ===
+    function handleTagInput(event, type) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        const input = event.target;
+        const value = input.value.trim();
+        if (value === '') return;
+
+        addTag(type, value);
+        input.value = '';
+      }
+    }
+
+    function addTag(type, text) {
+      const container = document.getElementById(type + '-tags');
+      // Check for duplicates
+      const existing = container.querySelectorAll('.tag-text');
+      for (let t of existing) {
+        if (t.textContent.toLowerCase() === text.toLowerCase()) return;
+      }
+
+      const tag = document.createElement('div');
+      tag.className = 'tag-item';
+      tag.innerHTML = `
+        <span class="tag-text">${text}</span>
+        <button class="tag-remove" onclick="removeTag(this, '${type}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      `;
+      container.appendChild(tag);
+    }
+
+    function removeTag(btn, type) {
+      const tagItem = btn.closest('.tag-item');
+      const text = tagItem.querySelector('.tag-text').textContent;
+      tagItem.remove();
+
+      // Re-enable suggestion if exists
+      const suggestions = document.getElementById(type + '-suggestions');
+      if (suggestions) {
+        suggestions.querySelectorAll('.tag-suggestion').forEach(s => {
+          if (s.textContent === text) s.classList.remove('used');
+        });
+      }
+    }
+
+    function addSuggestion(type, el) {
+      const text = el.textContent;
+      addTag(type, text);
+      el.classList.add('used');
+    }
+
+    // Click on wrapper focuses input
+    document.querySelectorAll('.tag-input-wrapper').forEach(w => {
+      w.addEventListener('click', function() {
+        this.querySelector('.tag-input').focus();
+      });
+    });
+
+    // === DISPONIBILITÉS ===
+    function toggleDay(el) {
+      el.classList.toggle('active');
+      const block = el.closest('.horaire-day-block');
+      const slots = block.querySelector('.horaire-slots');
+      const addBtn = block.querySelector('.btn-add-slot');
+      const label = el.closest('.horaire-toggle').querySelector('.toggle-label');
+      const isActive = el.classList.contains('active');
+
+      if (isActive) {
+        slots.style.display = 'flex';
+        addBtn.style.display = 'flex';
+        label.textContent = 'Ouvert';
+        block.classList.add('open');
+      } else {
+        slots.style.display = 'none';
+        addBtn.style.display = 'none';
+        label.textContent = 'Fermé';
+        block.classList.remove('open');
+      }
+    }
+
+    function addSlot(btn) {
+      const block = btn.closest('.horaire-day-block');
+      const slots = block.querySelector('.horaire-slots');
+
+      const row = document.createElement('div');
+      row.className = 'horaire-slot-row';
+      row.style.animation = 'tagIn 0.2s ease-out';
+      row.innerHTML = `
+        <div class="horaire-inputs">
+          <input type="text" value="" placeholder="14:00">
+          <span class="horaire-sep">à</span>
+          <input type="text" value="" placeholder="18:00">
+        </div>
+        <button class="btn-remove-slot" onclick="removeSlot(this)" title="Supprimer ce créneau">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      `;
+      slots.appendChild(row);
+    }
+
+    function removeSlot(btn) {
+      const row = btn.closest('.horaire-slot-row');
+      const slots = row.closest('.horaire-slots');
+      // Don't remove the last slot
+      if (slots.querySelectorAll('.horaire-slot-row').length > 1) {
+        row.remove();
+      }
+    }
+
+    // === PLAN SELECTOR ===
+    function selectPlan(el) {
+      document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    // === SAVE CONTACT PREFERENCES ===
+    function saveContactPrefs() {
+      const prefs = {
+        complete: document.getElementById('contact-complete').checked,
+        message: document.getElementById('contact-message').checked,
+        appel: document.getElementById('contact-appel').checked
+      };
+      localStorage.setItem('artisano-contact-prefs', JSON.stringify(prefs));
+    }
+  </script>
+
+</body>
+</html>

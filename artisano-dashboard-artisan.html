@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tableau de bord | Artisano</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #E8700A; --orange-light: #F08A2E; --orange-dark: #CC5F00;
+    --yellow: #F0B429; --dark: #1A2744; --dark-mid: #213052;
+    --white: #FAFAF8; --gray-100: #F2F1EE; --gray-200: #E5E3DE;
+    --gray-300: #D1CEC7; --gray-500: #8A8680; --gray-700: #55524D;
+    --green: #2E7D32; --green-light: #E8F5E9;
+    --red: #D32F2F; --red-light: #FFEBEE;
+    --blue: #1565C0; --blue-light: #E3F2FD;
+    --radius: 16px; --radius-sm: 10px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--gray-100); color:var(--dark); -webkit-font-smoothing:antialiased; }
+
+  /* NAV */
+  nav { position:fixed; top:0; left:0; right:0; z-index:100; padding:14px 40px; display:flex; align-items:center; justify-content:space-between; background:rgba(250,250,248,0.92); backdrop-filter:blur(20px); border-bottom:1px solid rgba(0,0,0,0.05); }
+  .logo { font-family:'Sora',sans-serif; font-weight:800; font-size:24px; color:var(--dark); text-decoration:none; display:flex; align-items:center; gap:6px; }
+  .logo-dot { width:8px; height:8px; background:var(--orange); border-radius:50%; }
+  .nav-user { display:flex; align-items:center; gap:16px; }
+  .nav-user-name { font-weight:600; font-size:14px; }
+  .nav-user-avatar { width:36px; height:36px; background:var(--dark); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-family:'Sora',sans-serif; font-weight:800; font-size:13px; }
+  .nav-links { display:flex; gap:24px; list-style:none; }
+  .nav-links a { text-decoration:none; color:var(--gray-500); font-weight:500; font-size:14px; padding:6px 0; border-bottom:2px solid transparent; transition:all 0.2s; }
+  .nav-links a:hover { color:var(--dark); }
+  .nav-links a.active { color:var(--orange); border-bottom-color:var(--orange); }
+
+  /* LAYOUT */
+  .dashboard { max-width:1200px; margin:0 auto; padding:90px 40px 80px; }
+  .dash-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:28px; }
+  .dash-hello { font-family:'Sora',sans-serif; font-size:28px; font-weight:800; }
+  .dash-hello span { color:var(--orange); }
+  .dash-date { font-size:14px; color:var(--gray-500); margin-top:2px; }
+
+  /* STATS */
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px; }
+  .stat-card { background:white; border-radius:var(--radius); padding:20px; border:1px solid var(--gray-200); }
+  .stat-label { font-size:12px; color:var(--gray-500); margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+  .stat-label svg { width:14px; height:14px; }
+  .stat-value { font-family:'Sora',sans-serif; font-size:26px; font-weight:800; }
+  .stat-sub { font-size:11px; font-weight:600; margin-top:2px; color:var(--green); }
+
+  /* TABS */
+  .dash-tabs { display:flex; gap:4px; background:var(--gray-200); padding:4px; border-radius:var(--radius-sm); margin-bottom:24px; width:fit-content; }
+  .dash-tab { padding:10px 24px; border-radius:8px; font-weight:600; font-size:14px; color:var(--gray-500); cursor:pointer; transition:all 0.2s; }
+  .dash-tab.active { background:white; color:var(--dark); box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+
+  /* CONTENT */
+  .content-grid { display:grid; grid-template-columns:1fr 360px; gap:24px; }
+
+  .card { background:white; border-radius:var(--radius); padding:24px; border:1px solid var(--gray-200); }
+  .card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .card-title { font-family:'Sora',sans-serif; font-size:18px; font-weight:700; }
+  .card-link { font-size:13px; color:var(--orange); font-weight:600; text-decoration:none; }
+  .card-link:hover { text-decoration:underline; }
+
+  /* ===== AGENDA ===== */
+  .agenda-section { display:none; }
+  .agenda-section.active { display:block; }
+  .demandes-section { display:block; }
+  .demandes-section.active { display:block; }
+
+  .agenda-card { background:white; border-radius:var(--radius); border:1px solid var(--gray-200); overflow:hidden; }
+  .agenda-header { padding:20px 24px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--gray-200); }
+  .agenda-nav { display:flex; align-items:center; gap:16px; }
+  .agenda-week { font-family:'Sora',sans-serif; font-size:16px; font-weight:700; }
+  .agenda-btn { width:32px; height:32px; border-radius:50%; border:1px solid var(--gray-200); background:white; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+  .agenda-btn:hover { background:var(--gray-100); }
+  .agenda-btn svg { width:16px; height:16px; color:var(--gray-700); }
+  .agenda-actions { display:flex; gap:10px; }
+  .agenda-publish { background:var(--orange); color:white; padding:8px 20px; border-radius:50px; font-family:'Sora',sans-serif; font-weight:700; font-size:13px; border:none; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:6px; }
+  .agenda-publish:hover { background:var(--orange-dark); }
+  .agenda-publish svg { width:14px; height:14px; }
+  .agenda-sync { background:white; color:var(--gray-700); padding:8px 16px; border-radius:50px; font-size:13px; font-weight:600; border:1px solid var(--gray-200); cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:6px; }
+  .agenda-sync:hover { border-color:var(--gray-300); background:var(--gray-100); }
+  .agenda-sync svg { width:14px; height:14px; }
+
+  .agenda-info { background:var(--blue-light); padding:14px 24px; font-size:13px; color:var(--blue); display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(21,101,192,0.1); }
+  .agenda-info svg { width:16px; height:16px; flex-shrink:0; }
+
+  /* GRID */
+  .agenda-grid { display:grid; grid-template-columns:80px repeat(7, 1fr); }
+  .agenda-day-header { padding:14px 8px; text-align:center; font-family:'Sora',sans-serif; font-size:12px; font-weight:700; color:var(--gray-500); border-bottom:1px solid var(--gray-200); border-right:1px solid var(--gray-100); }
+  .agenda-day-header .day-num { font-size:20px; color:var(--dark); margin-top:2px; }
+  .agenda-day-header.today { background:rgba(232,112,10,0.04); }
+  .agenda-day-header.today .day-num { color:var(--orange); }
+  .agenda-corner { border-bottom:1px solid var(--gray-200); border-right:1px solid var(--gray-100); }
+
+  .agenda-time { padding:0 10px; font-size:11px; color:var(--gray-500); text-align:right; border-right:1px solid var(--gray-100); height:28px; display:flex; align-items:flex-start; justify-content:flex-end; padding-top:2px; }
+  .agenda-time.half-hour { height:28px; border-bottom:1px solid var(--gray-100); }
+  .agenda-cell { height:28px; border-bottom:1px solid var(--gray-100); border-right:1px solid var(--gray-100); cursor:pointer; transition:background 0.15s; position:relative; user-select:none; -webkit-user-select:none; }
+  .agenda-cell.hour-start { border-bottom:1px solid var(--gray-200); }
+  .agenda-cell:hover { background:rgba(232,112,10,0.03); }
+  .agenda-cell.available { background:var(--green-light); }
+  .agenda-cell.available::after { content:''; }
+  .agenda-cell.booked { background:rgba(232,112,10,0.08); cursor:default; }
+  .agenda-cell.booked::after { content:'Réservé'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:9px; font-weight:700; color:var(--orange); white-space:nowrap; }
+  .agenda-cell.unavailable { background:repeating-linear-gradient(135deg, var(--red-light), var(--red-light) 3px, #fff 3px, #fff 6px); cursor:pointer; }
+  .agenda-cell.unavailable::after { content:''; }
+  .agenda-cell.past { background:var(--gray-100); cursor:default; opacity:0.5; }
+  .agenda-cell.drag-preview { outline:2px solid var(--orange); outline-offset:-2px; }
+
+  .agenda-legend { padding:16px 24px; border-top:1px solid var(--gray-200); display:flex; gap:20px; flex-wrap:wrap; }
+  .legend-item { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--gray-500); }
+  .legend-dot { width:12px; height:12px; border-radius:3px; }
+  .legend-dot.avail { background:var(--green-light); border:1px solid var(--green); }
+  .legend-dot.unavail { background:repeating-linear-gradient(135deg, var(--red-light), var(--red-light) 2px, #fff 2px, #fff 4px); border:1px solid var(--red); }
+  .legend-dot.booked { background:rgba(232,112,10,0.15); border:1px solid var(--orange); }
+  .legend-dot.empty { background:white; border:1px solid var(--gray-300); }
+
+  /* DEMANDES */
+  .demande-item { display:flex; gap:14px; padding:14px 0; border-top:1px solid var(--gray-100); align-items:flex-start; }
+  .demande-item:first-child { border-top:none; padding-top:0; }
+  .demande-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .demande-icon.new { background:rgba(232,112,10,0.08); }
+  .demande-icon.new svg { color:var(--orange); }
+  .demande-icon.confirmed { background:var(--green-light); }
+  .demande-icon.confirmed svg { color:var(--green); }
+  .demande-icon svg { width:18px; height:18px; }
+  .demande-body { flex:1; min-width:0; }
+  .demande-name { font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; }
+  .demande-desc { font-size:12px; color:var(--gray-500); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .demande-meta { font-size:11px; color:var(--gray-500); margin-top:4px; }
+  .status { padding:3px 8px; border-radius:50px; font-size:10px; font-weight:700; }
+  .status-new { background:rgba(232,112,10,0.1); color:var(--orange); }
+  .status-confirmed { background:var(--green-light); color:var(--green); }
+  .btn-sm { padding:6px 14px; border-radius:50px; font-size:11px; font-weight:700; cursor:pointer; transition:all 0.2s; border:none; }
+  .btn-sm-accept { background:var(--green); color:white; }
+  .btn-sm-refuse { background:var(--red-light); color:var(--red); }
+  .btn-sm-refuse:hover { background:#FFCDD2; }
+  .btn-sm-view { background:var(--gray-100); color:var(--dark); border:1px solid var(--gray-200); }
+  .status-refused { background:var(--red-light); color:var(--red); }
+  .demande-actions { display:flex; gap:6px; flex-shrink:0; }
+
+  /* REFUSE MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; z-index:200; background:rgba(26,39,68,0.4); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); align-items:center; justify-content:center; }
+  .modal-overlay.active { display:flex; }
+  .modal-card { background:white; border-radius:var(--radius); width:100%; max-width:440px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,0.15); }
+  .modal-title { font-family:'Sora',sans-serif; font-size:18px; font-weight:700; margin-bottom:4px; }
+  .modal-subtitle { font-size:13px; color:var(--gray-500); margin-bottom:20px; }
+  .modal-radio-group { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+  .modal-radio-label { display:flex; align-items:center; gap:10px; font-size:14px; cursor:pointer; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--gray-200); transition:all 0.15s; }
+  .modal-radio-label:hover { border-color:var(--gray-300); background:var(--gray-100); }
+  .modal-radio-label input[type="radio"] { accent-color:var(--red); width:16px; height:16px; flex-shrink:0; }
+  .modal-radio-label.selected { border-color:var(--red); background:var(--red-light); }
+  .modal-textarea { display:none; width:100%; min-height:80px; border:1px solid var(--gray-200); border-radius:var(--radius-sm); padding:10px 12px; font-family:'DM Sans',sans-serif; font-size:13px; resize:vertical; margin-bottom:16px; }
+  .modal-textarea:focus { outline:none; border-color:var(--red); }
+  .modal-textarea.visible { display:block; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; }
+  .modal-btn { padding:10px 22px; border-radius:50px; font-family:'Sora',sans-serif; font-weight:700; font-size:13px; border:none; cursor:pointer; transition:all 0.2s; }
+  .modal-btn-cancel { background:var(--gray-100); color:var(--gray-700); border:1px solid var(--gray-200); }
+  .modal-btn-cancel:hover { background:var(--gray-200); }
+  .modal-btn-confirm { background:var(--red); color:white; }
+  .modal-btn-confirm:hover { background:#C62828; }
+
+  /* SIDEBAR */
+  .sidebar-stack { display:flex; flex-direction:column; gap:20px; }
+  .avis-item { padding:12px 0; border-top:1px solid var(--gray-100); }
+  .avis-item:first-child { border-top:none; padding-top:0; }
+  .avis-top { display:flex; justify-content:space-between; margin-bottom:4px; }
+  .avis-author { font-weight:700; font-size:13px; }
+  .avis-stars { color:var(--yellow); font-size:12px; }
+  .avis-text { font-size:12px; color:var(--gray-500); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+  .abo-card { background:var(--dark); border-radius:var(--radius); padding:20px; color:white; border:none; }
+  .abo-plan { font-family:'Sora',sans-serif; font-size:22px; font-weight:800; margin-top:6px; }
+  .abo-plan span { font-size:14px; font-weight:400; color:rgba(255,255,255,0.5); }
+  .abo-status { display:flex; align-items:center; gap:6px; margin-top:6px; font-size:13px; color:var(--green-light); font-weight:600; }
+  .abo-status::before { content:''; width:6px; height:6px; background:var(--green); border-radius:50%; }
+  .abo-renew { font-size:11px; color:rgba(255,255,255,0.4); margin-top:4px; }
+  .btn-abo { display:block; margin-top:14px; padding:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:50px; font-size:12px; font-weight:600; text-align:center; text-decoration:none; transition:all 0.2s; cursor:pointer; }
+  .btn-abo:hover { background:rgba(255,255,255,0.15); }
+
+  @media (max-width:1024px) {
+    .dashboard { padding:80px 16px; }
+    .stats-grid { grid-template-columns:repeat(2,1fr); }
+    .content-grid { grid-template-columns:1fr; }
+    .agenda-grid { font-size:11px; grid-template-columns:50px repeat(7,1fr); }
+    nav { padding:12px 16px; }
+    .nav-links { display:none; }
+    .dash-header { flex-direction:column; align-items:flex-start; gap:12px; }
+  }
+</style>
+</head>
+<body>
+  <nav>
+    <a href="artisano-homepage.html" class="logo">artisano<span class="logo-dot"></span></a>
+    <ul class="nav-links">
+      <li><a href="artisano-dashboard-artisan.html" class="active">Tableau de bord</a></li>
+      <li><a href="#" onclick="switchDashTab('demandes'); return false;">Demandes</a></li>
+      <li><a href="artisano-profil-artisan.html">Mon profil</a></li>
+      <li><a href="#" onclick="switchDashTab('agenda'); return false;">Agenda</a></li>
+    </ul>
+    <div class="nav-user">
+      <span class="nav-user-name">Müller & Fils</span>
+      <div class="nav-user-avatar">MF</div>
+    </div>
+  </nav>
+
+  <div class="dashboard">
+    <div class="dash-header">
+      <div>
+        <h1 class="dash-hello">Bonjour, <span>Jean</span></h1>
+        <p class="dash-date">Mercredi 12 mars 2026</p>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Nouvelles demandes</div>
+        <div class="stat-value">3</div>
+        <div class="stat-sub">En attente de réponse</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Rendez-vous à venir</div>
+        <div class="stat-value">5</div>
+        <div class="stat-sub">Cette semaine et la suivante</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Note moyenne</div>
+        <div class="stat-value">4.9</div>
+        <div class="stat-sub">47 avis vérifiés</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Vues du profil</div>
+        <div class="stat-value">128</div>
+        <div class="stat-sub">Ce mois-ci</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="dash-tabs">
+      <div class="dash-tab active" onclick="switchDashTab('demandes')">Demandes</div>
+      <div class="dash-tab" onclick="switchDashTab('agenda')">Agenda et disponibilités</div>
+    </div>
+
+    <!-- ===== TAB: DEMANDES ===== -->
+    <div class="demandes-section active" id="tab-demandes">
+      <div class="content-grid">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Dernières demandes</h2>
+            <a href="#" class="card-link" onclick="switchDashTab('demandes'); return false;">Voir toutes les demandes</a>
+          </div>
+          <div class="demande-item">
+            <div class="demande-icon new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+            <div class="demande-body">
+              <div class="demande-name">Sophie Martin <span class="status status-new">Nouvelle</span></div>
+              <div class="demande-desc">Fuite sous l'évier de la cuisine, le joint semble abîmé</div>
+              <div class="demande-meta">Lausanne · Rendez-vous · Il y a 2 heures</div>
+            </div>
+            <div class="demande-actions"><button class="btn-sm btn-sm-accept" onclick="acceptDemande(this)">Accepter</button><button class="btn-sm btn-sm-refuse" onclick="openRefuseModal(this, 'Sophie Martin')">Refuser</button><button class="btn-sm btn-sm-view">Voir</button></div>
+          </div>
+          <div class="demande-item">
+            <div class="demande-icon new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <div class="demande-body">
+              <div class="demande-name">Marc Favre <span class="status status-new">Nouvelle</span></div>
+              <div class="demande-desc">Remplacement chauffe-eau 200 litres, appartement 3e étage</div>
+              <div class="demande-meta">Pully · Devis · Il y a 5 heures</div>
+            </div>
+            <div class="demande-actions"><button class="btn-sm btn-sm-accept" onclick="acceptDemande(this)">Accepter</button><button class="btn-sm btn-sm-refuse" onclick="openRefuseModal(this, 'Marc Favre')">Refuser</button><button class="btn-sm btn-sm-view">Voir</button></div>
+          </div>
+          <div class="demande-item">
+            <div class="demande-icon confirmed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+            <div class="demande-body">
+              <div class="demande-name">Isabelle Rochat <span class="status status-confirmed">Confirmée</span></div>
+              <div class="demande-desc">Rénovation salle de bain complète</div>
+              <div class="demande-meta">Renens · Rendez-vous · Hier</div>
+            </div>
+            <div class="demande-actions"><button class="btn-sm btn-sm-view">Voir</button></div>
+          </div>
+        </div>
+        <div class="sidebar-stack">
+          <div class="card">
+            <div class="card-header"><h2 class="card-title">Derniers avis</h2></div>
+            <div class="avis-item"><div class="avis-top"><span class="avis-author">Sophie M.</span><span class="avis-stars">★★★★★</span></div><div class="avis-text">Intervention rapide, travail propre. Je recommande sans hésiter.</div></div>
+            <div class="avis-item"><div class="avis-top"><span class="avis-author">Marc D.</span><span class="avis-stars">★★★★★</span></div><div class="avis-text">Rénovation impeccable. L'équipe était ponctuelle et soignée.</div></div>
+          </div>
+          <div class="abo-card">
+            <div style="font-size:12px; color:rgba(255,255,255,0.5);">Votre abonnement</div>
+            <div class="abo-plan">25 CHF <span>/ mois</span></div>
+            <div class="abo-status">Actif</div>
+            <div class="abo-renew">Renouvellement le 1er avril 2026</div>
+            <a href="#" class="btn-abo">Gérer mon abonnement</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: AGENDA ===== -->
+    <div class="agenda-section" id="tab-agenda">
+      <div class="agenda-card">
+        <div class="agenda-header">
+          <div class="agenda-nav">
+            <button class="agenda-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <span class="agenda-week">Semaine du 16 au 22 mars 2026</span>
+            <button class="agenda-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+          </div>
+          <div class="agenda-actions">
+            <button class="agenda-sync"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9"/></svg> Connecter Google Calendar</button>
+            <button class="agenda-publish" onclick="alert('Disponibilités publiées avec succès ! Les clients verront vos créneaux sur votre profil.');"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Publier les disponibilités</button>
+          </div>
+        </div>
+
+        <div class="agenda-info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          Cliquez pour basculer entre 3 états : vide → disponible (vert) → indisponible (rouge) → vide. Glissez pour sélectionner plusieurs créneaux d'un coup sur la même journée.
+        </div>
+
+        <div class="agenda-grid" id="agendaGrid">
+          <!-- HEADER ROW -->
+          <div class="agenda-corner"></div>
+          <div class="agenda-day-header">Lundi<div class="day-num">16</div></div>
+          <div class="agenda-day-header">Mardi<div class="day-num">17</div></div>
+          <div class="agenda-day-header today">Mercredi<div class="day-num">18</div></div>
+          <div class="agenda-day-header">Jeudi<div class="day-num">19</div></div>
+          <div class="agenda-day-header">Vendredi<div class="day-num">20</div></div>
+          <div class="agenda-day-header">Samedi<div class="day-num">21</div></div>
+          <div class="agenda-day-header">Dimanche<div class="day-num">22</div></div>
+
+          <!-- 8h00 -->
+          <div class="agenda-time">8h00</div>
+          <div class="agenda-cell available" data-col="0" data-row="0"></div>
+          <div class="agenda-cell" data-col="1" data-row="0"></div>
+          <div class="agenda-cell available" data-col="2" data-row="0"></div>
+          <div class="agenda-cell" data-col="3" data-row="0"></div>
+          <div class="agenda-cell available" data-col="4" data-row="0"></div>
+          <div class="agenda-cell" data-col="5" data-row="0"></div>
+          <div class="agenda-cell" data-col="6" data-row="0"></div>
+          <!-- 8h30 -->
+          <div class="agenda-time half-hour"></div>
+          <div class="agenda-cell available" data-col="0" data-row="1"></div>
+          <div class="agenda-cell" data-col="1" data-row="1"></div>
+          <div class="agenda-cell available" data-col="2" data-row="1"></div>
+          <div class="agenda-cell" data-col="3" data-row="1"></div>
+          <div class="agenda-cell available" data-col="4" data-row="1"></div>
+          <div class="agenda-cell" data-col="5" data-row="1"></div>
+          <div class="agenda-cell" data-col="6" data-row="1"></div>
+
+          <!-- 9h00 -->
+          <div class="agenda-time">9h00</div>
+          <div class="agenda-cell booked hour-start" data-col="0" data-row="2"></div>
+          <div class="agenda-cell available hour-start" data-col="1" data-row="2"></div>
+          <div class="agenda-cell hour-start" data-col="2" data-row="2"></div>
+          <div class="agenda-cell available hour-start" data-col="3" data-row="2"></div>
+          <div class="agenda-cell hour-start" data-col="4" data-row="2"></div>
+          <div class="agenda-cell hour-start" data-col="5" data-row="2"></div>
+          <div class="agenda-cell hour-start" data-col="6" data-row="2"></div>
+          <!-- 9h30 -->
+          <div class="agenda-time half-hour"></div>
+          <div class="agenda-cell booked" data-col="0" data-row="3"></div>
+          <div class="agenda-cell available" data-col="1" data-row="3"></div>
+          <div class="agenda-cell" data-col="2" data-row="3"></div>
+          <div class="agenda-cell" data-col="3" data-row="3"></div>
+          <div class="agenda-cell" data-col="4" data-row="3"></div>
+          <div class="agenda-cell" data-col="5" data-row="3"></div>
+          <div class="agenda-cell" data-col="6" data-row="3"></div>
+
+          <!-- 10h00 -->
+          <div class="agenda-time">10h00</div>
+          <div class="agenda-cell available hour-start" data-col="0" data-row="4"></div>
+          <div class="agenda-cell hour-start" data-col="1" data-row="4"></div>
+          <div class="agenda-cell booked hour-start" data-col="2" data-row="4"></div>
+          <div class="agenda-cell hour-start" data-col="3" data-row="4"></div>
+          <div class="agenda-cell available hour-start" data-col="4" data-row="4"></div>
+          <div class="agenda-cell available hour-start" data-col="5" data-row="4"></div>
+          <div class="agenda-cell hour-start" data-col="6" data-row="4"></div>
+          <!-- 10h30 -->
+          <div class="agenda-time half-hour"></div>
+          <div class="agenda-cell available" data-col="0" data-row="5"></div>
+          <div class="agenda-cell" data-col="1" data-row="5"></div>
+          <div class="agenda-cell booked" data-col="2" data-row="5"></div>
+          <div class="agenda-cell" data-col="3" data-row="5"></div>
+          <div class="agenda-cell available" data-col="4" data-row="5"></div>
+          <div class="agenda-cell available" data-col="5" data-row="5"></div>
+          <div class="agenda-cell" data-col="6" data-row="5"></div>
+
+          <!-- 11h00 -->
+          <div class="agenda-time">11h00</div>
+          <div class="agenda-cell hour-start" data-col="0" data-row="6"></div>
+          <div class="agenda-cell available hour-start" data-col="1" data-row="6"></div>
+          <div class="agenda-cell hour-start" data-col="2" data-row="6"></div>
+          <div class="agenda-cell available hour-start" data-col="3" data-row="6"></div>
+          <div class="agenda-cell hour-start" data-col="4" data-row="6"></div>
+          <div class="agenda-cell hour-start" data-col="5" data-row="6"></div>
+          <div class="agenda-cell hour-start" data-col="6" data-row="6"></div>
+          <!-- 11h30 -->
+          <div class="agenda-time half-hour"></div>
+          <div class="agenda-cell" data-col="0" data-row="7"></div>
+          <div class="agenda-cell available" data-col="1" data-row="7"></div>
+          <div class="agenda-cell" data-col="2" data-row="7"></div>
+          <div class="agenda-cell" data-col="3" data-row="7"></div>
+          <div class="agenda-cell" data-col="4" data-row="7"></div>
+          <div class="agenda-cell" data-col="5" data-row="7"></div>
+          <div class="agenda-cell" data-col="6" data-row="7"></div>
+
+          <!-- 12h00 -->
+          <div class="agenda-time">12h00</div>
+          <div class="agenda-cell unavailable hour-start" data-col="0" data-row="8"></div>
+          <div class="agenda-cell unavailable hour-start" data-col="1" data-row="8"></div>
+          <div class="agenda-cell unavailable hour-start" data-col="2" data-row="8"></div>
+          <div class="agenda-cell unavailable hour-start" data-col="3" data-row="8"></div>
+          <div class="agenda-cell unavailable hour-start" data-col="4" data-row="8"></div>
+          <div class="agenda-cell hour-start" data-col="5" data-row="8"></div>
+          <div class="agenda-cell hour-start" data-col="6" data-row="8"></div>
+          <!-- 12h30 -->
+          <div class="agenda-time half-hour"></div>
+          <div class="agenda-cell unavailable" data-col="0" data-row="9"></div>
+          <div class="agenda-cell unavailable" data-col="1" data-row="9"></div>
+          <div class="agenda-cell unavailable" data-col="2" data-row="9"></div>
+          <div class="agenda-cell unavailable" data-col="3" data-row="9"></div>
+          <div class="agenda-cell unavailable" data-col="4" data-row="9"></div>
+          <div class="agenda-cell" data-col="5" data-row="9"></div>
+          <div class="agenda-cell" data-col="6" data-row="9"></div>
+
+          <!-- 13h00 -->
+          <div class="agenda-time">13h00</div>
+          <div class="agenda-cell hour-start" data-col="0" data-row="10"></div>
+          <div class="agenda-cell hour-start" data-col="1" data-row="10"></div>
+          <div class="agenda-cell available hour-start" data-col="2" data-row="10"></div>
+          <div class="agenda-cell hour-start" data-col="3" data-row="10"></div>
+          <div class="agenda-cell hour-start" data-col="4" data-row="10"></div>
+          <div class="agenda-cell hour-start" data-col="5" data-row="10"></div>
+          <div class="agenda-cell hour-start" data-col="6" data-row="10"></div>
+          <!-- 13h30 -->
+          <div class="agenda-time half-hour"></div>
+          <div class="agenda-cell" data-col="0" data-row="11"></div>
+          <div class="agenda-cell" data-col="1" data-row="11"></div>
+          <div class="agenda-cell available" data-col="2" data-row="11"></div>
+          <div class="agenda-cell" data-col="3" data-row="11"></div>
+          <div class="agenda-cell" data-col="4" data-row="11"></div>
+          <div class="agenda-cell" data-col="5" data-row="11"></div>
+          <div class="agenda-cell" data-col="6" data-row="11"></div>
+
+          <!-- 14h00 -->
+          <div class="agenda-time">14h00</div>
+          <div class="agenda-cell available hour-start" data-col="0" data-row="12"></div>
+          <div class="agenda-cell booked hour-start" data-col="1" data-row="12"></div>
+          <div class="agenda-cell hour-start" data-col="2" data-row="12"></div>
+          <div class="agenda-cell available hour-start" data-col="3" data-row="12"></div>
+          <div class="agenda-cell hour-start" data-col="4" data-row="12"></div>
+          <div class="agenda-cell hour-start" data-col="5" data-row="12"></div>
+          <div class="agenda-cell hour-start" data-col="6" data-row="12"></div>
+          <!-- 14h30 -->
+          <div class="agenda-time half-hour"></div>
+          <div class="agenda-cell available" data-col="0" data-row="13"></div>
+          <div class="agenda-cell booked" data-col="1" data-row="13"></div>
+          <div class="agenda-cell" data-col="2" data-row="13"></div>
+          <div class="agenda-cell available" data-col="3" data-row="13"></div>
+          <div class="agenda-cell" data-col="4" data-row="13"></div>
+          <div class="agenda-cell" data-col="5" data-row="13"></div>
+          <div class="agenda-cell" data-col="6" data-row="13"></div>
+
+          <!-- 15h00 -->
+          <div class="agenda-time">15h00</div>
+          <div class="agenda-cell hour-start" data-col="0" data-row="14"></div>
+          <div class="agenda-cell hour-start" data-col="1" data-row="14"></div>
+          <div class="agenda-cell available hour-start" data-col="2" data-row="14"></div>
+          <div class="agenda-cell hour-start" data-col="3" data-row="14"></div>
+          <div class="agenda-cell available hour-start" data-col="4" data-row="14"></div>
+          <div class="agenda-cell hour-start" data-col="5" data-row="14"></div>
+          <div class="agenda-cell hour-start" data-col="6" data-row="14"></div>
+          <!-- 15h30 -->
+          <div class="agenda-time half-hour"></div>
+          <div class="agenda-cell" data-col="0" data-row="15"></div>
+          <div class="agenda-cell" data-col="1" data-row="15"></div>
+          <div class="agenda-cell available" data-col="2" data-row="15"></div>
+          <div class="agenda-cell" data-col="3" data-row="15"></div>
+          <div class="agenda-cell available" data-col="4" data-row="15"></div>
+          <div class="agenda-cell" data-col="5" data-row="15"></div>
+          <div class="agenda-cell" data-col="6" data-row="15"></div>
+
+          <!-- 16h00 -->
+          <div class="agenda-time">16h00</div>
+          <div class="agenda-cell hour-start" data-col="0" data-row="16"></div>
+          <div class="agenda-cell available hour-start" data-col="1" data-row="16"></div>
+          <div class="agenda-cell hour-start" data-col="2" data-row="16"></div>
+          <div class="agenda-cell booked hour-start" data-col="3" data-row="16"></div>
+          <div class="agenda-cell hour-start" data-col="4" data-row="16"></div>
+          <div class="agenda-cell hour-start" data-col="5" data-row="16"></div>
+          <div class="agenda-cell hour-start" data-col="6" data-row="16"></div>
+          <!-- 16h30 -->
+          <div class="agenda-time half-hour"></div>
+          <div class="agenda-cell" data-col="0" data-row="17"></div>
+          <div class="agenda-cell available" data-col="1" data-row="17"></div>
+          <div class="agenda-cell" data-col="2" data-row="17"></div>
+          <div class="agenda-cell booked" data-col="3" data-row="17"></div>
+          <div class="agenda-cell" data-col="4" data-row="17"></div>
+          <div class="agenda-cell" data-col="5" data-row="17"></div>
+          <div class="agenda-cell" data-col="6" data-row="17"></div>
+
+          <!-- 17h00 -->
+          <div class="agenda-time">17h00</div>
+          <div class="agenda-cell hour-start" data-col="0" data-row="18"></div>
+          <div class="agenda-cell hour-start" data-col="1" data-row="18"></div>
+          <div class="agenda-cell hour-start" data-col="2" data-row="18"></div>
+          <div class="agenda-cell hour-start" data-col="3" data-row="18"></div>
+          <div class="agenda-cell hour-start" data-col="4" data-row="18"></div>
+          <div class="agenda-cell hour-start" data-col="5" data-row="18"></div>
+          <div class="agenda-cell hour-start" data-col="6" data-row="18"></div>
+          <!-- 17h30 -->
+          <div class="agenda-time half-hour"></div>
+          <div class="agenda-cell" data-col="0" data-row="19"></div>
+          <div class="agenda-cell" data-col="1" data-row="19"></div>
+          <div class="agenda-cell" data-col="2" data-row="19"></div>
+          <div class="agenda-cell" data-col="3" data-row="19"></div>
+          <div class="agenda-cell" data-col="4" data-row="19"></div>
+          <div class="agenda-cell" data-col="5" data-row="19"></div>
+          <div class="agenda-cell" data-col="6" data-row="19"></div>
+        </div>
+
+        <div class="agenda-legend">
+          <div class="legend-item"><div class="legend-dot avail"></div> Disponible</div>
+          <div class="legend-item"><div class="legend-dot unavail"></div> Indisponible</div>
+          <div class="legend-item"><div class="legend-dot booked"></div> Réservé</div>
+          <div class="legend-item"><div class="legend-dot empty"></div> Non défini</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- REFUSE MODAL -->
+  <div class="modal-overlay" id="refuseModal">
+    <div class="modal-card">
+      <div class="modal-title">Refuser cette demande</div>
+      <div class="modal-subtitle">Client : <strong id="refuseClientName"></strong></div>
+      <div class="modal-radio-group" id="refuseReasons">
+        <label class="modal-radio-label">
+          <input type="radio" name="refuse-reason" value="Pas disponible à cette date">
+          Pas disponible à cette date
+        </label>
+        <label class="modal-radio-label">
+          <input type="radio" name="refuse-reason" value="Hors zone d'intervention">
+          Hors zone d'intervention
+        </label>
+        <label class="modal-radio-label">
+          <input type="radio" name="refuse-reason" value="Travail hors de mes compétences">
+          Travail hors de mes compétences
+        </label>
+        <label class="modal-radio-label">
+          <input type="radio" name="refuse-reason" value="Autre raison">
+          Autre raison
+        </label>
+      </div>
+      <textarea class="modal-textarea" id="refuseOtherText" placeholder="Précisez la raison du refus..."></textarea>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" onclick="closeRefuseModal()">Annuler</button>
+        <button class="modal-btn modal-btn-confirm" onclick="confirmRefuse()">Confirmer le refus</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ========== TAB SWITCHING ========== */
+    function switchDashTab(tab) {
+      document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-demandes').classList.remove('active');
+      document.getElementById('tab-agenda').classList.remove('active');
+
+      if (tab === 'demandes') {
+        document.querySelectorAll('.dash-tab')[0].classList.add('active');
+        document.getElementById('tab-demandes').classList.add('active');
+        document.getElementById('tab-demandes').style.display = 'block';
+        document.getElementById('tab-agenda').style.display = 'none';
+      } else {
+        document.querySelectorAll('.dash-tab')[1].classList.add('active');
+        document.getElementById('tab-agenda').classList.add('active');
+        document.getElementById('tab-agenda').style.display = 'block';
+        document.getElementById('tab-demandes').style.display = 'none';
+      }
+    }
+
+    /* ========== AGENDA: 3-STATE TOGGLE ========== */
+    function cycleCell(cell) {
+      if (cell.classList.contains('booked') || cell.classList.contains('past')) return;
+      if (!cell.classList.contains('available') && !cell.classList.contains('unavailable')) {
+        // empty -> available
+        cell.classList.add('available');
+      } else if (cell.classList.contains('available')) {
+        // available -> unavailable
+        cell.classList.remove('available');
+        cell.classList.add('unavailable');
+      } else {
+        // unavailable -> empty
+        cell.classList.remove('unavailable');
+      }
+    }
+
+    /* ========== AGENDA: DRAG SELECTION ========== */
+    (function() {
+      var isDragging = false;
+      var dragCol = null;
+      var dragStartRow = null;
+      var dragCurrentRow = null;
+      var startState = null; // state at mousedown cell to determine what to apply
+
+      var grid = document.getElementById('agendaGrid');
+      if (!grid) return;
+
+      function getCellsInColumn(col) {
+        return Array.from(grid.querySelectorAll('.agenda-cell[data-col="' + col + '"]'));
+      }
+
+      function getCellState(cell) {
+        if (cell.classList.contains('booked')) return 'booked';
+        if (cell.classList.contains('available')) return 'available';
+        if (cell.classList.contains('unavailable')) return 'unavailable';
+        return 'empty';
+      }
+
+      function getNextState(state) {
+        if (state === 'empty') return 'available';
+        if (state === 'available') return 'unavailable';
+        return 'empty'; // unavailable -> empty
+      }
+
+      function clearDragPreview() {
+        grid.querySelectorAll('.drag-preview').forEach(function(c) {
+          c.classList.remove('drag-preview');
+        });
+      }
+
+      function applyDragPreview() {
+        clearDragPreview();
+        if (dragCol === null || dragStartRow === null || dragCurrentRow === null) return;
+        var minRow = Math.min(dragStartRow, dragCurrentRow);
+        var maxRow = Math.max(dragStartRow, dragCurrentRow);
+        var cells = getCellsInColumn(dragCol);
+        cells.forEach(function(c) {
+          var r = parseInt(c.dataset.row);
+          if (r >= minRow && r <= maxRow && getCellState(c) !== 'booked') {
+            c.classList.add('drag-preview');
+          }
+        });
+      }
+
+      function applyDragState() {
+        if (dragCol === null || dragStartRow === null || dragCurrentRow === null) return;
+        var minRow = Math.min(dragStartRow, dragCurrentRow);
+        var maxRow = Math.max(dragStartRow, dragCurrentRow);
+        var targetState = getNextState(startState);
+        var cells = getCellsInColumn(dragCol);
+        cells.forEach(function(c) {
+          var r = parseInt(c.dataset.row);
+          if (r >= minRow && r <= maxRow && getCellState(c) !== 'booked') {
+            c.classList.remove('available', 'unavailable');
+            if (targetState === 'available') c.classList.add('available');
+            else if (targetState === 'unavailable') c.classList.add('unavailable');
+          }
+        });
+      }
+
+      grid.addEventListener('mousedown', function(e) {
+        var cell = e.target.closest('.agenda-cell');
+        if (!cell || cell.classList.contains('booked') || cell.classList.contains('past')) return;
+        e.preventDefault();
+        isDragging = true;
+        dragCol = cell.dataset.col;
+        dragStartRow = parseInt(cell.dataset.row);
+        dragCurrentRow = dragStartRow;
+        startState = getCellState(cell);
+        applyDragPreview();
+      });
+
+      grid.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        var cell = e.target.closest('.agenda-cell');
+        if (!cell || cell.dataset.col !== dragCol) return;
+        var row = parseInt(cell.dataset.row);
+        if (row !== dragCurrentRow) {
+          dragCurrentRow = row;
+          applyDragPreview();
+        }
+      });
+
+      document.addEventListener('mouseup', function(e) {
+        if (!isDragging) return;
+        clearDragPreview();
+        if (dragStartRow === dragCurrentRow) {
+          // single click: cycle the one cell
+          var cells = getCellsInColumn(dragCol);
+          cells.forEach(function(c) {
+            if (parseInt(c.dataset.row) === dragStartRow) cycleCell(c);
+          });
+        } else {
+          // drag: apply the computed next-state to range
+          applyDragState();
+        }
+        isDragging = false;
+        dragCol = null;
+        dragStartRow = null;
+        dragCurrentRow = null;
+        startState = null;
+      });
+
+      // prevent text selection while dragging
+      grid.addEventListener('selectstart', function(e) {
+        if (isDragging) e.preventDefault();
+      });
+    })();
+
+    /* ========== DEMANDES: ACCEPT ========== */
+    function acceptDemande(btn) {
+      var item = btn.closest('.demande-item');
+      var actions = item.querySelector('.demande-actions');
+      var status = item.querySelector('.status');
+      status.className = 'status status-confirmed';
+      status.textContent = 'Confirmée';
+      // remove accept & refuse buttons, keep view
+      var viewBtn = actions.querySelector('.btn-sm-view');
+      actions.innerHTML = '';
+      if (viewBtn) actions.appendChild(viewBtn);
+    }
+
+    /* ========== DEMANDES: REFUSE MODAL ========== */
+    var refuseTargetBtn = null;
+
+    function openRefuseModal(btn, clientName) {
+      refuseTargetBtn = btn;
+      document.getElementById('refuseClientName').textContent = clientName;
+      // reset state
+      document.querySelectorAll('#refuseReasons input[type="radio"]').forEach(function(r) { r.checked = false; });
+      document.querySelectorAll('#refuseReasons .modal-radio-label').forEach(function(l) { l.classList.remove('selected'); });
+      document.getElementById('refuseOtherText').value = '';
+      document.getElementById('refuseOtherText').classList.remove('visible');
+      document.getElementById('refuseModal').classList.add('active');
+    }
+
+    function closeRefuseModal() {
+      document.getElementById('refuseModal').classList.remove('active');
+      refuseTargetBtn = null;
+    }
+
+    // Radio button highlight and "Autre raison" textarea toggle
+    document.querySelectorAll('#refuseReasons input[type="radio"]').forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        document.querySelectorAll('#refuseReasons .modal-radio-label').forEach(function(l) { l.classList.remove('selected'); });
+        this.closest('.modal-radio-label').classList.add('selected');
+        var textarea = document.getElementById('refuseOtherText');
+        if (this.value === 'Autre raison') {
+          textarea.classList.add('visible');
+          textarea.focus();
+        } else {
+          textarea.classList.remove('visible');
+        }
+      });
+    });
+
+    // Close modal on backdrop click
+    document.getElementById('refuseModal').addEventListener('click', function(e) {
+      if (e.target === this) closeRefuseModal();
+    });
+
+    function confirmRefuse() {
+      var checked = document.querySelector('#refuseReasons input[type="radio"]:checked');
+      if (!checked) {
+        alert('Veuillez sélectionner une raison.');
+        return;
+      }
+      if (!refuseTargetBtn) return;
+      var item = refuseTargetBtn.closest('.demande-item');
+      var actions = item.querySelector('.demande-actions');
+      var status = item.querySelector('.status');
+      // update status
+      status.className = 'status status-refused';
+      status.textContent = 'Refusée';
+      // update icon
+      var icon = item.querySelector('.demande-icon');
+      if (icon) { icon.className = 'demande-icon'; icon.style.background = 'var(--red-light)'; icon.querySelector('svg').style.color = 'var(--red)'; }
+      // remove accept & refuse, keep view
+      var viewBtn = actions.querySelector('.btn-sm-view');
+      actions.innerHTML = '';
+      if (viewBtn) actions.appendChild(viewBtn);
+      closeRefuseModal();
+    }
+  </script>
+</body>
+</html>

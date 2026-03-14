@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artisano — Trouve ton artisan en 2 clics</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #E8700A;
+    --orange-light: #F08A2E;
+    --orange-dark: #CC5F00;
+    --yellow: #F0B429;
+    --yellow-light: #F7C948;
+    --dark: #1A2744;
+    --dark-mid: #213052;
+    --dark-light: #2B3D68;
+    --white: #FAFAF8;
+    --gray-100: #F2F1EE;
+    --gray-200: #E5E3DE;
+    --gray-300: #D1CEC7;
+    --gray-500: #8A8680;
+    --gray-700: #55524D;
+    --green: #4CAF50;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --radius-xs: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--white);
+    color: var(--dark);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== NAV ===== */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 16px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(250,250,250,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    animation: slideDown 0.6s ease-out;
+  }
+
+  @keyframes slideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .logo {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    color: var(--dark);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--orange);
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    text-decoration: none;
+    color: var(--gray-700);
+    font-weight: 500;
+    font-size: 15px;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--dark); }
+
+  .btn-nav {
+    background: var(--dark);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.3s;
+  }
+
+  .btn-nav:hover {
+    background: var(--orange);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(232,112,10,0.3);
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 140px 24px 80px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--white) 0%, #FFF8F0 25%, #FFFBF5 50%, #FFF5E6 75%, var(--white) 100%);
+    background-size: 400% 400%;
+    animation: heroGradient 12s ease infinite;
+  }
+
+  @keyframes heroGradient {
+    0% { background-position: 0% 50%; }
+    25% { background-position: 100% 25%; }
+    50% { background-position: 100% 50%; }
+    75% { background-position: 0% 75%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* ===== FLOATING GEOMETRIC SHAPES ===== */
+  .hero-shapes {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .hero-shape {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0;
+    animation: shapeFloat 20s ease-in-out infinite;
+  }
+
+  .hero-shape:nth-child(1) {
+    width: 8px; height: 8px;
+    background: var(--orange);
+    top: 15%; left: 10%;
+    animation-delay: 0s;
+    animation-duration: 18s;
+    opacity: 0.4;
+  }
+  .hero-shape:nth-child(2) {
+    width: 14px; height: 14px;
+    border: 2px solid var(--orange-light);
+    background: transparent;
+    top: 25%; right: 15%;
+    animation-delay: 2s;
+    animation-duration: 22s;
+    opacity: 0.3;
+  }
+  .hero-shape:nth-child(3) {
+    width: 6px; height: 6px;
+    background: var(--yellow);
+    top: 60%; left: 8%;
+    animation-delay: 4s;
+    animation-duration: 16s;
+    opacity: 0.5;
+  }
+  .hero-shape:nth-child(4) {
+    width: 20px; height: 20px;
+    border: 2px solid var(--yellow-light);
+    background: transparent;
+    top: 70%; right: 10%;
+    animation-delay: 1s;
+    animation-duration: 24s;
+    opacity: 0.2;
+  }
+  .hero-shape:nth-child(5) {
+    width: 10px; height: 10px;
+    background: var(--orange-light);
+    top: 40%; left: 5%;
+    animation-delay: 3s;
+    animation-duration: 20s;
+    opacity: 0.3;
+  }
+  .hero-shape:nth-child(6) {
+    width: 5px; height: 5px;
+    background: var(--yellow);
+    top: 20%; left: 30%;
+    animation-delay: 5s;
+    animation-duration: 15s;
+    opacity: 0.4;
+  }
+  .hero-shape:nth-child(7) {
+    width: 12px; height: 12px;
+    border: 2px solid rgba(232,112,10,0.25);
+    background: transparent;
+    top: 80%; left: 25%;
+    animation-delay: 2.5s;
+    animation-duration: 19s;
+    opacity: 0.3;
+  }
+  .hero-shape:nth-child(8) {
+    width: 7px; height: 7px;
+    background: var(--orange);
+    top: 50%; right: 25%;
+    animation-delay: 6s;
+    animation-duration: 21s;
+    opacity: 0.35;
+  }
+  .hero-shape:nth-child(9) {
+    width: 16px; height: 16px;
+    border: 2px solid var(--yellow);
+    background: transparent;
+    bottom: 20%; right: 30%;
+    animation-delay: 1.5s;
+    animation-duration: 17s;
+    opacity: 0.2;
+  }
+  .hero-shape:nth-child(10) {
+    width: 4px; height: 4px;
+    background: var(--orange-dark);
+    top: 35%; right: 8%;
+    animation-delay: 4.5s;
+    animation-duration: 23s;
+    opacity: 0.45;
+  }
+
+  @keyframes shapeFloat {
+    0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+    10% { opacity: var(--shape-opacity, 0.3); }
+    25% { transform: translate(30px, -40px) rotate(90deg); }
+    50% { transform: translate(-20px, -80px) rotate(180deg); }
+    75% { transform: translate(40px, -30px) rotate(270deg); }
+    90% { opacity: var(--shape-opacity, 0.3); }
+    100% { transform: translate(0, 0) rotate(360deg); opacity: 0; }
+  }
+
+  /* ===== HERO MOUSE GLOW ===== */
+  .hero-glow {
+    position: absolute;
+    width: 350px;
+    height: 350px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,112,10,0.08) 0%, rgba(240,180,41,0.04) 40%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    transform: translate(-50%, -50%);
+    transition: left 0.3s ease-out, top 0.3s ease-out, opacity 0.4s;
+    opacity: 0;
+  }
+  .hero-glow.active { opacity: 1; }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(232,112,10,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -150px;
+    left: -150px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(240,180,41,0.06) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    padding: 8px 20px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-700);
+    margin-bottom: 32px;
+    animation: fadeUp 0.8s ease-out 0.2s both;
+  }
+
+  .hero-badge span {
+    background: var(--orange);
+    color: white;
+    padding: 2px 10px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  @keyframes fadeUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .hero h1 {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(40px, 6vw, 72px);
+    font-weight: 800;
+    line-height: 1.1;
+    max-width: 800px;
+    margin-bottom: 24px;
+    animation: fadeUp 0.8s ease-out 0.4s both;
+  }
+
+  .hero h1 .highlight {
+    color: var(--orange);
+    position: relative;
+  }
+
+  .hero h1 .highlight::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: var(--yellow);
+    border-radius: 3px;
+    opacity: 0.5;
+    z-index: -1;
+  }
+
+  .hero p {
+    font-size: 19px;
+    color: var(--gray-700);
+    max-width: 520px;
+    line-height: 1.6;
+    margin-bottom: 48px;
+    animation: fadeUp 0.8s ease-out 0.6s both;
+  }
+
+  /* ===== SEARCH BOX ===== */
+  .search-box {
+    background: white;
+    border-radius: 20px;
+    padding: 8px;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 720px;
+    width: 100%;
+    animation: fadeUp 0.8s ease-out 0.8s both, searchFloat 4s ease-in-out 2s infinite;
+    transition: box-shadow 0.4s, transform 0.4s;
+    position: relative;
+    z-index: 2;
+  }
+
+  @keyframes searchFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .search-box:focus-within {
+    box-shadow: 0 8px 60px rgba(232,112,10,0.15), 0 0 0 2px var(--orange), 0 0 80px rgba(232,112,10,0.08);
+    animation: searchGlow 2s ease-in-out infinite, fadeUp 0.8s ease-out 0.8s both;
+    transform: translateY(-4px);
+  }
+
+  @keyframes searchGlow {
+    0%, 100% { box-shadow: 0 8px 60px rgba(232,112,10,0.15), 0 0 0 2px var(--orange), 0 0 40px rgba(232,112,10,0.06); }
+    50% { box-shadow: 0 12px 80px rgba(232,112,10,0.2), 0 0 0 3px var(--orange-light), 0 0 100px rgba(232,112,10,0.1); }
+  }
+
+  .search-field {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-radius: 14px;
+    transition: background 0.2s;
+  }
+
+  .search-field:hover { background: var(--gray-100); }
+
+  .search-field svg {
+    width: 20px;
+    height: 20px;
+    color: var(--gray-500);
+    flex-shrink: 0;
+  }
+
+  .search-field input {
+    border: none;
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    width: 100%;
+    background: transparent;
+    color: var(--dark);
+  }
+
+  .search-field input::placeholder { color: var(--gray-500); }
+
+  .search-divider {
+    width: 1px;
+    height: 32px;
+    background: var(--gray-300);
+    flex-shrink: 0;
+  }
+
+  .search-btn {
+    background: var(--orange);
+    color: white;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 14px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .search-btn:hover {
+    background: var(--orange-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(232,112,10,0.35);
+  }
+
+  /* ===== AI ASSIST ===== */
+  .ai-assist {
+    margin-top: 20px;
+    animation: fadeUp 0.8s ease-out 1s both;
+  }
+
+  .ai-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--dark);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .ai-btn:hover {
+    background: var(--dark-mid);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(26,26,46,0.25);
+  }
+
+  .ai-btn .sparkle {
+    font-size: 16px;
+    animation: sparkle 2s infinite;
+  }
+
+  @keyframes sparkle {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(10deg) scale(1.2); }
+    75% { transform: rotate(-10deg) scale(1.1); }
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 48px;
+    margin-top: 56px;
+    animation: fadeUp 0.8s ease-out 1.2s both;
+  }
+
+  .hero-stat {
+    text-align: center;
+  }
+
+  .hero-stat-number {
+    font-family: 'Sora', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--dark);
+  }
+
+  .hero-stat-label {
+    font-size: 13px;
+    color: var(--gray-500);
+    margin-top: 4px;
+  }
+
+  /* ===== MÉTIERS ===== */
+  .metiers {
+    padding: 80px 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 40px;
+  }
+
+  .section-header h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+  }
+
+  .section-header a {
+    color: var(--orange);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    transition: gap 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .section-header a:hover { gap: 12px; }
+
+  .metiers-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+
+  .metier-card {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 32px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .metier-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--orange);
+    transform: scaleX(0);
+    transition: transform 0.35s;
+    transform-origin: left;
+  }
+
+  .metier-card:hover::before { transform: scaleX(1); }
+
+  .metier-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.08);
+    border-color: transparent;
+  }
+
+  .metier-icon {
+    width: 64px;
+    height: 64px;
+    background: var(--gray-100);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 16px;
+    transition: all 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .metier-icon svg {
+    transition: all 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .metier-card:hover .metier-icon {
+    background: var(--orange);
+    transform: scale(1.15) rotate(-8deg);
+    box-shadow: 0 8px 24px rgba(232,112,10,0.3);
+  }
+
+  .metier-card:hover .metier-icon svg {
+    stroke: white;
+    transform: scale(1.1) rotate(8deg);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  }
+
+  .metier-card h3 {
+    font-family: 'Sora', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .metier-card p {
+    font-size: 13px;
+    color: var(--gray-500);
+  }
+
+  /* Staggered entrance for metier cards */
+  .metier-card {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+  .metier-card.card-visible {
+    animation: cardEntrance 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+  .metier-card.card-visible:nth-child(1) { animation-delay: 0s; }
+  .metier-card.card-visible:nth-child(2) { animation-delay: 0.12s; }
+  .metier-card.card-visible:nth-child(3) { animation-delay: 0.24s; }
+  .metier-card.card-visible:nth-child(4) { animation-delay: 0.36s; }
+
+  @keyframes cardEntrance {
+    from { opacity: 0; transform: translateY(40px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ===== ARTISANS EN VEDETTE ===== */
+  .featured {
+    padding: 80px 40px;
+    background: var(--gray-100);
+  }
+
+  .featured-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .artisan-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .artisan-card {
+    background: white;
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all 0.35s;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+
+  .artisan-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+  }
+
+  .artisan-img {
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(135deg, var(--dark) 0%, var(--dark-mid) 100%);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .artisan-img .placeholder-icon {
+    font-size: 48px;
+    opacity: 0.3;
+  }
+
+  .artisan-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(8px);
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .artisan-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+  }
+
+  .artisan-info {
+    padding: 24px;
+  }
+
+  .artisan-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .artisan-name {
+    font-family: 'Sora', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .artisan-rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--dark);
+  }
+
+  .artisan-rating .star { color: #F0B429; }
+
+  .artisan-trade {
+    color: var(--orange);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  .artisan-location {
+    color: var(--gray-500);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .artisan-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .artisan-tag {
+    background: var(--gray-100);
+    padding: 5px 12px;
+    border-radius: 50px;
+    font-size: 12px;
+    color: var(--gray-700);
+    font-weight: 500;
+  }
+
+  .artisan-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid var(--gray-200);
+  }
+
+  .artisan-avail {
+    font-size: 13px;
+    color: var(--green);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-profile {
+    background: var(--dark);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .btn-profile:hover {
+    background: var(--orange);
+    transform: translateY(-1px);
+  }
+
+  /* ===== HOW IT WORKS ===== */
+  .how-it-works {
+    padding: 100px 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .how-it-works h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .how-subtitle {
+    text-align: center;
+    color: var(--gray-500);
+    font-size: 17px;
+    margin-bottom: 64px;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+    position: relative;
+  }
+
+  .steps::before {
+    content: '';
+    position: absolute;
+    top: 44px;
+    left: 12%;
+    right: 12%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--orange), var(--yellow), var(--orange));
+    opacity: 0.3;
+    z-index: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .steps.line-visible::before {
+    transform: scaleX(1);
+  }
+
+  .step {
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  .step.step-visible {
+    animation: stepEntrance 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+  .step.step-visible:nth-child(1) { animation-delay: 0.1s; }
+  .step.step-visible:nth-child(2) { animation-delay: 0.3s; }
+  .step.step-visible:nth-child(3) { animation-delay: 0.5s; }
+  .step.step-visible:nth-child(4) { animation-delay: 0.7s; }
+
+  @keyframes stepEntrance {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .step-number {
+    width: 56px;
+    height: 56px;
+    background: var(--dark);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    margin: 0 auto 20px;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .step-number::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid var(--orange);
+    opacity: 0;
+    animation: stepRingPulse 2.5s ease-in-out infinite;
+  }
+
+  .step:nth-child(1) .step-number::before { animation-delay: 0s; }
+  .step:nth-child(2) .step-number::before { animation-delay: 0.5s; }
+  .step:nth-child(3) .step-number::before { animation-delay: 1s; }
+  .step:nth-child(4) .step-number::before { animation-delay: 1.5s; }
+
+  @keyframes stepRingPulse {
+    0% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.3); opacity: 0; }
+    100% { transform: scale(1); opacity: 0; }
+  }
+
+  .step:hover .step-number {
+    background: var(--orange);
+    transform: scale(1.15);
+    box-shadow: 0 8px 24px rgba(232,112,10,0.35);
+  }
+
+  .step h3 {
+    font-family: 'Sora', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .step p {
+    font-size: 14px;
+    color: var(--gray-500);
+    line-height: 1.5;
+  }
+
+  /* ===== CTA ===== */
+  .cta {
+    margin: 0 40px 80px;
+    background: var(--dark);
+    border-radius: 24px;
+    padding: 80px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .cta::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(232,112,10,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: ctaOrbFloat 8s ease-in-out infinite;
+  }
+
+  .cta::after {
+    content: '';
+    position: absolute;
+    bottom: -80px;
+    left: -80px;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(240,180,41,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: ctaOrbFloat 8s ease-in-out 3s infinite reverse;
+  }
+
+  @keyframes ctaOrbFloat {
+    0%, 100% { transform: translate(0, 0); }
+    33% { transform: translate(20px, -15px); }
+    66% { transform: translate(-10px, 10px); }
+  }
+
+  /* CTA Particles */
+  .cta-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .cta-particle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    animation: particleFloat linear infinite;
+  }
+
+  @keyframes particleFloat {
+    0% { transform: translateY(100%) scale(0); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(-100px) scale(1); opacity: 0; }
+  }
+
+  .cta h2 {
+    font-family: 'Sora', sans-serif;
+    font-size: 40px;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta p {
+    color: rgba(255,255,255,0.65);
+    font-size: 18px;
+    max-width: 480px;
+    margin: 0 auto 36px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .btn-cta-primary {
+    background: var(--orange);
+    color: white;
+    padding: 16px 36px;
+    border-radius: 50px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    text-decoration: none;
+    transition: all 0.3s;
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn-cta-primary:hover {
+    background: var(--orange-light);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(232,112,10,0.4);
+  }
+
+  .btn-cta-secondary {
+    background: transparent;
+    color: white;
+    padding: 16px 36px;
+    border-radius: 50px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    text-decoration: none;
+    border: 2px solid rgba(255,255,255,0.25);
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+
+  .btn-cta-secondary:hover {
+    border-color: white;
+    background: rgba(255,255,255,0.05);
+    transform: translateY(-2px);
+  }
+
+  /* ===== FOOTER ===== */
+  footer {
+    padding: 48px 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--gray-200);
+  }
+
+  .footer-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 24px;
+  }
+
+  .footer-links a {
+    color: var(--gray-500);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+
+  .footer-links a:hover { color: var(--dark); }
+
+  .footer-made {
+    font-size: 13px;
+    color: var(--gray-500);
+  }
+
+  .footer-made span { color: var(--orange); }
+
+  /* ===== HAMBURGER ===== */
+  .hamburger {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    z-index: 101;
+  }
+  .hamburger span {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: var(--dark);
+    margin: 6px 0;
+    border-radius: 2px;
+    transition: all 0.3s;
+  }
+  .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(6px, 6px); }
+  .hamburger.active span:nth-child(2) { opacity: 0; }
+  .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(6px, -6px); }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    .hamburger { display: block; }
+    nav { padding: 14px 20px; }
+    .nav-links {
+      display: none;
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      background: white;
+      flex-direction: column;
+      padding: 24px;
+      gap: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .nav-links.open { display: flex; }
+    .hero { padding: 120px 20px 60px; }
+    .search-box { flex-direction: column; padding: 12px; }
+    .search-divider { width: 100%; height: 1px; }
+    .search-btn { width: 100%; justify-content: center; }
+    .metiers { padding: 60px 20px; }
+    .metiers-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .featured { padding: 60px 20px; }
+    .artisan-grid { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: repeat(2, 1fr); }
+    .steps::before { display: none; }
+    .how-it-works { padding: 60px 20px; }
+    .cta { margin: 0 20px 60px; padding: 48px 24px; }
+    .cta h2 { font-size: 28px; }
+    .cta-buttons { flex-direction: column; align-items: center; }
+    .hero-stats { gap: 32px; }
+    footer { flex-direction: column; gap: 20px; text-align: center; }
+    .footer-left { flex-direction: column; }
+  }
+
+  /* ===== SCROLL ANIMATIONS ===== */
+  .reveal {
+    opacity: 0;
+    transform: translateY(60px) scale(0.97);
+    transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  /* Letter stagger animation for hero title */
+  .hero h1 .char {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(40px) rotateX(-40deg);
+    animation: charReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes charReveal {
+    to { opacity: 1; transform: translateY(0) rotateX(0deg); }
+  }
+
+  /* hero content z-index */
+  .hero-badge, .hero h1, .hero > p, .search-box, .ai-assist, .hero-stats {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ===== CITY AUTOCOMPLETE DROPDOWN ===== */
+  .search-field-location {
+    position: relative;
+  }
+
+  .city-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 6px;
+    background: white;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+    max-height: 260px;
+    overflow-y: auto;
+    z-index: 200;
+    padding: 6px;
+  }
+
+  .city-dropdown.open {
+    display: block;
+  }
+
+  .city-dropdown-item {
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--dark);
+    border-radius: var(--radius-xs);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .city-dropdown-item:hover,
+  .city-dropdown-item.active {
+    background: var(--orange);
+    color: white;
+  }
+
+  .city-dropdown-item svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    opacity: 0.5;
+  }
+
+  .city-dropdown-item:hover svg,
+  .city-dropdown-item.active svg {
+    opacity: 1;
+  }
+
+  .city-dropdown-empty {
+    padding: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--gray-500);
+    text-align: center;
+  }
+
+  /* Scrollbar styling for dropdown */
+  .city-dropdown::-webkit-scrollbar {
+    width: 6px;
+  }
+  .city-dropdown::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .city-dropdown::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="artisano-homepage.html" class="logo">artisano<span class="logo-dot"></span></a>
+    <button class="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links">
+      <li><a href="artisano-resultats-recherche.html">Rechercher</a></li>
+      <li><a href="#how-it-works">Comment ça marche</a></li>
+      <li><a href="artisano-inscription-pro.html">Pour les artisans</a></li>
+      <li><a href="artisano-connexion.html" class="btn-nav">Connexion</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <!-- Floating geometric shapes -->
+    <div class="hero-shapes">
+      <div class="hero-shape"></div>
+      <div class="hero-shape"></div>
+      <div class="hero-shape"></div>
+      <div class="hero-shape"></div>
+      <div class="hero-shape"></div>
+      <div class="hero-shape"></div>
+      <div class="hero-shape"></div>
+      <div class="hero-shape"></div>
+      <div class="hero-shape"></div>
+      <div class="hero-shape"></div>
+    </div>
+    <!-- Mouse-following glow -->
+    <div class="hero-glow" id="hero-glow"></div>
+
+    <div class="hero-badge">
+      <span>Nouveau</span> Disponible dans le canton de Vaud
+    </div>
+
+    <h1>Ton artisan local,<br><span class="highlight">en 2 clics</span></h1>
+    <p>Trouve un plombier, électricien ou serrurier près de chez toi. Des vrais avis, des vrais pros, zéro prise de tête.</p>
+
+    <div class="search-box">
+      <div class="search-field">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" placeholder="Quel métier ? (plombier, électricien...)">
+      </div>
+      <div class="search-divider"></div>
+      <div class="search-field search-field-location">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <input type="text" placeholder="Où ? (ville, code postal...)" id="city-input" autocomplete="off">
+        <div class="city-dropdown" id="city-dropdown"></div>
+      </div>
+      <button class="search-btn" onclick="doSearch()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        Chercher
+      </button>
+    </div>
+
+    <div class="ai-assist">
+      <button class="ai-btn">
+        <span class="sparkle"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/></svg></span> Pas sûr du métier ? Décris ton problème, on t'oriente
+      </button>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-number" data-target="120" data-suffix="+">0</div>
+        <div class="hero-stat-label">artisans inscrits</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-number" data-target="4.8" data-suffix="" data-decimal="true">0</div>
+        <div class="hero-stat-label">note moyenne</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-number" data-target="100" data-suffix="%">0</div>
+        <div class="hero-stat-label">avis vérifiés</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MÉTIERS -->
+  <section class="metiers reveal">
+    <div class="section-header">
+      <h2>Explore par métier</h2>
+      <a href="artisano-resultats-recherche.html">Voir tout →</a>
+    </div>
+    <div class="metiers-grid">
+      <a class="metier-card" href="artisano-resultats-recherche.html" style="text-decoration:none;color:inherit;">
+        <div class="metier-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
+        <h3>Plombier</h3>
+        <p>42 pros disponibles</p>
+      </a>
+      <a class="metier-card" href="artisano-resultats-recherche.html" style="text-decoration:none;color:inherit;">
+        <div class="metier-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+        <h3>Électricien</h3>
+        <p>35 pros disponibles</p>
+      </a>
+      <a class="metier-card" href="artisano-resultats-recherche.html" style="text-decoration:none;color:inherit;">
+        <div class="metier-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
+        <h3>Serrurier</h3>
+        <p>18 pros disponibles</p>
+      </a>
+      <a class="metier-card" href="artisano-resultats-recherche.html" style="text-decoration:none;color:inherit;">
+        <div class="metier-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c1 3 4 6 4 10a4 4 0 11-8 0c0-4 3-7 4-10z"/></svg></div>
+        <h3>Chauffagiste</h3>
+        <p>24 pros disponibles</p>
+      </a>
+    </div>
+  </section>
+
+
+  <!-- HOW IT WORKS -->
+  <section class="how-it-works reveal" id="how-it-works">
+    <h2>Simple comme bonjour</h2>
+    <p class="how-subtitle">Pas de compte obligatoire, pas de prise de tête.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <h3>Dis-nous ce qu'il te faut</h3>
+        <p>Choisis un métier ou décris ton problème en deux mots</p>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <h3>Compare les pros</h3>
+        <p>Avis vérifiés, spécialités, zones couvertes — tout est là</p>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <h3>Contacte direct</h3>
+        <p>Demande un rendez-vous ou un devis en 30 secondes</p>
+      </div>
+      <div class="step">
+        <div class="step-number">4</div>
+        <h3>Laisse ton avis</h3>
+        <p>Aide la communauté en partageant ton expérience</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA ARTISAN -->
+  <section class="cta reveal" id="cta-section">
+    <!-- Animated particles -->
+    <div class="cta-particles" id="cta-particles"></div>
+    <h2>T'es artisan ?<br>Rejoins-nous.</h2>
+    <p>Reçois des demandes locales, gère tes rendez-vous, et construis ta réputation en ligne. Dès 25 CHF/mois.</p>
+    <div class="cta-buttons">
+      <a href="artisano-inscription-pro.html" class="btn-cta-primary">Créer mon profil</a>
+      <a href="artisano-inscription-pro.html" class="btn-cta-secondary">En savoir plus</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-left">
+      <a href="artisano-homepage.html" class="logo" style="font-size:20px;">artisano<span class="logo-dot"></span></a>
+      <div class="footer-links">
+        <a href="artisano-homepage.html">À propos</a>
+        <a href="artisano-formulaire-demande.html">Contact</a>
+        <a href="#">CGU</a>
+        <a href="#">Confidentialité</a>
+      </div>
+    </div>
+    <div class="footer-made">
+      Fait avec <span>♥</span> en Suisse
+    </div>
+  </footer>
+
+  <script>
+    // =============================================
+    // 1. SCROLL REVEAL (enhanced)
+    // =============================================
+    const reveals = document.querySelectorAll('.reveal');
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+    reveals.forEach(el => revealObserver.observe(el));
+
+    // =============================================
+    // 2. HERO TITLE LETTER-BY-LETTER STAGGER
+    // =============================================
+    (function() {
+      const h1 = document.querySelector('.hero h1');
+      if (!h1) return;
+      // Remove the CSS fadeUp animation since we're doing char-by-char
+      h1.style.animation = 'none';
+      h1.style.opacity = '1';
+
+      const html = h1.innerHTML;
+      // Split text nodes into individual characters, preserve HTML tags
+      let charIndex = 0;
+      const newHTML = html.replace(/(<[^>]+>)|([^<])/g, function(match, tag, char) {
+        if (tag) return tag;
+        if (char === ' ') return ' ';
+        const delay = 0.4 + (charIndex * 0.03);
+        charIndex++;
+        return '<span class="char" style="animation-delay:' + delay.toFixed(2) + 's">' + char + '</span>';
+      });
+      h1.innerHTML = newHTML;
+    })();
+
+    // =============================================
+    // 3. ANIMATED COUNTERS
+    // =============================================
+    (function() {
+      const counters = document.querySelectorAll('.hero-stat-number[data-target]');
+      let countersAnimated = false;
+
+      function animateCounter(el) {
+        const target = parseFloat(el.dataset.target);
+        const suffix = el.dataset.suffix || '';
+        const isDecimal = el.dataset.decimal === 'true';
+        const duration = 2000;
+        const startTime = performance.now();
+
+        function easeOutCubic(t) {
+          return 1 - Math.pow(1 - t, 3);
+        }
+
+        function update(currentTime) {
+          const elapsed = currentTime - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const easedProgress = easeOutCubic(progress);
+          const current = easedProgress * target;
+
+          if (isDecimal) {
+            el.textContent = current.toFixed(1) + suffix;
+          } else {
+            el.textContent = Math.round(current) + suffix;
+          }
+
+          if (progress < 1) {
+            requestAnimationFrame(update);
+          }
+        }
+
+        requestAnimationFrame(update);
+      }
+
+      const statsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !countersAnimated) {
+            countersAnimated = true;
+            counters.forEach(c => animateCounter(c));
+          }
+        });
+      }, { threshold: 0.3 });
+
+      const statsContainer = document.querySelector('.hero-stats');
+      if (statsContainer) statsObserver.observe(statsContainer);
+    })();
+
+    // =============================================
+    // 4. HERO MOUSE-FOLLOWING GLOW
+    // =============================================
+    (function() {
+      const hero = document.getElementById('hero');
+      const glow = document.getElementById('hero-glow');
+      if (!hero || !glow) return;
+
+      hero.addEventListener('mouseenter', function() {
+        glow.classList.add('active');
+      });
+      hero.addEventListener('mouseleave', function() {
+        glow.classList.remove('active');
+      });
+      hero.addEventListener('mousemove', function(e) {
+        const rect = hero.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        glow.style.left = x + 'px';
+        glow.style.top = y + 'px';
+      });
+    })();
+
+    // =============================================
+    // 5. METIER CARDS STAGGER ENTRANCE
+    // =============================================
+    (function() {
+      const cards = document.querySelectorAll('.metier-card');
+      const cardObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            // Add visible class to all cards in the grid
+            cards.forEach(c => c.classList.add('card-visible'));
+            cardObserver.disconnect();
+          }
+        });
+      }, { threshold: 0.15 });
+
+      const grid = document.querySelector('.metiers-grid');
+      if (grid) cardObserver.observe(grid);
+    })();
+
+    // =============================================
+    // 6. STEPS STAGGER + CONNECTING LINE ANIMATION
+    // =============================================
+    (function() {
+      const stepsContainer = document.querySelector('.steps');
+      const steps = document.querySelectorAll('.step');
+      if (!stepsContainer) return;
+
+      const stepsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            stepsContainer.classList.add('line-visible');
+            steps.forEach(s => s.classList.add('step-visible'));
+            stepsObserver.disconnect();
+          }
+        });
+      }, { threshold: 0.15 });
+
+      stepsObserver.observe(stepsContainer);
+    })();
+
+    // =============================================
+    // 7. CTA PARTICLES
+    // =============================================
+    (function() {
+      const container = document.getElementById('cta-particles');
+      if (!container) return;
+
+      for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'cta-particle';
+        const size = Math.random() * 4 + 2;
+        particle.style.width = size + 'px';
+        particle.style.height = size + 'px';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.bottom = '-10px';
+        particle.style.animationDuration = (Math.random() * 6 + 4) + 's';
+        particle.style.animationDelay = (Math.random() * 8) + 's';
+        particle.style.opacity = Math.random() * 0.3 + 0.1;
+        container.appendChild(particle);
+      }
+    })();
+
+    // =============================================
+    // 8. CTA PARALLAX ON SCROLL
+    // =============================================
+    (function() {
+      const cta = document.getElementById('cta-section');
+      if (!cta) return;
+      const ctaH2 = cta.querySelector('h2');
+      const ctaP = cta.querySelector('p');
+      const ctaBtns = cta.querySelector('.cta-buttons');
+
+      window.addEventListener('scroll', function() {
+        const rect = cta.getBoundingClientRect();
+        const windowH = window.innerHeight;
+        if (rect.top < windowH && rect.bottom > 0) {
+          const progress = (windowH - rect.top) / (windowH + rect.height);
+          const offset = (progress - 0.5) * 30;
+          if (ctaH2) ctaH2.style.transform = 'translateY(' + (offset * -0.6) + 'px)';
+          if (ctaP) ctaP.style.transform = 'translateY(' + (offset * -0.3) + 'px)';
+          if (ctaBtns) ctaBtns.style.transform = 'translateY(' + (offset * -0.15) + 'px)';
+        }
+      }, { passive: true });
+    })();
+
+    // =============================================
+    // 9. SEARCH FUNCTIONALITY
+    // =============================================
+    function doSearch() {
+      window.location.href = 'artisano-resultats-recherche.html';
+    }
+    document.querySelectorAll('.search-field input').forEach(input => {
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') doSearch();
+      });
+    });
+
+    // =============================================
+    // 10. MOBILE HAMBURGER MENU
+    // =============================================
+    const hamburger = document.querySelector('.hamburger');
+    const navLinks = document.querySelector('.nav-links');
+    if (hamburger) {
+      hamburger.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+        this.classList.toggle('active');
+      });
+    }
+
+    // City autocomplete
+    (function() {
+      const cities = [
+        'Lausanne', 'Renens', 'Pully', 'Prilly', 'Morges', 'Nyon',
+        'Vevey', 'Montreux', 'Yverdon-les-Bains', 'Ecublens', 'Bussigny',
+        'Crissier', 'Lutry', 'Payerne', 'Aigle', 'Rolle', 'Gland',
+        'Chavannes-près-Renens', 'Le Mont-sur-Lausanne', 'Epalinges'
+      ];
+
+      const input = document.getElementById('city-input');
+      const dropdown = document.getElementById('city-dropdown');
+      let activeIndex = -1;
+
+      function pinIcon() {
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+      }
+
+      function renderDropdown(filtered) {
+        activeIndex = -1;
+        if (filtered.length === 0) {
+          dropdown.innerHTML = '<div class="city-dropdown-empty">Aucune ville trouvée</div>';
+        } else {
+          dropdown.innerHTML = filtered.map(function(city, i) {
+            return '<div class="city-dropdown-item" data-index="' + i + '" data-city="' + city + '">' + pinIcon() + '<span>' + city + '</span></div>';
+          }).join('');
+        }
+        dropdown.classList.add('open');
+      }
+
+      function closeDropdown() {
+        dropdown.classList.remove('open');
+        activeIndex = -1;
+      }
+
+      function selectCity(city) {
+        input.value = city;
+        closeDropdown();
+      }
+
+      function getFiltered() {
+        var query = input.value.trim().toLowerCase();
+        if (query === '') return cities.slice();
+        return cities.filter(function(c) {
+          return c.toLowerCase().indexOf(query) !== -1;
+        });
+      }
+
+      function setActive(index) {
+        var items = dropdown.querySelectorAll('.city-dropdown-item');
+        items.forEach(function(el) { el.classList.remove('active'); });
+        if (index >= 0 && index < items.length) {
+          items[index].classList.add('active');
+          items[index].scrollIntoView({ block: 'nearest' });
+        }
+        activeIndex = index;
+      }
+
+      input.addEventListener('focus', function() {
+        renderDropdown(getFiltered());
+      });
+
+      input.addEventListener('input', function() {
+        renderDropdown(getFiltered());
+      });
+
+      input.addEventListener('keydown', function(e) {
+        var items = dropdown.querySelectorAll('.city-dropdown-item');
+        if (!dropdown.classList.contains('open') || items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          var next = activeIndex + 1;
+          if (next >= items.length) next = 0;
+          setActive(next);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          var prev = activeIndex - 1;
+          if (prev < 0) prev = items.length - 1;
+          setActive(prev);
+        } else if (e.key === 'Enter' && activeIndex >= 0) {
+          e.preventDefault();
+          e.stopPropagation();
+          selectCity(items[activeIndex].dataset.city);
+        } else if (e.key === 'Escape') {
+          closeDropdown();
+        }
+      });
+
+      dropdown.addEventListener('mousedown', function(e) {
+        e.preventDefault(); // prevent input blur
+        var item = e.target.closest('.city-dropdown-item');
+        if (item) {
+          selectCity(item.dataset.city);
+        }
+      });
+
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.search-field-location')) {
+          closeDropdown();
+        }
+      });
+    })();
+  </script>
+
+</body>
+</html>

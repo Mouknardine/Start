@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contacter Müller & Fils | Artisano</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #E8700A; --orange-light: #F08A2E; --orange-dark: #CC5F00;
+    --yellow: #F0B429; --dark: #1A2744; --dark-mid: #213052;
+    --white: #FAFAF8; --gray-100: #F2F1EE; --gray-200: #E5E3DE;
+    --gray-300: #D1CEC7; --gray-500: #8A8680; --gray-700: #55524D;
+    --green: #2E7D32; --green-light: #E8F5E9;
+    --red: #D32F2F; --blue: #1565C0; --blue-light: #E3F2FD;
+    --radius: 16px; --radius-sm: 10px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--gray-100); color:var(--dark); -webkit-font-smoothing:antialiased; }
+
+  nav { position:fixed; top:0; left:0; right:0; z-index:100; padding:16px 40px; display:flex; align-items:center; justify-content:space-between; background:rgba(250,250,248,0.9); backdrop-filter:blur(20px); border-bottom:1px solid rgba(0,0,0,0.05); }
+  .logo { font-family:'Sora',sans-serif; font-weight:800; font-size:24px; color:var(--dark); text-decoration:none; display:flex; align-items:center; gap:6px; }
+  .logo-dot { width:8px; height:8px; background:var(--orange); border-radius:50%; }
+  .nav-back { color:var(--gray-700); text-decoration:none; font-size:14px; font-weight:500; display:flex; align-items:center; gap:6px; transition:color 0.2s; }
+  .nav-back:hover { color:var(--dark); }
+
+  .page-layout { max-width:900px; margin:0 auto; padding:100px 40px 80px; }
+
+  /* ARTISAN HEADER */
+  .artisan-header { display:flex; gap:20px; align-items:center; background:white; border-radius:var(--radius); padding:24px; border:1px solid var(--gray-200); margin-bottom:28px; }
+  .artisan-header-avatar { width:64px; height:64px; background:linear-gradient(135deg,var(--dark),var(--dark-mid)); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .artisan-header-avatar svg { width:28px; height:28px; color:rgba(255,255,255,0.25); }
+  .artisan-header-info { flex:1; }
+  .artisan-header-name { font-family:'Sora',sans-serif; font-weight:800; font-size:20px; }
+  .artisan-header-trade { font-size:13px; color:var(--orange); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+  .artisan-header-meta { display:flex; gap:16px; margin-top:6px; font-size:13px; color:var(--gray-500); }
+  .artisan-header-meta span { display:flex; align-items:center; gap:4px; }
+  .artisan-header-meta svg { width:14px; height:14px; }
+  .artisan-header-rating { color:#F0B429; }
+
+  /* SECTION TITLE */
+  .contact-title { font-family:'Sora',sans-serif; font-size:24px; font-weight:800; margin-bottom:8px; }
+  .contact-subtitle { font-size:15px; color:var(--gray-500); margin-bottom:28px; line-height:1.5; }
+
+  /* ===== 3 OPTIONS ===== */
+  .options-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:32px; }
+
+  .option-card {
+    background:white; border:2px solid var(--gray-200); border-radius:var(--radius); padding:28px 24px;
+    text-align:center; cursor:pointer; transition:all 0.3s; position:relative;
+  }
+  .option-card:hover { border-color:var(--gray-300); transform:translateY(-3px); box-shadow:0 8px 28px rgba(0,0,0,0.06); }
+  .option-card.selected { border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.1); }
+
+  .option-icon { width:56px; height:56px; border-radius:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; transition:all 0.3s; }
+  .option-card:nth-child(1) .option-icon { background:var(--green-light); }
+  .option-card:nth-child(1) .option-icon svg { color:var(--green); }
+  .option-card:nth-child(2) .option-icon { background:var(--blue-light); }
+  .option-card:nth-child(2) .option-icon svg { color:var(--blue); }
+  .option-card:nth-child(3) .option-icon { background:rgba(232,112,10,0.08); }
+  .option-card:nth-child(3) .option-icon svg { color:var(--orange); }
+
+  .option-card.selected .option-icon { transform:scale(1.1); }
+
+  .option-icon svg { width:26px; height:26px; }
+  .option-title { font-family:'Sora',sans-serif; font-size:16px; font-weight:700; margin-bottom:6px; }
+  .option-desc { font-size:13px; color:var(--gray-500); line-height:1.5; }
+  .option-time { display:inline-flex; align-items:center; gap:4px; margin-top:10px; font-size:12px; font-weight:600; color:var(--gray-500); background:var(--gray-100); padding:4px 12px; border-radius:50px; }
+  .option-time svg { width:12px; height:12px; }
+
+  /* ===== PANELS ===== */
+  .panel { display:none; animation:fadeIn 0.4s ease-out; }
+  .panel.active { display:block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+  .panel-card { background:white; border-radius:var(--radius); padding:32px; border:1px solid var(--gray-200); }
+
+  /* PANEL CALL */
+  .call-content { text-align:center; padding:20px 0; }
+  .call-number { font-family:'Sora',sans-serif; font-size:32px; font-weight:800; margin-bottom:8px; }
+  .call-hours { font-size:14px; color:var(--gray-500); margin-bottom:24px; }
+  .btn-call { display:inline-flex; align-items:center; gap:10px; background:var(--green); color:white; padding:16px 40px; border-radius:50px; font-family:'Sora',sans-serif; font-weight:700; font-size:16px; text-decoration:none; transition:all 0.3s; }
+  .btn-call:hover { background:#257a2e; transform:translateY(-2px); box-shadow:0 8px 24px rgba(46,125,50,0.3); }
+  .btn-call svg { width:22px; height:22px; }
+  .call-note { margin-top:20px; font-size:13px; color:var(--gray-500); line-height:1.5; max-width:400px; margin-left:auto; margin-right:auto; }
+
+  /* PANEL QUICK MESSAGE */
+  .form-group { margin-bottom:18px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  label { display:block; font-size:14px; font-weight:600; color:var(--dark); margin-bottom:6px; }
+
+  .label-optional { color:var(--gray-500); font-weight:400; }
+  input[type="text"], input[type="email"], input[type="tel"], select, textarea {
+    width:100%; padding:12px 14px; border:2px solid var(--gray-200); border-radius:var(--radius-sm);
+    font-family:'DM Sans',sans-serif; font-size:15px; color:var(--dark); background:white; transition:all 0.2s; outline:none;
+  }
+  input:focus, select:focus, textarea:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.1); }
+  input::placeholder, textarea::placeholder { color:var(--gray-500); }
+  textarea { resize:vertical; min-height:80px; }
+  .form-hint { font-size:12px; color:var(--gray-500); margin-top:4px; }
+
+  .btn-send { background:var(--orange); color:white; padding:14px 36px; border-radius:50px; font-family:'Sora',sans-serif; font-weight:700; font-size:15px; border:none; cursor:pointer; transition:all 0.3s; width:100%; display:flex; align-items:center; justify-content:center; gap:10px; margin-top:8px; }
+  .btn-send:hover { background:var(--orange-dark); transform:translateY(-2px); box-shadow:0 8px 24px rgba(232,112,10,0.3); }
+  .btn-send svg { width:18px; height:18px; }
+
+  /* UPLOAD */
+  .upload-mini { display:flex; align-items:center; gap:10px; padding:12px 16px; border:2px dashed var(--gray-300); border-radius:var(--radius-sm); cursor:pointer; transition:all 0.2s; }
+  .upload-mini:hover { border-color:var(--orange); background:rgba(232,112,10,0.02); }
+  .upload-mini svg { width:20px; height:20px; color:var(--gray-500); flex-shrink:0; }
+  .upload-mini span { font-size:14px; color:var(--gray-500); }
+
+  /* FULL FORM */
+  .form-divider { border:none; border-top:1px solid var(--gray-200); margin:24px 0; }
+  .section-label { font-family:'Sora',sans-serif; font-size:15px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .section-label svg { width:18px; height:18px; color:var(--orange); }
+  select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%238A8680' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:40px; }
+
+  /* INFO BOX */
+  .info-box { background:var(--blue-light); border-radius:var(--radius-sm); padding:14px 16px; display:flex; gap:10px; align-items:flex-start; margin-top:16px; }
+  .info-box svg { width:16px; height:16px; color:var(--blue); flex-shrink:0; margin-top:1px; }
+  .info-box p { font-size:12px; color:var(--blue); line-height:1.5; }
+
+  /* TOGGLE */
+  .toggle-full { text-align:center; margin-top:16px; }
+  .toggle-full-link { font-size:13px; color:var(--orange); font-weight:600; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+  .toggle-full-link:hover { color:var(--orange-dark); }
+
+  .extra-fields { display:none; animation:fadeIn 0.3s ease-out; }
+  .extra-fields.visible { display:block; }
+
+  @media (max-width:768px) {
+    .page-layout { padding:90px 16px 80px; }
+    .options-grid { grid-template-columns:1fr; }
+    .form-row { grid-template-columns:1fr; }
+    nav { padding:14px 16px; }
+    .artisan-header { flex-direction:column; text-align:center; }
+    .artisan-header-meta { justify-content:center; }
+  }
+</style>
+</head>
+<body>
+  <nav>
+    <a href="artisano-homepage.html" class="logo">artisano<span class="logo-dot"></span></a>
+    <a href="artisano-profil-artisan.html" class="nav-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Retour au profil</a>
+  </nav>
+
+  <div class="page-layout">
+
+    <!-- ARTISAN HEADER -->
+    <div class="artisan-header">
+      <div class="artisan-header-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
+      <div class="artisan-header-info">
+        <div class="artisan-header-name">Müller & Fils</div>
+        <div class="artisan-header-trade">Plombier · Chauffagiste</div>
+        <div class="artisan-header-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> Lausanne et environs</span>
+          <span class="artisan-header-rating">★★★★★ 4.9 (47 avis)</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Disponible cette semaine</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TITLE -->
+    <h1 class="contact-title">Comment souhaitez-vous nous contacter ?</h1>
+    <p class="contact-subtitle">Choisissez la méthode qui vous convient le mieux. Quelle que soit l'option, l'artisan recevra votre demande.</p>
+
+    <!-- 3 OPTIONS -->
+    <div class="options-grid">
+      <div class="option-card" onclick="selectOption(0)">
+        <div class="option-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 013.12 4.18 2 2 0 015.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></div>
+        <div class="option-title">Appeler directement</div>
+        <div class="option-desc">Parlez avec l'artisan tout de suite par téléphone</div>
+      </div>
+      <div class="option-card" onclick="selectOption(1)">
+        <div class="option-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        <div class="option-title">Message rapide</div>
+        <div class="option-desc">Décrivez votre problème en quelques mots, on vous rappelle</div>
+      </div>
+      <div class="option-card" onclick="selectOption(2)">
+        <div class="option-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+        <div class="option-title">Demande complète</div>
+        <div class="option-desc">Rendez-vous ou devis avec tous les détails et photos</div>
+      </div>
+    </div>
+
+    <!-- ===== PANEL 1 : APPEL ===== -->
+    <div class="panel" id="panel-0">
+      <div class="panel-card">
+        <div class="call-content">
+          <div class="call-number">021 123 45 67</div>
+          <div class="call-hours">Disponible du lundi au vendredi, 7h30 – 18h00 · Samedi 8h00 – 12h00</div>
+          <a href="tel:+41211234567" class="btn-call">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 013.12 4.18 2 2 0 015.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+            Appeler maintenant
+          </a>
+          <div class="call-note">En mentionnant que vous appelez via Artisano, l'artisan pourra retrouver votre demande et vous pourrez laisser un avis vérifié après l'intervention.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PANEL 2 : MESSAGE RAPIDE ===== -->
+    <div class="panel" id="panel-1">
+      <div class="panel-card">
+        <div class="form-group">
+          <label>Quel est le problème ? </label>
+          <textarea rows="3" placeholder="Par exemple : fuite sous l'évier, chauffe-eau en panne, robinet qui coule..."></textarea>
+        </div>
+        <div class="form-group">
+          <div class="form-row">
+            <div>
+              <label>Votre prénom </label>
+              <input type="text" placeholder="Jean">
+            </div>
+            <div>
+              <label>Votre téléphone </label>
+              <input type="tel" placeholder="079 123 45 67">
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Votre email </label>
+          <input type="email" placeholder="jean.dupont@email.ch">
+          <div class="form-hint">Pour recevoir la confirmation et pouvoir laisser un avis ensuite</div>
+        </div>
+
+        <button class="btn-send" onclick="alert('Message envoyé ! L\'artisan vous rappellera dans les plus brefs délais.'); return false;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Envoyer — l'artisan vous rappelle
+        </button>
+
+        <div class="toggle-full">
+          <span class="toggle-full-link" onclick="selectOption(2)">Ajouter plus de détails (adresse, photos, créneau souhaité)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PANEL 3 : FORMULAIRE COMPLET ===== -->
+    <div class="panel" id="panel-2">
+      <div class="panel-card">
+
+        <!-- TYPE -->
+        <div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Type de demande</div>
+        <div class="form-group">
+          <div class="form-row">
+            <div class="type-pill selected" onclick="selectPill(this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              Rendez-vous
+            </div>
+            <div class="type-pill" onclick="selectPill(this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Devis
+            </div>
+          </div>
+        </div>
+
+        <!-- COORDONNÉES -->
+        <hr class="form-divider">
+        <div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Vos coordonnées</div>
+        <div class="form-group">
+          <div class="form-row">
+            <div><label>Prénom </label><input type="text" placeholder="Jean"></div>
+            <div><label>Nom </label><input type="text" placeholder="Dupont"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="form-row">
+            <div><label>Email </label><input type="email" placeholder="jean.dupont@email.ch"></div>
+            <div><label>Téléphone </label><input type="tel" placeholder="079 123 45 67"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Adresse de l'intervention </label>
+          <input type="text" placeholder="Rue du Lac 15, 1003 Lausanne">
+        </div>
+
+        <!-- PROBLÈME -->
+        <hr class="form-divider">
+        <div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg> Votre besoin</div>
+        <div class="form-group">
+          <label>Description </label>
+          <textarea placeholder="Décrivez la situation en quelques mots : fuite sous l'évier, chauffe-eau qui ne chauffe plus, robinet à remplacer..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Photos <span class="label-optional">(facultatif)</span></label>
+          <div class="upload-mini">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>Ajouter des photos du problème</span>
+          </div>
+        </div>
+
+        <!-- CRÉNEAU -->
+        <hr class="form-divider">
+        <div class="section-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Créneau souhaité <span class="label-optional" style="font-family:'DM Sans'; font-size:13px;">(facultatif)</span></div>
+        <div class="form-group">
+          <div class="form-row">
+            <div><label>Date souhaitée</label><input type="text" placeholder="Par exemple : lundi 17 mars"></div>
+            <div><label>Moment de la journée</label>
+              <select>
+                <option value="">Pas de préférence</option>
+                <option>Matin (8h00 - 12h00)</option>
+                <option>Début d'après-midi (12h00 - 15h00)</option>
+                <option>Fin d'après-midi (15h00 - 18h00)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-send" onclick="alert('Demande envoyée avec succès ! Vous recevrez une confirmation par email.'); return false;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Envoyer ma demande
+        </button>
+
+        <div class="info-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <p>Aucun compte nécessaire. Vos données sont envoyées uniquement à cet artisan. Vous recevrez une confirmation par email.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <style>
+    .type-pill { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border:2px solid var(--gray-200); border-radius:var(--radius-sm); font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s; }
+    .type-pill:hover { border-color:var(--gray-300); }
+    .type-pill.selected { border-color:var(--orange); background:rgba(232,112,10,0.03); color:var(--orange); }
+    .type-pill svg { color:var(--gray-500); }
+    .type-pill.selected svg { color:var(--orange); }
+  </style>
+
+  <script>
+    let currentOption = -1;
+
+    function selectOption(index) {
+      currentOption = index;
+      document.querySelectorAll('.option-card').forEach((c, i) => {
+        c.classList.toggle('selected', i === index);
+      });
+      document.querySelectorAll('.panel').forEach((p, i) => {
+        p.classList.toggle('active', i === index);
+      });
+      // Scroll to panel
+      setTimeout(() => {
+        const panel = document.getElementById('panel-' + index);
+        if (panel) panel.scrollIntoView({ behavior:'smooth', block:'start' });
+      }, 100);
+    }
+
+    function selectPill(el) {
+      document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    // === APPLY CONTACT PREFERENCES FROM ARTISAN CONFIG ===
+    (function applyContactPrefs() {
+      const raw = localStorage.getItem('artisano-contact-prefs');
+      if (!raw) return; // If no prefs stored, show all options (demo mode)
+      try {
+        const prefs = JSON.parse(raw);
+        const optionCards = document.querySelectorAll('.option-card');
+        const panels = document.querySelectorAll('.panel');
+        // Option 0 = Appel, Option 1 = Message rapide, Option 2 = Demande complète
+        if (!prefs.appel && optionCards[0]) {
+          optionCards[0].style.display = 'none';
+          optionCards[0].classList.add('disabled-option');
+        }
+        if (!prefs.message && optionCards[1]) {
+          optionCards[1].style.display = 'none';
+          optionCards[1].classList.add('disabled-option');
+        }
+        // Demande complète is always available
+        // Count visible options
+        const visibleOptions = document.querySelectorAll('.option-card:not(.disabled-option)');
+        // If only one option visible, auto-select it
+        if (visibleOptions.length === 1) {
+          const idx = Array.from(optionCards).indexOf(visibleOptions[0]);
+          selectOption(idx);
+        }
+        // Update grid columns based on visible options
+        const grid = document.querySelector('.options-grid');
+        if (grid) {
+          grid.style.gridTemplateColumns = 'repeat(' + visibleOptions.length + ', 1fr)';
+        }
+      } catch(e) {}
+    })();
+  </script>
+</body>
+</html>
