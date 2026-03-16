@@ -561,7 +561,7 @@
     box-shadow: 0 6px 20px rgba(232,112,10,0.25);
   }
 
-  .btn-devis {
+  .btn-contacter {
     background: white;
     color: var(--dark);
     padding: 10px 28px;
@@ -575,11 +575,48 @@
     text-decoration: none;
     text-align: center;
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
   }
 
-  .btn-devis:hover {
+  .btn-contacter:hover {
     border-color: var(--dark);
     background: var(--gray-100);
+  }
+
+  /* ===== URGENCE BADGE (card) ===== */
+  .card-urgence-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    margin-top: 8px;
+    width: fit-content;
+  }
+
+  .card-urgence-badge svg {
+    width: 13px; height: 13px;
+    flex-shrink: 0;
+  }
+
+  .card-urgence-badge .urgence-dot {
+    width: 6px; height: 6px;
+    background: #FF8A80;
+    border-radius: 50%;
+    animation: urgenceDot 1.5s ease-in-out infinite;
+  }
+
+  @keyframes urgenceDot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
   }
 
   /* ===== PAGINATION ===== */
@@ -688,7 +725,7 @@
     }
 
     .card-side .btn-voir-profil,
-    .card-side .btn-devis {
+    .card-side .btn-contacter {
       flex: 1;
     }
 
@@ -773,7 +810,7 @@
     }
 
     .card-side .btn-voir-profil,
-    .card-side .btn-devis {
+    .card-side .btn-contacter {
       width: 100%;
       text-align: center;
       padding: 12px;
@@ -862,7 +899,7 @@
     .card-avail-value { font-size: 13px; }
 
     .btn-voir-profil { font-size: 13px; padding: 10px; }
-    .btn-devis { font-size: 12px; padding: 9px; }
+    .btn-contacter { font-size: 12px; padding: 9px; }
 
     .sort-bar-left { font-size: 12px; }
     .sort-select { font-size: 12px; }
@@ -1002,6 +1039,7 @@
           <span class="card-tag">Chauffage</span>
         </div>
         <div class="card-description">Entreprise familiale active depuis plus de 15 ans. Intervention rapide pour tous vos besoins en plomberie et chauffage. Devis gratuit pour les travaux de plus de 500 francs.</div>
+        <div class="card-urgence-badge"><span class="urgence-dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z"/></svg> Urgence disponible</div>
       </div>
       <div class="card-side">
         <div class="card-avail">
@@ -1017,7 +1055,7 @@
           <span class="card-slot">Mercredi 8h00</span>
         </div>
         <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
+        <a href="demande.html" class="btn-contacter" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Contacter</a>
       </div>
     </div>
 
@@ -1061,7 +1099,7 @@
           <span class="card-slot">Jeudi 14h00</span>
         </div>
         <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
+        <a href="demande.html" class="btn-contacter" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Contacter</a>
       </div>
     </div>
 
@@ -1107,7 +1145,7 @@
           <span class="card-slot">Vendredi 9h00</span>
         </div>
         <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
+        <a href="demande.html" class="btn-contacter" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Contacter</a>
       </div>
     </div>
 
@@ -1137,6 +1175,7 @@
           <span class="card-tag">Débouchage</span>
         </div>
         <div class="card-description">Service de dépannage plomberie rapide sur le Grand Lausanne. Disponible en urgence pour les fuites, bouchons et pannes sanitaires. Devis sur place gratuit.</div>
+        <div class="card-urgence-badge"><span class="urgence-dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z"/></svg> Urgence disponible</div>
       </div>
       <div class="card-side">
         <div class="card-avail">
@@ -1151,7 +1190,7 @@
           <span class="card-slot">Demain 8h00</span>
         </div>
         <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
+        <a href="demande.html" class="btn-contacter" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Contacter</a>
       </div>
     </div>
 
@@ -1197,7 +1236,7 @@
           <span class="card-slot">Mardi 17 mars</span>
         </div>
         <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="demande.html" class="btn-devis" onclick="event.stopPropagation()">Demander un devis</a>
+        <a href="demande.html" class="btn-contacter" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Contacter</a>
       </div>
     </div>
 
