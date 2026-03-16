@@ -537,6 +537,83 @@
     opacity: 1;
   }
 
+  /* ===== URGENCE FIELDS ===== */
+  .urgence-fields {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.3s ease;
+    opacity: 0;
+  }
+
+  .urgence-fields.open {
+    max-height: 500px;
+    opacity: 1;
+  }
+
+  .urgence-fields-inner {
+    padding: 20px;
+    margin-top: 12px;
+    background: rgba(232,112,10,0.03);
+    border: 1px solid rgba(232,112,10,0.15);
+    border-radius: var(--radius-sm);
+  }
+
+  .input-suffix {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-500);
+    pointer-events: none;
+  }
+
+  .urgence-days {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .urgence-day {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--gray-200);
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-500);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .urgence-day:hover {
+    border-color: var(--orange);
+    color: var(--orange);
+  }
+
+  .urgence-day.active {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: white;
+  }
+
+  .checkbox-item.urgence-toggle.selected {
+    border-color: #D32F2F;
+    background: rgba(211,47,47,0.04);
+  }
+
+  .checkbox-item.urgence-toggle.selected .check-box {
+    background: #D32F2F;
+    border-color: #D32F2F;
+  }
+
   .checkbox-label {
     font-size: 14px;
     font-weight: 500;
@@ -1714,6 +1791,77 @@
 
         <hr class="form-divider">
 
+        <!-- URGENCES -->
+        <div class="form-group">
+          <div class="form-section-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Disponibilité urgences <span class="label-optional">(optionnel)</span>
+          </div>
+          <div class="form-hint" style="margin-top:-12px; margin-bottom:14px;">Activez cette option si vous acceptez les demandes de dépannage urgent (intervention sous 2h). Un badge "Urgence" apparaîtra sur votre profil et les clients pourront vous contacter en priorité.</div>
+
+          <div class="checkbox-grid" style="grid-template-columns:1fr;">
+            <label class="checkbox-item urgence-toggle" onclick="toggleCheck(this); toggleUrgenceFields();">
+              <input type="checkbox" id="contact-urgence">
+              <div class="check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div>
+                <span class="checkbox-label">J'accepte les demandes urgentes (dépannage sous 2h)</span>
+                <span style="display:block; font-size:12px; color:var(--gray-500); margin-top:2px;">Vous serez notifié en priorité. Vous pouvez désactiver à tout moment depuis votre tableau de bord.</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- Champs conditionnels urgence -->
+          <div class="urgence-fields" id="urgence-fields">
+            <div class="urgence-fields-inner">
+              <div class="form-row">
+                <div>
+                  <label>Supplément urgence <span class="label-optional">(facultatif)</span></label>
+                  <div style="position:relative;">
+                    <input type="number" id="urgence-supplement" placeholder="Ex: 50" min="0" style="padding-right:50px;">
+                    <span class="input-suffix">CHF</span>
+                  </div>
+                  <div class="form-hint">Montant forfaitaire ajouté pour une intervention urgente. Laissez vide si aucun supplément.</div>
+                </div>
+                <div>
+                  <label>Rayon d'intervention urgence</label>
+                  <div style="position:relative;">
+                    <input type="number" id="urgence-rayon" placeholder="Ex: 15" min="1" style="padding-right:44px;">
+                    <span class="input-suffix">km</span>
+                  </div>
+                  <div class="form-hint">Distance maximale pour un dépannage urgent.</div>
+                </div>
+              </div>
+
+              <div class="form-row" style="margin-top:16px;">
+                <div>
+                  <label>Disponible pour urgences de</label>
+                  <input type="time" id="urgence-heure-debut" value="07:00">
+                </div>
+                <div>
+                  <label>à</label>
+                  <input type="time" id="urgence-heure-fin" value="22:00">
+                </div>
+              </div>
+              <div class="form-hint" style="margin-top:4px;">En dehors de ces heures, le bouton "Urgence" ne sera pas affiché sur votre profil.</div>
+
+              <div style="margin-top:16px;">
+                <label>Jours de disponibilité urgence</label>
+                <div class="urgence-days">
+                  <button type="button" class="urgence-day active" onclick="this.classList.toggle('active')">Lun</button>
+                  <button type="button" class="urgence-day active" onclick="this.classList.toggle('active')">Mar</button>
+                  <button type="button" class="urgence-day active" onclick="this.classList.toggle('active')">Mer</button>
+                  <button type="button" class="urgence-day active" onclick="this.classList.toggle('active')">Jeu</button>
+                  <button type="button" class="urgence-day active" onclick="this.classList.toggle('active')">Ven</button>
+                  <button type="button" class="urgence-day" onclick="this.classList.toggle('active')">Sam</button>
+                  <button type="button" class="urgence-day" onclick="this.classList.toggle('active')">Dim</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="form-divider">
+
         <div class="form-group">
           <label>Photo de profil ou logo <span class="label-optional">(facultatif)</span></label>
           <div class="upload-zone">
@@ -2069,12 +2217,48 @@
       el.classList.add('selected');
     }
 
+    // === TOGGLE CHECKBOX ===
+    function toggleCheck(label) {
+      const checkbox = label.querySelector('input[type="checkbox"]');
+      // Don't allow unchecking "Demande complète" (always on)
+      if (checkbox.id === 'contact-complete') {
+        checkbox.checked = true;
+        label.classList.add('selected');
+        return;
+      }
+      checkbox.checked = !checkbox.checked;
+      label.classList.toggle('selected', checkbox.checked);
+    }
+
+    // === URGENCE FIELDS TOGGLE ===
+    function toggleUrgenceFields() {
+      const checkbox = document.getElementById('contact-urgence');
+      const fields = document.getElementById('urgence-fields');
+      if (checkbox.checked) {
+        fields.classList.add('open');
+      } else {
+        fields.classList.remove('open');
+      }
+    }
+
     // === SAVE CONTACT PREFERENCES ===
     function saveContactPrefs() {
+      const urgenceCheckbox = document.getElementById('contact-urgence');
+      const urgenceDays = [];
+      document.querySelectorAll('.urgence-day.active').forEach(function(btn) {
+        urgenceDays.push(btn.textContent.trim());
+      });
+
       const prefs = {
         complete: document.getElementById('contact-complete').checked,
         message: document.getElementById('contact-message').checked,
-        appel: document.getElementById('contact-appel').checked
+        appel: document.getElementById('contact-appel').checked,
+        urgence: urgenceCheckbox.checked,
+        urgenceSupplement: document.getElementById('urgence-supplement') ? document.getElementById('urgence-supplement').value : '',
+        urgenceRayon: document.getElementById('urgence-rayon') ? document.getElementById('urgence-rayon').value : '',
+        urgenceHeureDebut: document.getElementById('urgence-heure-debut') ? document.getElementById('urgence-heure-debut').value : '',
+        urgenceHeureFin: document.getElementById('urgence-heure-fin') ? document.getElementById('urgence-heure-fin').value : '',
+        urgenceJours: urgenceDays
       };
       localStorage.setItem('artisano-contact-prefs', JSON.stringify(prefs));
     }
