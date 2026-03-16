@@ -2220,12 +2220,6 @@
     // === TOGGLE CHECKBOX ===
     function toggleCheck(label) {
       const checkbox = label.querySelector('input[type="checkbox"]');
-      // Don't allow unchecking "Demande complète" (always on)
-      if (checkbox.id === 'contact-complete') {
-        checkbox.checked = true;
-        label.classList.add('selected');
-        return;
-      }
       checkbox.checked = !checkbox.checked;
       label.classList.toggle('selected', checkbox.checked);
     }
