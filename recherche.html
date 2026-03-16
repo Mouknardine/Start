@@ -692,6 +692,30 @@
     font-weight: 700;
   }
 
+  /* ===== HAMBURGER MENU ===== */
+  .hamburger {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    color: var(--dark);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .nav-links a {
+    color: var(--gray-700);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--dark); }
+
   /* ===== RESPONSIVE ===== */
 
   /* --- Tablet / narrow desktop (960px) --- */
@@ -746,6 +770,23 @@
     /* Nav */
     nav { padding: 12px 16px; }
     .nav-search { display: none; }
+    .nav-right { display: none; }
+    .hamburger { display: block; }
+    .nav-links {
+      display: none;
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      background: white;
+      flex-direction: column;
+      padding: 24px;
+      gap: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      border-bottom: 1px solid #E5E3DE;
+      z-index: 99;
+    }
+    .nav-links.open { display: flex; }
     .btn-nav { padding: 8px 18px; font-size: 13px; }
 
     /* Search header */
@@ -949,7 +990,15 @@
       </button>
     </div>
 
+    <button class="hamburger" aria-label="Menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
     <div class="nav-right">
+      <a href="connexion.html" class="btn-nav">Connexion</a>
+    </div>
+    <div class="nav-links">
+      <a href="index.html">Accueil</a>
+      <a href="inscription.html">Devenir artisan</a>
       <a href="connexion.html" class="btn-nav">Connexion</a>
     </div>
   </nav>
@@ -1258,5 +1307,50 @@
 
   </div>
 
+<script>
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var metier = params.get('metier') || 'Plombier';
+  var ville = params.get('ville') || 'Lausanne';
+  // Capitalize first letter
+  metier = metier.charAt(0).toUpperCase() + metier.slice(1);
+  ville = ville.charAt(0).toUpperCase() + ville.slice(1);
+
+  // Update title
+  var h1 = document.querySelector('.search-title');
+  if (h1) h1.innerHTML = metier + ' à <span>' + ville + '</span>';
+
+  // Update count
+  var count = document.querySelector('.search-count');
+  if (count) count.textContent = Math.floor(Math.random() * 30 + 10) + ' professionnels trouvés';
+
+  // Update breadcrumb
+  var breadcrumbLinks = document.querySelectorAll('.breadcrumb a');
+  if (breadcrumbLinks[1]) breadcrumbLinks[1].textContent = metier;
+  var breadcrumbSpans = document.querySelectorAll('.breadcrumb span');
+  // The last span (non-link) in breadcrumb shows the city
+  var lastBreadcrumb = document.querySelector('.breadcrumb span[style]');
+  if (lastBreadcrumb) lastBreadcrumb.textContent = ville;
+
+  // Update nav search inputs
+  var navInputs = document.querySelectorAll('.nav-search-field input');
+  if (navInputs[0]) navInputs[0].value = metier;
+  if (navInputs[1]) navInputs[1].value = ville;
+
+  // Update page title
+  document.title = metier + ' à ' + ville + ' — Résultats | Artisano';
+})();
+
+// Mobile hamburger menu
+(function() {
+  var hamburger = document.querySelector('.hamburger');
+  var navLinks = document.querySelector('.nav-links');
+  if (hamburger && navLinks) {
+    hamburger.addEventListener('click', function() {
+      navLinks.classList.toggle('open');
+    });
+  }
+})();
+</script>
 </body>
 </html>

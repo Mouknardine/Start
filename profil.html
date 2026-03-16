@@ -864,6 +864,30 @@
     font-size: 14px;
   }
 
+  /* ===== HAMBURGER MENU ===== */
+  .hamburger {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    color: var(--dark);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-links {
+    display: none;
+    align-items: center;
+    gap: 24px;
+  }
+  .nav-links a {
+    color: var(--gray-700);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--dark); }
+
   /* ===== RESPONSIVE ===== */
   @media (max-width: 960px) {
     /* Nav */
@@ -871,6 +895,23 @@
     .nav-right { gap: 12px; }
     .nav-back { font-size: 12px; }
     .btn-nav { padding: 8px 16px; font-size: 12px; }
+    .hamburger { display: block; }
+    .nav-right { display: none; }
+    .nav-links {
+      display: none;
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      background: white;
+      flex-direction: column;
+      padding: 24px;
+      gap: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      border-bottom: 1px solid #E5E3DE;
+      z-index: 99;
+    }
+    .nav-links.open { display: flex; }
 
     /* Profile hero & header: stack vertically */
     .profile-hero-inner { padding: 24px 16px 0; }
@@ -1118,11 +1159,19 @@
   <!-- NAV -->
   <nav>
     <a href="index.html" class="logo">artisano<span class="logo-dot"></span></a>
+    <button class="hamburger" aria-label="Menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
     <div class="nav-right">
       <a href="recherche.html" class="nav-back">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         Retour aux résultats
       </a>
+      <a href="connexion.html" class="btn-nav">Connexion</a>
+    </div>
+    <div class="nav-links">
+      <a href="recherche.html">Retour aux résultats</a>
+      <a href="index.html">Accueil</a>
       <a href="connexion.html" class="btn-nav">Connexion</a>
     </div>
   </nav>
@@ -1520,11 +1569,12 @@
       slot.addEventListener('click', function() {
         document.querySelectorAll('.avail-slot').forEach(s => s.classList.remove('selected'));
         this.classList.add('selected');
-        const day = this.closest('.avail-day').querySelector('.avail-day-name').textContent;
-        const date = this.closest('.avail-day').querySelector('.avail-day-date').textContent;
-        const time = this.textContent;
-        // Navigate to contact form
-        window.location.href = 'demande.html';
+        const day = this.closest('.avail-day').querySelector('.avail-day-name').textContent.trim();
+        const date = this.closest('.avail-day').querySelector('.avail-day-date').textContent.trim();
+        const time = this.textContent.trim();
+        // Navigate to contact form with slot info
+        var params = 'jour=' + encodeURIComponent(day) + '&date=' + encodeURIComponent(date) + '&heure=' + encodeURIComponent(time);
+        window.location.href = 'demande.html?' + params;
       });
     });
 
@@ -1548,6 +1598,17 @@
       var badge = document.getElementById('urgence-badge');
       if (artisanUrgence && badge) {
         badge.style.display = 'inline-flex';
+      }
+    })();
+
+    // Mobile hamburger menu
+    (function() {
+      var hamburger = document.querySelector('.hamburger');
+      var navLinks = document.querySelector('.nav-links');
+      if (hamburger && navLinks) {
+        hamburger.addEventListener('click', function() {
+          navLinks.classList.toggle('open');
+        });
       }
     })();
   </script>

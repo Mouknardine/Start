@@ -1158,6 +1158,41 @@
     color: var(--orange);
   }
 
+  /* ===== HAMBURGER MENU ===== */
+  .hamburger {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    color: var(--dark);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-links {
+    display: none;
+    align-items: center;
+    gap: 24px;
+  }
+  .nav-links a {
+    color: var(--gray-700);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--dark); }
+  .nav-links .btn-nav {
+    background: var(--orange);
+    color: white !important;
+    padding: 10px 22px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.3s;
+  }
+  .nav-links .btn-nav:hover { background: #CC5F00; transform: translateY(-1px); }
+
   /* ===== RESPONSIVE ===== */
 
   /* --- Tablet breakpoint --- */
@@ -1200,8 +1235,25 @@
     }
 
     .nav-help {
-      font-size: 13px;
+      display: none;
     }
+
+    .hamburger { display: block; }
+    .nav-links {
+      display: none;
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      background: white;
+      flex-direction: column;
+      padding: 24px;
+      gap: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      border-bottom: 1px solid #E5E3DE;
+      z-index: 99;
+    }
+    .nav-links.open { display: flex; }
 
     /* Hide left sidebar on mobile - form takes full width */
     .page {
@@ -1534,6 +1586,14 @@
     <a href="index.html" class="logo">artisano<span class="logo-dot"></span></a>
     <div class="nav-help">
       Vous avez déjà un compte ? <a href="connexion.html">Se connecter</a>
+    </div>
+    <button class="hamburger" aria-label="Menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+    <div class="nav-links">
+      <a href="index.html">Accueil</a>
+      <a href="recherche.html">Trouver un artisan</a>
+      <a href="connexion.html" class="btn-nav">Connexion</a>
     </div>
   </nav>
 
@@ -2256,6 +2316,17 @@
       };
       localStorage.setItem('artisano-contact-prefs', JSON.stringify(prefs));
     }
+
+    // Mobile hamburger menu
+    (function() {
+      var hamburger = document.querySelector('.hamburger');
+      var navLinks = document.querySelector('.nav-links');
+      if (hamburger && navLinks) {
+        hamburger.addEventListener('click', function() {
+          navLinks.classList.toggle('open');
+        });
+      }
+    })();
   </script>
 
 </body>

@@ -1346,7 +1346,14 @@
     // 9. SEARCH FUNCTIONALITY
     // =============================================
     function doSearch() {
-      window.location.href = 'recherche.html';
+      var metierInput = document.querySelector('.search-field:first-child input');
+      var villeInput = document.getElementById('city-input');
+      var metier = metierInput ? metierInput.value.trim() : '';
+      var ville = villeInput ? villeInput.value.trim() : '';
+      var params = [];
+      if (metier) params.push('metier=' + encodeURIComponent(metier));
+      if (ville) params.push('ville=' + encodeURIComponent(ville));
+      window.location.href = 'recherche.html' + (params.length ? '?' + params.join('&') : '');
     }
     document.querySelectorAll('.search-field input').forEach(input => {
       input.addEventListener('keydown', function(e) {
