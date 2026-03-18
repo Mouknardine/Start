@@ -316,6 +316,72 @@
     box-shadow: 0 8px 24px rgba(232,112,10,0.35);
   }
 
+  /* ===== URGENCE TOGGLE ===== */
+  .urgence-search-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    cursor: pointer;
+    user-select: none;
+    animation: fadeUp 0.8s ease-out 0.85s both;
+  }
+
+  .urgence-search-toggle input { display: none; }
+
+  .urgence-toggle-track {
+    width: 44px;
+    height: 24px;
+    background: var(--gray-300);
+    border-radius: 50px;
+    position: relative;
+    transition: background 0.3s;
+    flex-shrink: 0;
+  }
+
+  .urgence-toggle-dot {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+
+  .urgence-search-toggle input:checked ~ .urgence-toggle-track {
+    background: #D32F2F;
+  }
+
+  .urgence-search-toggle input:checked ~ .urgence-toggle-track .urgence-toggle-dot {
+    transform: translateX(20px);
+  }
+
+  .urgence-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-700);
+    transition: color 0.3s;
+  }
+
+  .urgence-search-toggle input:checked ~ .urgence-toggle-label {
+    color: #D32F2F;
+  }
+
+  .urgence-toggle-label svg {
+    color: var(--gray-500);
+    transition: color 0.3s;
+  }
+
+  .urgence-search-toggle input:checked ~ .urgence-toggle-label svg {
+    color: #D32F2F;
+  }
+
   /* ===== AI ASSIST ===== */
   .ai-assist {
     margin-top: 20px;
@@ -1209,6 +1275,17 @@
       </button>
     </div>
 
+    <label class="urgence-search-toggle" id="urgence-toggle">
+      <input type="checkbox" id="urgence-check">
+      <span class="urgence-toggle-track">
+        <span class="urgence-toggle-dot"></span>
+      </span>
+      <span class="urgence-toggle-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Urgence — Artisan disponible maintenant
+      </span>
+    </label>
+
     <div class="ai-assist">
       <button class="ai-btn">
         <span class="sparkle"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/></svg></span> Pas sûr du métier ? Décris ton problème, on t'oriente
@@ -1348,11 +1425,13 @@
     function doSearch() {
       var metierInput = document.querySelector('.search-field:first-child input');
       var villeInput = document.getElementById('city-input');
+      var urgenceCheck = document.getElementById('urgence-check');
       var metier = metierInput ? metierInput.value.trim() : '';
       var ville = villeInput ? villeInput.value.trim() : '';
       var params = [];
       if (metier) params.push('metier=' + encodeURIComponent(metier));
       if (ville) params.push('ville=' + encodeURIComponent(ville));
+      if (urgenceCheck && urgenceCheck.checked) params.push('urgence=1');
       window.location.href = 'recherche.html' + (params.length ? '?' + params.join('&') : '');
     }
     document.querySelectorAll('.search-field input').forEach(input => {

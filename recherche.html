@@ -266,6 +266,17 @@
     width: 16px; height: 16px;
   }
 
+  .filter-urgence.active {
+    border-color: #D32F2F;
+    background: rgba(211,47,47,0.06);
+    color: #D32F2F;
+    font-weight: 600;
+  }
+
+  .artisan-card.hidden-urgence {
+    display: none;
+  }
+
   /* ===== RESULTS LAYOUT ===== */
   .results-layout {
     max-width: 1200px;
@@ -1038,6 +1049,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           Note 4 étoiles et plus
         </button>
+        <button class="filter-btn filter-urgence" id="filter-urgence" onclick="toggleUrgenceFilter(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Urgence
+        </button>
       </div>
     </div>
   </section>
@@ -1061,7 +1076,7 @@
     </div>
 
     <!-- CARD 1 -->
-    <div class="artisan-card" onclick="window.location.href='profil.html'">
+    <div class="artisan-card" data-urgence="1" onclick="window.location.href='profil.html'">
       <div class="card-img">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
         <div class="card-img-badge">
@@ -1199,7 +1214,7 @@
     </div>
 
     <!-- CARD 4 -->
-    <div class="artisan-card" onclick="window.location.href='profil.html'">
+    <div class="artisan-card" data-urgence="1" onclick="window.location.href='profil.html'">
       <div class="card-img">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
         <div class="card-img-badge">
@@ -1339,7 +1354,46 @@
 
   // Update page title
   document.title = metier + ' à ' + ville + ' — Résultats | Artisano';
+
+  // Auto-activate urgence filter if URL param present
+  var urgence = params.get('urgence');
+  if (urgence === '1') {
+    var urgBtn = document.getElementById('filter-urgence');
+    if (urgBtn) {
+      urgBtn.classList.add('active');
+      filterUrgence(true);
+    }
+  }
 })();
+
+// Urgence filter logic
+function toggleUrgenceFilter(btn) {
+  btn.classList.toggle('active');
+  var isActive = btn.classList.contains('active');
+  filterUrgence(isActive);
+}
+
+function filterUrgence(showOnlyUrgence) {
+  var cards = document.querySelectorAll('.artisan-card');
+  var visibleCount = 0;
+  cards.forEach(function(card) {
+    if (showOnlyUrgence && !card.hasAttribute('data-urgence')) {
+      card.classList.add('hidden-urgence');
+    } else {
+      card.classList.remove('hidden-urgence');
+      visibleCount++;
+    }
+  });
+  // Update the result count
+  var sortBarLeft = document.querySelector('.sort-bar-left');
+  if (sortBarLeft) {
+    if (showOnlyUrgence) {
+      sortBarLeft.innerHTML = '<strong>' + visibleCount + '</strong> artisan' + (visibleCount > 1 ? 's' : '') + ' disponible' + (visibleCount > 1 ? 's' : '') + ' en <strong style="color:#D32F2F;">urgence</strong>';
+    } else {
+      sortBarLeft.innerHTML = 'Affichage de <strong>1 à ' + cards.length + '</strong> sur <strong>' + cards.length + '</strong> résultats';
+    }
+  }
+}
 
 // Mobile hamburger menu
 (function() {
