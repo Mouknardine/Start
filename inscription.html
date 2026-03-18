@@ -1668,12 +1668,14 @@
         <div class="form-group">
           <div class="form-row">
             <div>
-              <label>Prénom </label>
+              <label>Prénom <span class="label-required">*</span></label>
               <input type="text" id="prenom" placeholder="Jean">
+              <div class="form-error" id="error-prenom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>Le prénom est obligatoire</span></div>
             </div>
             <div>
-              <label>Nom </label>
+              <label>Nom <span class="label-required">*</span></label>
               <input type="text" id="nom" placeholder="Müller">
+              <div class="form-error" id="error-nom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>Le nom est obligatoire</span></div>
             </div>
           </div>
         </div>
@@ -1685,13 +1687,15 @@
         </div>
 
         <div class="form-group">
-          <label>Adresse email professionnelle </label>
+          <label>Adresse email professionnelle <span class="label-required">*</span></label>
           <input type="email" id="email" placeholder="contact@muller-fils.ch">
+          <div class="form-error" id="error-email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span></span></div>
         </div>
 
         <div class="form-group">
-          <label>Numéro de téléphone </label>
+          <label>Numéro de téléphone <span class="label-required">*</span></label>
           <input type="tel" id="phone" placeholder="021 123 45 67">
+          <div class="form-error" id="error-phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>Le numéro de téléphone est obligatoire</span></div>
         </div>
 
         <div class="form-group">
@@ -1707,13 +1711,15 @@
         <hr class="form-divider">
 
         <div class="form-group">
-          <label>Mot de passe </label>
-          <input type="password" id="password" placeholder="Minimum 8 caractères">
+          <label>Mot de passe <span class="label-required">*</span></label>
+          <input type="password" id="password" placeholder="Minimum 6 caractères">
+          <div class="form-error" id="error-password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span></span></div>
         </div>
 
         <div class="form-group">
-          <label>Confirmez le mot de passe </label>
+          <label>Confirmez le mot de passe <span class="label-required">*</span></label>
           <input type="password" id="password-confirm" placeholder="Retapez votre mot de passe">
+          <div class="form-error" id="error-password-confirm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>Les mots de passe ne correspondent pas</span></div>
         </div>
 
         <div class="form-actions">
@@ -2095,9 +2101,16 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script>
-    // === STEP NAVIGATION ===
+    // === STEP NAVIGATION WITH VALIDATION ===
     function goToStep(step) {
+      // Validate Step 1 before allowing to go to Step 2
+      if (step === 2) {
+        var errors = validateStep1();
+        if (errors.length > 0) return;
+      }
       document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
       document.getElementById('step-' + step).classList.add('active');
 
@@ -2126,6 +2139,130 @@
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    // === VALIDATION STEP 1 ===
+    function showError(id, msg) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (msg) el.querySelector('span').textContent = msg;
+      el.classList.add('visible');
+      var input = el.previousElementSibling;
+      if (!input || input.tagName === 'DIV') input = el.parentElement.querySelector('input');
+      if (input && input.tagName === 'INPUT') input.classList.add('error');
+    }
+
+    function clearError(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('visible');
+      var input = el.previousElementSibling;
+      if (!input || input.tagName === 'DIV') input = el.parentElement.querySelector('input');
+      if (input && input.tagName === 'INPUT') input.classList.remove('error');
+    }
+
+    function clearAllErrors() {
+      document.querySelectorAll('.form-error').forEach(function(el) { el.classList.remove('visible'); });
+      document.querySelectorAll('input.error').forEach(function(el) { el.classList.remove('error'); });
+    }
+
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function validateStep1() {
+      clearAllErrors();
+      var errors = [];
+
+      var prenom = document.getElementById('prenom').value.trim();
+      var nom = document.getElementById('nom').value.trim();
+      var email = document.getElementById('email').value.trim();
+      var phone = document.getElementById('phone').value.trim();
+      var password = document.getElementById('password').value;
+      var passwordConfirm = document.getElementById('password-confirm').value;
+
+      if (!prenom) { showError('error-prenom'); errors.push('prenom'); }
+      if (!nom) { showError('error-nom'); errors.push('nom'); }
+
+      if (!email) {
+        showError('error-email', 'L\'adresse email est obligatoire');
+        errors.push('email');
+      } else if (!isValidEmail(email)) {
+        showError('error-email', 'L\'adresse email n\'est pas valide');
+        errors.push('email');
+      }
+
+      if (!phone) { showError('error-phone'); errors.push('phone'); }
+
+      if (!password) {
+        showError('error-password', 'Le mot de passe est obligatoire');
+        errors.push('password');
+      } else if (password.length < 6) {
+        showError('error-password', 'Le mot de passe doit contenir au moins 6 caractères');
+        errors.push('password');
+      }
+
+      if (password && passwordConfirm && password !== passwordConfirm) {
+        showError('error-password-confirm');
+        errors.push('password-confirm');
+      } else if (password && !passwordConfirm) {
+        showError('error-password-confirm', 'Veuillez confirmer votre mot de passe');
+        errors.push('password-confirm');
+      }
+
+      // Scroll to first error
+      if (errors.length > 0) {
+        var firstErrorField = document.getElementById(errors[0]);
+        if (firstErrorField) firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      return errors;
+    }
+
+    // === REAL-TIME VALIDATION ===
+    document.getElementById('email').addEventListener('blur', function() {
+      var val = this.value.trim();
+      if (val && !isValidEmail(val)) {
+        showError('error-email', 'L\'adresse email n\'est pas valide');
+      } else {
+        clearError('error-email');
+      }
+    });
+
+    document.getElementById('password').addEventListener('input', function() {
+      var val = this.value;
+      if (val.length > 0 && val.length < 6) {
+        showError('error-password', 'Le mot de passe doit contenir au moins 6 caractères');
+      } else {
+        clearError('error-password');
+      }
+      // Also check confirm match
+      var confirm = document.getElementById('password-confirm').value;
+      if (confirm && val !== confirm) {
+        showError('error-password-confirm');
+      } else {
+        clearError('error-password-confirm');
+      }
+    });
+
+    document.getElementById('password-confirm').addEventListener('input', function() {
+      var password = document.getElementById('password').value;
+      if (this.value && this.value !== password) {
+        showError('error-password-confirm');
+      } else {
+        clearError('error-password-confirm');
+      }
+    });
+
+    // Clear error on input for required fields
+    ['prenom', 'nom', 'phone'].forEach(function(id) {
+      document.getElementById(id).addEventListener('input', function() {
+        if (this.value.trim()) clearError('error-' + id);
+      });
+    });
+
+    document.getElementById('email').addEventListener('input', function() {
+      if (this.value.trim() && isValidEmail(this.value.trim())) clearError('error-email');
+    });
 
     // === MÉTIER PRINCIPAL ===
     function handleMetierChange(select) {
@@ -2387,16 +2524,33 @@
           throw new Error('Erreur lors de la création du compte. Vérifiez votre email.');
         }
 
-        // 2. Collect profile data
+        // 2. Wait for session to be ready
+        var session = authData.session;
+        if (!session) {
+          // If email confirmation is required, signUp won't auto-login
+          // Try signing in manually
+          var loginData = await signInArtisan(email, password);
+          user = loginData.user;
+          if (!user) {
+            throw new Error('Compte créé ! Veuillez vérifier votre email pour confirmer votre inscription.');
+          }
+        }
+
+        // 3. Collect profile data
         var profile = collectProfileData();
 
-        // 3. Save to localStorage (dual-write)
+        // 4. Save to localStorage (dual-write)
         localStorage.setItem('artisano-profil', JSON.stringify(profile));
 
-        // 4. Save to Supabase DB
-        await saveArtisanProfile(user.id, profile);
+        // 5. Save to Supabase DB
+        try {
+          await saveArtisanProfile(user.id, profile);
+        } catch(dbErr) {
+          console.warn('Profil DB non sauvé (sera sync plus tard):', dbErr.message);
+          // Continue anyway — localStorage has the data
+        }
 
-        // 5. Redirect
+        // 6. Redirect
         window.location.href = 'dashboard.html';
 
       } catch (err) {
@@ -2413,8 +2567,6 @@
     }
 
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js"></script>
   <script src="artisano-common.js"></script>
 </body>
 </html>
