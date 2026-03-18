@@ -15,40 +15,8 @@
 <meta property="og:site_name" content="Artisano">
 <meta property="og:locale" content="fr_CH">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="artisano-common.css">
 <style>
-  :root {
-    --orange: #E8700A;
-    --orange-light: #F08A2E;
-    --orange-dark: #CC5F00;
-    --yellow: #F0B429;
-    --yellow-light: #F7C948;
-    --dark: #1A2744;
-    --dark-mid: #213052;
-    --white: #FAFAF8;
-    --gray-100: #F2F1EE;
-    --gray-200: #E5E3DE;
-    --gray-300: #D1CEC7;
-    --gray-500: #8A8680;
-    --gray-700: #55524D;
-    --green: #2E7D32;
-    --green-light: #E8F5E9;
-    --green-bg: #F1F8E9;
-    --red: #D32F2F;
-    --red-light: #FFEBEE;
-    --blue: #1565C0;
-    --blue-light: #E3F2FD;
-    --radius: 16px;
-    --radius-sm: 10px;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--gray-100);
-    color: var(--dark);
-    -webkit-font-smoothing: antialiased;
-  }
 
   /* ===== NAV ===== */
   nav {
@@ -1407,7 +1375,7 @@
           </div>
         </div>
 
-        <a href="#" class="reviews-more" onclick="document.getElementById('tab-avis').click(); return false;">Voir les 47 avis →</a>
+        <a href="#avis" class="reviews-more" onclick="document.querySelector('.profile-tab[href=\'#avis\']').click(); return false;">Voir les 47 avis →</a>
       </div>
 
     </div>
@@ -1590,28 +1558,116 @@
 
     document.querySelectorAll('.card').forEach(el => observer.observe(el));
 
-    // Show urgence badge if artisan has opted in (demo: simulated for this profile)
+    // Load profile from localStorage
     (function() {
-      // In production this would come from the artisan's data
-      // For demo, this artisan has urgence enabled
-      var artisanUrgence = true;
+      var data = localStorage.getItem('artisano-profil');
+      var p;
+      try { p = data ? JSON.parse(data) : null; } catch(e) { p = null; }
+
+      // Urgence badge
+      var artisanUrgence = p ? p.urgence : true; // default demo = true
       var badge = document.getElementById('urgence-badge');
       if (artisanUrgence && badge) {
         badge.style.display = 'inline-flex';
+      } else if (badge) {
+        badge.style.display = 'none';
       }
-    })();
 
-    // Mobile hamburger menu
-    (function() {
-      var hamburger = document.querySelector('.hamburger');
-      var navLinks = document.querySelector('.nav-links');
-      if (hamburger && navLinks) {
-        hamburger.addEventListener('click', function() {
-          navLinks.classList.toggle('open');
+      if (!p) return; // No saved profile, keep demo defaults
+
+      // Name & trade
+      var profileName = document.querySelector('.profile-name');
+      if (profileName) profileName.textContent = p.entreprise || ((p.prenom || '') + ' ' + (p.nom || '')).trim() || 'Müller & Fils';
+
+      var profileTrade = document.querySelector('.profile-trade');
+      if (profileTrade && p.metier) {
+        profileTrade.textContent = p.metier;
+      }
+
+      // Breadcrumb last item
+      var breadcrumbItems = document.querySelectorAll('.breadcrumb span');
+      var lastBreadcrumb = breadcrumbItems[breadcrumbItems.length - 1];
+      if (lastBreadcrumb) lastBreadcrumb.textContent = p.entreprise || ((p.prenom || '') + ' ' + (p.nom || '')).trim();
+
+      // Phone in meta
+      var metaItems = document.querySelectorAll('.profile-meta-item');
+      if (metaItems[1] && p.telephone) {
+        metaItems[1].innerHTML = metaItems[1].querySelector('svg').outerHTML + ' ' + p.telephone;
+      }
+
+      // Location in meta
+      if (metaItems[0] && p.zones && p.zones.length > 0) {
+        metaItems[0].innerHTML = metaItems[0].querySelector('svg').outerHTML + ' ' + p.zones[0] + ' et environs';
+      }
+
+      // Description
+      var descEl = document.querySelector('.description-text');
+      if (descEl && p.description) {
+        descEl.innerHTML = '<p>' + p.description.replace(/\n\n/g, '</p><br><p>').replace(/\n/g, '<br>') + '</p>';
+      }
+
+      // Specialites
+      if (p.specialites && p.specialites.length > 0) {
+        var specGrid = document.querySelector('.specialites-grid');
+        if (specGrid) {
+          specGrid.innerHTML = '';
+          p.specialites.forEach(function(s) {
+            var chip = document.createElement('div');
+            chip.className = 'specialite-chip';
+            chip.textContent = s;
+            specGrid.appendChild(chip);
+          });
+        }
+      }
+
+      // Zones
+      if (p.zones && p.zones.length > 0) {
+        var zoneList = document.querySelector('.zone-list');
+        if (zoneList) {
+          zoneList.innerHTML = '';
+          p.zones.forEach(function(z) {
+            var tag = document.createElement('span');
+            tag.className = 'zone-tag';
+            tag.textContent = z;
+            zoneList.appendChild(tag);
+          });
+        }
+      }
+
+      // Sidebar: contact info
+      var contactItems = document.querySelectorAll('.contact-item');
+      if (contactItems[0] && p.telephone) {
+        var tel = p.telephone.replace(/\s/g, '');
+        contactItems[0].innerHTML = contactItems[0].querySelector('svg').outerHTML + ' <a href="tel:+41' + tel + '">' + p.telephone + '</a>';
+      }
+      if (contactItems[1] && p.email) {
+        contactItems[1].innerHTML = contactItems[1].querySelector('svg').outerHTML + ' <a href="mailto:' + p.email + '">' + p.email + '</a>';
+      }
+      if (contactItems[2] && p.adresse) {
+        contactItems[2].innerHTML = contactItems[2].querySelector('svg').outerHTML + ' ' + p.adresse;
+      }
+
+      // Sidebar: horaires
+      if (contactItems[3] && p.horaires) {
+        var svgHTML = contactItems[3].querySelector('svg').outerHTML;
+        var horaireText = '';
+        p.horaires.forEach(function(h) {
+          if (h.ouvert) {
+            horaireText += h.jour + ' : ' + h.debut + ' – ' + h.fin + '<br>';
+          }
         });
+        if (!horaireText) horaireText = 'Horaires non définis';
+        contactItems[3].innerHTML = svgHTML + ' ' + horaireText;
+      }
+
+      // Title tag
+      var name = p.entreprise || ((p.prenom || '') + ' ' + (p.nom || '')).trim();
+      if (name) {
+        document.title = name + ' — ' + (p.metier || 'Artisan') + ' | Artisano';
       }
     })();
-  </script>
 
+  </script>
+  <script src="artisano-common.js"></script>
 </body>
 </html>

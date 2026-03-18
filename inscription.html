@@ -15,37 +15,13 @@
 <meta property="og:site_name" content="Artisano">
 <meta property="og:locale" content="fr_CH">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="artisano-common.css">
 <style>
   :root {
-    --orange: #E8700A;
-    --orange-light: #F08A2E;
-    --orange-dark: #CC5F00;
-    --yellow: #F0B429;
-    --yellow-light: #F7C948;
-    --dark: #1A2744;
-    --dark-mid: #213052;
     --dark-light: #2B3D68;
-    --white: #FAFAF8;
-    --gray-100: #F2F1EE;
-    --gray-200: #E5E3DE;
-    --gray-300: #D1CEC7;
-    --gray-500: #8A8680;
-    --gray-700: #55524D;
-    --green: #2E7D32;
-    --green-light: #E8F5E9;
-    --red: #D32F2F;
-    --red-light: #FFEBEE;
-    --radius: 16px;
-    --radius-sm: 10px;
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
   body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--gray-100);
-    color: var(--dark);
-    -webkit-font-smoothing: antialiased;
     min-height: 100vh;
   }
 
@@ -1693,51 +1669,51 @@
           <div class="form-row">
             <div>
               <label>Prénom </label>
-              <input type="text" placeholder="Jean">
+              <input type="text" id="prenom" placeholder="Jean">
             </div>
             <div>
               <label>Nom </label>
-              <input type="text" placeholder="Müller">
+              <input type="text" id="nom" placeholder="Müller">
             </div>
           </div>
         </div>
 
         <div class="form-group">
           <label>Nom de l'entreprise </label>
-          <input type="text" placeholder="Müller & Fils Sàrl">
+          <input type="text" id="entreprise" placeholder="Müller & Fils Sàrl">
           <div class="form-hint">C'est le nom qui apparaîtra sur votre profil</div>
         </div>
 
         <div class="form-group">
           <label>Adresse email professionnelle </label>
-          <input type="email" placeholder="contact@muller-fils.ch">
+          <input type="email" id="email" placeholder="contact@muller-fils.ch">
         </div>
 
         <div class="form-group">
           <label>Numéro de téléphone </label>
-          <input type="tel" placeholder="021 123 45 67">
+          <input type="tel" id="phone" placeholder="021 123 45 67">
         </div>
 
         <div class="form-group">
           <label>Adresse de l'entreprise </label>
-          <input type="text" placeholder="Rue du Lac 15, 1003 Lausanne">
+          <input type="text" id="adresse" placeholder="Rue du Lac 15, 1003 Lausanne">
         </div>
 
         <div class="form-group">
           <label>Site internet <span class="label-optional">(facultatif)</span></label>
-          <input type="url" placeholder="https://www.muller-fils.ch">
+          <input type="url" id="site" placeholder="https://www.muller-fils.ch">
         </div>
 
         <hr class="form-divider">
 
         <div class="form-group">
           <label>Mot de passe </label>
-          <input type="password" placeholder="Minimum 8 caractères">
+          <input type="password" id="password" placeholder="Minimum 8 caractères">
         </div>
 
         <div class="form-group">
           <label>Confirmez le mot de passe </label>
-          <input type="password" placeholder="Retapez votre mot de passe">
+          <input type="password" id="password-confirm" placeholder="Retapez votre mot de passe">
         </div>
 
         <div class="form-actions">
@@ -1756,7 +1732,7 @@
 
         <div class="form-group">
           <label>Métier principal </label>
-          <select id="metier-select" onchange="handleMetierChange(this)">
+          <select id="metier" onchange="handleMetierChange(this)">
             <option value="">Sélectionnez votre métier</option>
             <option>Plombier</option>
             <option>Électricien</option>
@@ -1808,7 +1784,7 @@
 
         <div class="form-group">
           <label>Description de votre activité <span class="label-optional">(facultatif)</span></label>
-          <textarea placeholder="Décrivez votre entreprise, votre expérience et ce qui vous distingue. Par exemple : depuis combien de temps vous exercez, vos points forts, le type de travaux que vous réalisez le plus souvent..."></textarea>
+          <textarea id="description" placeholder="Décrivez votre entreprise, votre expérience et ce qui vous distingue. Par exemple : depuis combien de temps vous exercez, vos points forts, le type de travaux que vous réalisez le plus souvent..."></textarea>
           <div class="form-hint">Cette description sera visible sur votre profil. Écrivez comme si vous parliez directement à un futur client.</div>
         </div>
 
@@ -2108,10 +2084,11 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             Retour
           </button>
-          <button class="btn-submit" onclick="saveContactPrefs(); alert('Profil créé avec succès ! Redirection vers votre tableau de bord...'); setTimeout(function(){ window.location.href='dashboard.html'; }, 1000);">
+          <button class="btn-submit" id="btn-submit" onclick="handleSignup()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-            Créer mon profil et payer
+            Créer mon profil
           </button>
+          <div id="signup-error" style="color:var(--red); font-size:14px; margin-top:12px; display:none;"></div>
         </div>
       </div>
 
@@ -2295,39 +2272,149 @@
       }
     }
 
-    // === SAVE CONTACT PREFERENCES ===
-    function saveContactPrefs() {
-      const urgenceCheckbox = document.getElementById('contact-urgence');
-      const urgenceDays = [];
+    // === COLLECT PROFILE DATA ===
+    function collectProfileData() {
+      var urgenceCheckbox = document.getElementById('contact-urgence');
+      var urgenceDays = [];
       document.querySelectorAll('.urgence-day.active').forEach(function(btn) {
         urgenceDays.push(btn.textContent.trim());
       });
 
-      const prefs = {
-        complete: document.getElementById('contact-complete').checked,
-        message: document.getElementById('contact-message').checked,
-        appel: document.getElementById('contact-appel').checked,
-        urgence: urgenceCheckbox.checked,
-        urgenceSupplement: document.getElementById('urgence-supplement') ? document.getElementById('urgence-supplement').value : '',
-        urgenceRayon: document.getElementById('urgence-rayon') ? document.getElementById('urgence-rayon').value : '',
-        urgenceHeureDebut: document.getElementById('urgence-heure-debut') ? document.getElementById('urgence-heure-debut').value : '',
-        urgenceHeureFin: document.getElementById('urgence-heure-fin') ? document.getElementById('urgence-heure-fin').value : '',
-        urgenceJours: urgenceDays
+      var horaires = [];
+      document.querySelectorAll('.horaire-day-block').forEach(function(block) {
+        var toggle = block.querySelector('.toggle');
+        var ouvert = toggle ? toggle.classList.contains('active') : false;
+        var firstSlot = block.querySelector('.horaire-slot-row');
+        var inputs = firstSlot ? firstSlot.querySelectorAll('input') : [];
+        horaires.push({
+          jour: block.getAttribute('data-day'),
+          ouvert: ouvert,
+          debut: inputs[0] ? inputs[0].value : '',
+          fin: inputs[1] ? inputs[1].value : ''
+        });
+      });
+
+      var specialites = [];
+      document.querySelectorAll('#specialites-tags .tag-text').forEach(function(t) {
+        specialites.push(t.textContent.trim());
+      });
+
+      var zones = [];
+      document.querySelectorAll('#communes-tags .tag-text').forEach(function(t) {
+        zones.push(t.textContent.trim());
+      });
+
+      // Handle métier: if "autre" is selected, use the custom input value
+      var metierSelect = document.getElementById('metier');
+      var metierValue = metierSelect.value;
+      if (metierValue === 'autre') {
+        var customInput = document.querySelector('#metier-custom input');
+        metierValue = customInput ? customInput.value.trim() : '';
+      }
+
+      return {
+        prenom: (document.getElementById('prenom') || {}).value || '',
+        nom: (document.getElementById('nom') || {}).value || '',
+        entreprise: (document.getElementById('entreprise') || {}).value || '',
+        telephone: (document.getElementById('phone') || {}).value || '',
+        email: (document.getElementById('email') || {}).value || '',
+        adresse: (document.getElementById('adresse') || {}).value || '',
+        site: (document.getElementById('site') || {}).value || '',
+        metier: metierValue,
+        specialites: specialites,
+        zones: zones,
+        description: (document.getElementById('description') || {}).value || '',
+        horaires: horaires,
+        urgence: urgenceCheckbox ? urgenceCheckbox.checked : false,
+        urgenceSupplement: (document.getElementById('urgence-supplement') || {}).value || '',
+        urgenceRayon: (document.getElementById('urgence-rayon') || {}).value || '',
+        urgenceHeureDebut: (document.getElementById('urgence-heure-debut') || {}).value || '',
+        urgenceHeureFin: (document.getElementById('urgence-heure-fin') || {}).value || '',
+        urgenceJours: urgenceDays,
+        contactPrefs: {
+          complete: document.getElementById('contact-complete') ? document.getElementById('contact-complete').checked : true,
+          message: document.getElementById('contact-message') ? document.getElementById('contact-message').checked : false,
+          appel: document.getElementById('contact-appel') ? document.getElementById('contact-appel').checked : false
+        }
       };
-      localStorage.setItem('artisano-contact-prefs', JSON.stringify(prefs));
     }
 
-    // Mobile hamburger menu
-    (function() {
-      var hamburger = document.querySelector('.hamburger');
-      var navLinks = document.querySelector('.nav-links');
-      if (hamburger && navLinks) {
-        hamburger.addEventListener('click', function() {
-          navLinks.classList.toggle('open');
-        });
-      }
-    })();
-  </script>
+    // === SIGNUP WITH SUPABASE ===
+    async function handleSignup() {
+      var errorEl = document.getElementById('signup-error');
+      var btn = document.getElementById('btn-submit');
+      errorEl.style.display = 'none';
 
+      // Validate CGU
+      if (!document.getElementById('cgu-checkbox').checked) {
+        errorEl.textContent = 'Veuillez accepter les conditions générales d\'utilisation.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      var email = (document.getElementById('email') || {}).value || '';
+      var password = (document.getElementById('password') || {}).value || '';
+      var passwordConfirm = (document.getElementById('password-confirm') || {}).value || '';
+
+      if (!email) {
+        errorEl.textContent = 'Veuillez renseigner votre adresse email.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      if (password.length < 6) {
+        errorEl.textContent = 'Le mot de passe doit contenir au moins 6 caractères.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      if (password !== passwordConfirm) {
+        errorEl.textContent = 'Les mots de passe ne correspondent pas.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      // Disable button
+      btn.disabled = true;
+      btn.textContent = 'Création en cours...';
+
+      try {
+        // 1. Create auth account
+        var authData = await signUpArtisan(email, password);
+        var user = authData.user;
+
+        if (!user) {
+          throw new Error('Erreur lors de la création du compte. Vérifiez votre email.');
+        }
+
+        // 2. Collect profile data
+        var profile = collectProfileData();
+
+        // 3. Save to localStorage (dual-write)
+        localStorage.setItem('artisano-profil', JSON.stringify(profile));
+
+        // 4. Save to Supabase DB
+        await saveArtisanProfile(user.id, profile);
+
+        // 5. Redirect
+        window.location.href = 'dashboard.html';
+
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Créer mon profil';
+
+        var msg = err.message || 'Une erreur est survenue.';
+        if (msg.includes('already registered') || msg.includes('already been registered')) {
+          msg = 'Cette adresse email est déjà utilisée. Essayez de vous connecter.';
+        }
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
+      }
+    }
+
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="artisano-common.js"></script>
 </body>
 </html>

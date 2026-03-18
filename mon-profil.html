@@ -9,19 +9,8 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23E8700A'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="artisano-common.css">
 <style>
-  :root {
-    --orange: #E8700A; --orange-light: #F08A2E; --orange-dark: #CC5F00;
-    --yellow: #F0B429; --dark: #1A2744; --dark-mid: #213052;
-    --white: #FAFAF8; --gray-100: #F2F1EE; --gray-200: #E5E3DE;
-    --gray-300: #D1CEC7; --gray-500: #8A8680; --gray-700: #55524D;
-    --green: #2E7D32; --green-light: #E8F5E9;
-    --red: #D32F2F; --red-light: #FFEBEE;
-    --blue: #1565C0; --blue-light: #E3F2FD;
-    --radius: 16px; --radius-sm: 10px;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'DM Sans',sans-serif; background:var(--gray-100); color:var(--dark); -webkit-font-smoothing:antialiased; }
 
   /* NAV */
   nav { position:fixed; top:0; left:0; right:0; z-index:100; padding:14px 40px; display:flex; align-items:center; justify-content:space-between; background:rgba(250,250,248,0.92); backdrop-filter:blur(20px); border-bottom:1px solid rgba(0,0,0,0.05); }
@@ -30,6 +19,8 @@
   .nav-user { display:flex; align-items:center; gap:16px; }
   .nav-user-name { font-weight:600; font-size:14px; }
   .nav-user-avatar { width:36px; height:36px; background:var(--dark); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-family:'Sora',sans-serif; font-weight:800; font-size:13px; }
+  .btn-logout { background:none; border:none; cursor:pointer; color:var(--gray-500); padding:8px; border-radius:8px; transition:all 0.2s; display:flex; align-items:center; }
+  .btn-logout:hover { color:#D32F2F; background:rgba(211,47,47,0.08); }
   .nav-links { display:flex; gap:24px; list-style:none; }
   .nav-links a { text-decoration:none; color:var(--gray-500); font-weight:500; font-size:14px; padding:6px 0; border-bottom:2px solid transparent; transition:all 0.2s; }
   .nav-links a:hover { color:var(--dark); }
@@ -158,7 +149,7 @@
 <body>
   <nav>
     <a href="index.html" class="logo">artisano<span class="logo-dot"></span></a>
-    <button class="hamburger" aria-label="Menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+    <button class="hamburger" aria-label="Menu">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
     </button>
     <ul class="nav-links">
@@ -170,6 +161,9 @@
     <div class="nav-user">
       <span class="nav-user-name" id="nav-name">Müller & Fils</span>
       <div class="nav-user-avatar" id="nav-avatar">MF</div>
+      <button class="btn-logout" onclick="logout()" title="Se déconnecter">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
     </div>
   </nav>
 
@@ -446,7 +440,17 @@
     Profil enregistré avec succès
   </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <script>
+  // ====== AUTH CHECK ======
+  var currentUserId = null;
+  (async function() {
+    var user = await requireAuth();
+    if (!user) return;
+    currentUserId = user.id;
+  })();
+
   // ====== TAG SYSTEM ======
   var profileTags = { specialites: [], zones: [] };
 
@@ -581,32 +585,37 @@
 
     localStorage.setItem('artisano-profil', JSON.stringify(profile));
 
-    // Also update contact prefs in the old key for compatibility
-    var oldPrefs = {
-      complete: contactPrefs.complete || false,
-      message: contactPrefs.message || false,
-      appel: contactPrefs.appel || false,
-      urgence: profile.urgence,
-      urgenceSupplement: profile.urgenceSupplement,
-      urgenceRayon: profile.urgenceRayon,
-      urgenceHeureDebut: profile.urgenceHeureDebut,
-      urgenceHeureFin: profile.urgenceHeureFin,
-      urgenceJours: urgDays
-    };
-    localStorage.setItem('artisano-contact-prefs', JSON.stringify(oldPrefs));
+    // Save to Supabase
+    if (currentUserId) {
+      saveArtisanProfile(currentUserId, profile).catch(function(err) {
+        console.error('Erreur Supabase:', err);
+      });
+    }
 
     showToast();
   }
 
   // ====== LOAD PROFILE ======
-  function loadProfile() {
-    var data = localStorage.getItem('artisano-profil');
-    if (!data) {
-      // Load defaults from demo
-      loadDefaults();
-      return;
+  async function loadProfile() {
+    var p = null;
+
+    // Try Supabase first
+    if (currentUserId) {
+      try {
+        var dbProfile = await loadArtisanProfile(currentUserId);
+        if (dbProfile) {
+          p = dbProfileToLocal(dbProfile);
+          localStorage.setItem('artisano-profil', JSON.stringify(p));
+        }
+      } catch(e) { /* fallback to localStorage */ }
     }
-    var p = JSON.parse(data);
+
+    // Fallback to localStorage
+    if (!p) {
+      var data = localStorage.getItem('artisano-profil');
+      if (!data) { loadDefaults(); return; }
+      try { p = JSON.parse(data); } catch(e) { loadDefaults(); return; }
+    }
     document.getElementById('prenom').value = p.prenom || '';
     document.getElementById('nom').value = p.nom || '';
     document.getElementById('entreprise').value = p.entreprise || '';
@@ -738,7 +747,17 @@
   }
 
   // ====== INIT ======
-  loadProfile();
+  // Wait for auth check to complete, then load profile
+  (async function() {
+    // Wait until currentUserId is set by auth check
+    var attempts = 0;
+    while (currentUserId === null && attempts < 20) {
+      await new Promise(function(r) { setTimeout(r, 100); });
+      attempts++;
+    }
+    loadProfile();
+  })();
 </script>
+<script src="artisano-common.js"></script>
 </body>
 </html>

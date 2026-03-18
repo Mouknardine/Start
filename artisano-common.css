@@ -1,0 +1,66 @@
+/* ===== ARTISANO COMMON STYLES ===== */
+/* Shared variables, reset, nav, and hamburger across all pages */
+
+:root {
+  --orange: #E8700A;
+  --orange-light: #F08A2E;
+  --orange-dark: #CC5F00;
+  --yellow: #F0B429;
+  --yellow-light: #F7C948;
+  --dark: #1A2744;
+  --dark-mid: #213052;
+  --white: #FAFAF8;
+  --gray-100: #F2F1EE;
+  --gray-200: #E5E3DE;
+  --gray-300: #D1CEC7;
+  --gray-500: #8A8680;
+  --gray-700: #55524D;
+  --green: #2E7D32;
+  --green-light: #E8F5E9;
+  --green-bg: #F1F8E9;
+  --red: #D32F2F;
+  --red-light: #FFEBEE;
+  --blue: #1565C0;
+  --blue-light: #E3F2FD;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--gray-100);
+  color: var(--dark);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== LOGO ===== */
+.logo {
+  font-family: 'Sora', sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  color: var(--dark);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.logo-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--orange);
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ===== HAMBURGER ===== */
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: var(--dark);
+  -webkit-tap-highlight-color: transparent;
+}

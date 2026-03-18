@@ -16,38 +16,19 @@
 <meta property="og:site_name" content="Artisano">
 <meta property="og:locale" content="fr_CH">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="artisano-common.css">
 <style>
   :root {
-    --orange: #E8700A;
-    --orange-light: #F08A2E;
-    --orange-dark: #CC5F00;
-    --yellow: #F0B429;
-    --yellow-light: #F7C948;
-    --dark: #1A2744;
-    --dark-mid: #213052;
     --dark-light: #2B3D68;
-    --white: #FAFAF8;
-    --gray-100: #F2F1EE;
-    --gray-200: #E5E3DE;
-    --gray-300: #D1CEC7;
-    --gray-500: #8A8680;
-    --gray-700: #55524D;
     --green: #4CAF50;
-    --radius: 16px;
-    --radius-sm: 10px;
     --radius-xs: 6px;
   }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html { scroll-behavior: smooth; }
 
   body {
-    font-family: 'DM Sans', sans-serif;
     background: var(--white);
-    color: var(--dark);
     overflow-x: hidden;
-    -webkit-font-smoothing: antialiased;
   }
 
   /* ===== NAV ===== */
@@ -1440,18 +1421,6 @@
       });
     });
 
-    // =============================================
-    // 10. MOBILE HAMBURGER MENU
-    // =============================================
-    const hamburger = document.querySelector('.hamburger');
-    const navLinks = document.querySelector('.nav-links');
-    if (hamburger) {
-      hamburger.addEventListener('click', function() {
-        navLinks.classList.toggle('open');
-        this.classList.toggle('active');
-      });
-    }
-
     // City autocomplete (desktop + mobile overlay)
     (function() {
       const cities = [
@@ -1623,6 +1592,6 @@
       });
     })();
   </script>
-
+  <script src="artisano-common.js"></script>
 </body>
 </html>
