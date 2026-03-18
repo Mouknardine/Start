@@ -117,7 +117,8 @@ function dbProfileToLocal(dbRow) {
     urgenceHeureDebut: dbRow.urgence_heure_debut,
     urgenceHeureFin: dbRow.urgence_heure_fin,
     urgenceJours: dbRow.urgence_jours || [],
-    contactPrefs: dbRow.contact_prefs || { complete: true, message: true, appel: true }
+    contactPrefs: dbRow.contact_prefs || { complete: true, message: true, appel: true },
+    disponibilites: dbRow.disponibilites || null
   };
 }
 
