@@ -1389,11 +1389,11 @@
         <div class="avail-subtitle">Cliquez sur un créneau pour demander un rendez-vous</div>
 
         <div class="avail-week-nav">
-          <button class="avail-week-btn">
+          <button class="avail-week-btn" id="availWeekPrev" onclick="navigateProfileWeek(-1)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <span class="avail-week-label">Semaine du 16 mars</span>
-          <button class="avail-week-btn">
+          <button class="avail-week-btn" id="availWeekNext" onclick="navigateProfileWeek(1)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
@@ -1561,6 +1561,160 @@
 
     document.querySelectorAll('.card').forEach(el => observer.observe(el));
 
+    // === AVAILABILITY WEEK NAVIGATION ===
+    var profileWeekOffset = 0;
+    var profileData = null;
+    var profileArtisanId = null;
+
+    function getProfileMonday(d) {
+      var day = d.getDay();
+      var diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      var monday = new Date(d);
+      monday.setDate(diff);
+      monday.setHours(0, 0, 0, 0);
+      return monday;
+    }
+
+    function navigateProfileWeek(direction) {
+      profileWeekOffset += direction;
+      renderAvailabilityForWeek(profileData, profileWeekOffset);
+    }
+
+    function renderAvailabilityForWeek(p, weekOffset) {
+      if (!p) return;
+      var daysContainer = document.querySelector('.avail-days');
+      if (!daysContainer) return;
+      daysContainer.innerHTML = '';
+
+      var joursFr = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+      var moisCourt = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+      var moisLong = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+      // Calculate Monday for displayed week
+      var monday = getProfileMonday(new Date());
+      monday.setDate(monday.getDate() + weekOffset * 7);
+
+      // Update week label
+      var weekLabel = document.querySelector('.avail-week-label');
+      if (weekLabel) {
+        var endOfWeek = new Date(monday);
+        endOfWeek.setDate(monday.getDate() + 6);
+        if (monday.getMonth() === endOfWeek.getMonth()) {
+          weekLabel.textContent = 'Semaine du ' + monday.getDate() + ' au ' + endOfWeek.getDate() + ' ' + moisLong[monday.getMonth()];
+        } else {
+          weekLabel.textContent = 'Semaine du ' + monday.getDate() + ' ' + moisCourt[monday.getMonth()] + ' au ' + endOfWeek.getDate() + ' ' + moisCourt[endOfWeek.getMonth()];
+        }
+      }
+
+      // Check if published agenda data exists and matches this week
+      var dispo = p.disponibilites;
+      var hasAgendaData = false;
+      var mondayStr = monday.getFullYear() + '-' + String(monday.getMonth() + 1).padStart(2, '0') + '-' + String(monday.getDate()).padStart(2, '0');
+      if (dispo && dispo.slots && Object.keys(dispo.slots).length > 0) {
+        if (dispo.week_start === mondayStr) {
+          hasAgendaData = true;
+        }
+      }
+
+      joursFr.forEach(function(jourNom, idx) {
+        var currentDate = new Date(monday);
+        currentDate.setDate(monday.getDate() + idx);
+        var dateStr = currentDate.getDate() + ' ' + moisCourt[currentDate.getMonth()];
+
+        var dayDiv = document.createElement('div');
+        dayDiv.className = 'avail-day';
+
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'avail-day-name';
+        nameSpan.textContent = jourNom;
+        dayDiv.appendChild(nameSpan);
+
+        var dateSpan = document.createElement('span');
+        dateSpan.className = 'avail-day-date';
+        dateSpan.textContent = dateStr;
+        dayDiv.appendChild(dateSpan);
+
+        if (hasAgendaData) {
+          var colSlots = dispo.slots[String(idx)];
+          var availableSlots = [];
+          if (colSlots) {
+            var rows = Object.keys(colSlots).map(Number).sort(function(a, b) { return a - b; });
+            rows.forEach(function(row) {
+              if (colSlots[String(row)] === 'available') {
+                var totalMinutes = 8 * 60 + row * 30;
+                var h = Math.floor(totalMinutes / 60);
+                var m = totalMinutes % 60;
+                availableSlots.push(h + 'h' + (m === 0 ? '00' : m < 10 ? '0' + m : m));
+              }
+            });
+          }
+
+          if (availableSlots.length > 0) {
+            var slotsDiv = document.createElement('div');
+            slotsDiv.className = 'avail-slots';
+            availableSlots.forEach(function(label) {
+              var slot = document.createElement('span');
+              slot.className = 'avail-slot';
+              slot.textContent = label;
+              slotsDiv.appendChild(slot);
+            });
+            dayDiv.appendChild(slotsDiv);
+          } else {
+            var closedSpan = document.createElement('span');
+            closedSpan.className = 'avail-closed';
+            closedSpan.textContent = 'Indisponible';
+            dayDiv.appendChild(closedSpan);
+          }
+        } else if (p.horaires && p.horaires.length > 0) {
+          var h = p.horaires.find(function(entry) {
+            return entry.jour && entry.jour.toLowerCase() === jourNom.toLowerCase();
+          });
+          if (h && h.ouvert) {
+            var slotsDiv = document.createElement('div');
+            slotsDiv.className = 'avail-slots';
+            var startH = parseInt(h.debut);
+            var endH = parseInt(h.fin);
+            if (!isNaN(startH) && !isNaN(endH)) {
+              for (var hour = startH; hour < endH; hour += 2) {
+                var slot = document.createElement('span');
+                slot.className = 'avail-slot';
+                slot.textContent = hour + 'h00';
+                slotsDiv.appendChild(slot);
+              }
+            }
+            dayDiv.appendChild(slotsDiv);
+          } else {
+            var closedSpan = document.createElement('span');
+            closedSpan.className = 'avail-closed';
+            closedSpan.textContent = 'Fermé';
+            dayDiv.appendChild(closedSpan);
+          }
+        } else {
+          var closedSpan = document.createElement('span');
+          closedSpan.className = 'avail-closed';
+          closedSpan.textContent = 'Non défini';
+          dayDiv.appendChild(closedSpan);
+        }
+
+        daysContainer.appendChild(dayDiv);
+      });
+
+      // Re-bind slot click events
+      var artisanId = profileArtisanId;
+      document.querySelectorAll('.avail-slot').forEach(function(slot) {
+        slot.addEventListener('click', function() {
+          document.querySelectorAll('.avail-slot').forEach(function(s) { s.classList.remove('selected'); });
+          this.classList.add('selected');
+          var day = this.closest('.avail-day').querySelector('.avail-day-name').textContent.trim();
+          var date = this.closest('.avail-day').querySelector('.avail-day-date').textContent.trim();
+          var time = this.textContent.trim();
+          var slotParams = 'jour=' + encodeURIComponent(day) + '&date=' + encodeURIComponent(date) + '&heure=' + encodeURIComponent(time);
+          if (artisanId) slotParams += '&artisan=' + encodeURIComponent(artisanId);
+          window.location.href = 'demande.html?' + slotParams;
+        });
+      });
+    }
+
     // Load profile from Supabase (if ?id=UUID) or localStorage fallback
     (async function() {
       var params = new URLSearchParams(window.location.search);
@@ -1691,158 +1845,12 @@
         contactItems[3].innerHTML = svgHTML + ' ' + horaireText;
       }
 
-      // Sidebar: availability card — render from published agenda (disponibilites) or horaires fallback
-      var daysContainer = document.querySelector('.avail-days');
-      if (daysContainer) {
-        daysContainer.innerHTML = '';
-        var joursFr = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-        var moisCourt = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
-        var moisLong = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+      // Store profile globally for week navigation
+      profileData = p;
+      profileArtisanId = artisanId;
 
-        // Calculate current week Monday
-        var today = new Date();
-        var dayOfWeek = today.getDay();
-        var mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-        var monday = new Date(today);
-        monday.setDate(today.getDate() + mondayOffset);
-
-        // Update week label
-        var weekLabel = document.querySelector('.avail-week-label');
-        if (weekLabel) {
-          weekLabel.textContent = 'Semaine du ' + monday.getDate() + ' ' + moisLong[monday.getMonth()];
-        }
-
-        // Check if published agenda data exists and matches current week
-        var dispo = p.disponibilites;
-        var hasAgendaData = false;
-        if (dispo && dispo.slots && Object.keys(dispo.slots).length > 0) {
-          // Check if it's for the current week
-          var mondayStr = monday.getFullYear() + '-' + String(monday.getMonth() + 1).padStart(2, '0') + '-' + String(monday.getDate()).padStart(2, '0');
-          if (dispo.week_start === mondayStr) {
-            hasAgendaData = true;
-          }
-        }
-
-        joursFr.forEach(function(jourNom, idx) {
-          var currentDate = new Date(monday);
-          currentDate.setDate(monday.getDate() + idx);
-          var dateStr = currentDate.getDate() + ' ' + moisCourt[currentDate.getMonth()];
-
-          var dayDiv = document.createElement('div');
-          dayDiv.className = 'avail-day';
-
-          var nameSpan = document.createElement('span');
-          nameSpan.className = 'avail-day-name';
-          nameSpan.textContent = jourNom;
-          dayDiv.appendChild(nameSpan);
-
-          var dateSpan = document.createElement('span');
-          dateSpan.className = 'avail-day-date';
-          dateSpan.textContent = dateStr;
-          dayDiv.appendChild(dateSpan);
-
-          if (hasAgendaData) {
-            // Use published agenda data — col index = idx (0=Lundi...6=Dimanche)
-            var colSlots = dispo.slots[String(idx)];
-            var availableSlots = [];
-            if (colSlots) {
-              // Collect available slot rows and convert to time labels
-              var rows = Object.keys(colSlots).map(Number).sort(function(a, b) { return a - b; });
-              rows.forEach(function(row) {
-                if (colSlots[String(row)] === 'available') {
-                  // Each row = 30 min starting from 8h00
-                  var totalMinutes = 8 * 60 + row * 30;
-                  var h = Math.floor(totalMinutes / 60);
-                  var m = totalMinutes % 60;
-                  availableSlots.push(h + 'h' + (m === 0 ? '00' : m < 10 ? '0' + m : m));
-                }
-              });
-            }
-
-            if (availableSlots.length > 0) {
-              var slotsDiv = document.createElement('div');
-              slotsDiv.className = 'avail-slots';
-              // Group consecutive slots into ranges for cleaner display
-              // Show first, middle-ish, and last if many
-              var toShow = [];
-              if (availableSlots.length <= 4) {
-                toShow = availableSlots;
-              } else {
-                // Show start and end range
-                toShow.push(availableSlots[0]);
-                toShow.push(availableSlots[Math.floor(availableSlots.length / 2)]);
-                toShow.push(availableSlots[availableSlots.length - 1]);
-              }
-              toShow.forEach(function(label) {
-                var slot = document.createElement('span');
-                slot.className = 'avail-slot';
-                slot.textContent = label;
-                slotsDiv.appendChild(slot);
-              });
-              if (availableSlots.length > 4) {
-                var moreSpan = document.createElement('span');
-                moreSpan.className = 'avail-slot';
-                moreSpan.style.opacity = '0.6';
-                moreSpan.style.fontSize = '11px';
-                moreSpan.textContent = '+' + (availableSlots.length - 3) + ' créneaux';
-                slotsDiv.appendChild(moreSpan);
-              }
-              dayDiv.appendChild(slotsDiv);
-            } else {
-              var closedSpan = document.createElement('span');
-              closedSpan.className = 'avail-closed';
-              closedSpan.textContent = 'Indisponible';
-              dayDiv.appendChild(closedSpan);
-            }
-          } else if (p.horaires && p.horaires.length > 0) {
-            // Fallback: use horaires from profile
-            var h = p.horaires.find(function(entry) {
-              return entry.jour && entry.jour.toLowerCase() === jourNom.toLowerCase();
-            });
-            if (h && h.ouvert) {
-              var slotsDiv = document.createElement('div');
-              slotsDiv.className = 'avail-slots';
-              var startH = parseInt(h.debut);
-              var endH = parseInt(h.fin);
-              if (!isNaN(startH) && !isNaN(endH)) {
-                for (var hour = startH; hour < endH; hour += 2) {
-                  var slot = document.createElement('span');
-                  slot.className = 'avail-slot';
-                  slot.textContent = hour + 'h00';
-                  slotsDiv.appendChild(slot);
-                }
-              }
-              dayDiv.appendChild(slotsDiv);
-            } else {
-              var closedSpan = document.createElement('span');
-              closedSpan.className = 'avail-closed';
-              closedSpan.textContent = 'Fermé';
-              dayDiv.appendChild(closedSpan);
-            }
-          } else {
-            var closedSpan = document.createElement('span');
-            closedSpan.className = 'avail-closed';
-            closedSpan.textContent = 'Non défini';
-            dayDiv.appendChild(closedSpan);
-          }
-
-          daysContainer.appendChild(dayDiv);
-        });
-
-        // Re-bind slot click events for dynamically created slots
-        document.querySelectorAll('.avail-slot').forEach(function(slot) {
-          slot.addEventListener('click', function() {
-            document.querySelectorAll('.avail-slot').forEach(function(s) { s.classList.remove('selected'); });
-            this.classList.add('selected');
-            var day = this.closest('.avail-day').querySelector('.avail-day-name').textContent.trim();
-            var date = this.closest('.avail-day').querySelector('.avail-day-date').textContent.trim();
-            var time = this.textContent.trim();
-            var slotParams = 'jour=' + encodeURIComponent(day) + '&date=' + encodeURIComponent(date) + '&heure=' + encodeURIComponent(time);
-            if (artisanId) slotParams += '&artisan=' + encodeURIComponent(artisanId);
-            window.location.href = 'demande.html?' + slotParams;
-          });
-        });
-      }
+      // Render availability for current week
+      renderAvailabilityForWeek(p, 0);
 
       // Title tag
       var name = p.entreprise || ((p.prenom || '') + ' ' + (p.nom || '')).trim();

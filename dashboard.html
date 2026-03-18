@@ -120,12 +120,12 @@
 
   /* CUSTOM SLOT FORM */
   .custom-slot-section { padding:20px 24px; border-top:1px solid var(--gray-200); }
-  .custom-slot-toggle { display:flex; align-items:center; gap:8px; background:none; border:1px solid var(--gray-200); border-radius:50px; padding:10px 20px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; color:var(--gray-700); cursor:pointer; transition:all 0.2s; }
-  .custom-slot-toggle:hover { border-color:var(--gray-300); background:var(--gray-100); }
-  .custom-slot-toggle svg { width:16px; height:16px; }
-  .custom-slot-form { display:none; margin-top:16px; background:var(--gray-100); border-radius:var(--radius-sm); padding:20px; }
+  .custom-slot-toggle { display:flex; align-items:center; gap:10px; background:linear-gradient(135deg, rgba(232,112,10,0.06), rgba(232,112,10,0.02)); border:2px dashed var(--orange); border-radius:var(--radius-sm); padding:14px 24px; font-family:'Sora',sans-serif; font-size:14px; font-weight:700; color:var(--orange); cursor:pointer; transition:all 0.2s; width:100%; justify-content:center; }
+  .custom-slot-toggle:hover { background:rgba(232,112,10,0.1); border-style:solid; }
+  .custom-slot-toggle svg { width:20px; height:20px; }
+  .custom-slot-form { display:none; margin-top:16px; background:white; border-radius:var(--radius-sm); padding:24px; border:2px solid var(--orange); box-shadow:0 4px 16px rgba(232,112,10,0.1); }
   .custom-slot-form.active { display:block; }
-  .custom-slot-form-title { font-family:'Sora',sans-serif; font-size:14px; font-weight:700; margin-bottom:14px; }
+  .custom-slot-form-title { font-family:'Sora',sans-serif; font-size:15px; font-weight:700; margin-bottom:16px; color:var(--orange); display:flex; align-items:center; gap:8px; }
   .custom-slot-row { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
   .custom-slot-field { display:flex; flex-direction:column; gap:4px; }
   .custom-slot-field label { font-size:11px; font-weight:700; color:var(--gray-500); text-transform:uppercase; letter-spacing:0.4px; }
@@ -144,6 +144,9 @@
   .custom-slot-feedback { margin-top:10px; font-size:12px; font-weight:600; padding:8px 12px; border-radius:8px; display:none; }
   .custom-slot-feedback.success { display:block; background:var(--green-light); color:var(--green); }
   .custom-slot-feedback.error { display:block; background:var(--red-light); color:var(--red); }
+
+  /* CUSTOM-SET CELL MARKER (orange dot for custom slots) */
+  .agenda-cell.custom-set::after { content:''; position:absolute; top:2px; right:2px; width:6px; height:6px; background:var(--orange); border-radius:50%; z-index:1; }
 
   /* AGENDA FEEDBACK */
   .agenda-feedback { margin:0 24px; padding:12px 16px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; display:none; align-items:center; gap:8px; animation:agendaFeedbackIn 0.3s ease; }
@@ -183,6 +186,8 @@
   .btn-sm-refuse { background:var(--red-light); color:var(--red); }
   .btn-sm-refuse:hover { background:#FFCDD2; }
   .btn-sm-view { background:var(--gray-100); color:var(--dark); border:1px solid var(--gray-200); }
+  .btn-sm-delete { background:var(--gray-100); color:var(--red); border:1px solid rgba(211,47,47,0.2); }
+  .btn-sm-delete:hover { background:var(--red-light); border-color:var(--red); }
   .status-refused { background:var(--red-light); color:var(--red); }
   .demande-actions { display:flex; gap:6px; flex-shrink:0; }
 
@@ -381,7 +386,7 @@
               <div class="demande-desc">Fuite sous l'évier de la cuisine, le joint semble abîmé</div>
               <div class="demande-meta">Lausanne · Rendez-vous · Il y a 2 heures</div>
             </div>
-            <div class="demande-actions"><button class="btn-sm btn-sm-accept" onclick="acceptDemande(this)">Accepter</button><button class="btn-sm btn-sm-refuse" onclick="openRefuseModal(this, 'Sophie Martin')">Refuser</button><button class="btn-sm btn-sm-view">Voir</button></div>
+            <div class="demande-actions"><button class="btn-sm btn-sm-accept" onclick="acceptDemande(this)">Accepter</button><button class="btn-sm btn-sm-refuse" onclick="openRefuseModal(this, 'Sophie Martin')">Refuser</button><button class="btn-sm btn-sm-view">Voir</button><button class="btn-sm btn-sm-delete" onclick="deleteDemande(this)">Supprimer</button></div>
           </div>
           <div class="demande-item">
             <div class="demande-icon new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
@@ -390,7 +395,7 @@
               <div class="demande-desc">Remplacement chauffe-eau 200 litres, appartement 3e étage</div>
               <div class="demande-meta">Pully · Devis · Il y a 5 heures</div>
             </div>
-            <div class="demande-actions"><button class="btn-sm btn-sm-accept" onclick="acceptDemande(this)">Accepter</button><button class="btn-sm btn-sm-refuse" onclick="openRefuseModal(this, 'Marc Favre')">Refuser</button><button class="btn-sm btn-sm-view">Voir</button></div>
+            <div class="demande-actions"><button class="btn-sm btn-sm-accept" onclick="acceptDemande(this)">Accepter</button><button class="btn-sm btn-sm-refuse" onclick="openRefuseModal(this, 'Marc Favre')">Refuser</button><button class="btn-sm btn-sm-view">Voir</button><button class="btn-sm btn-sm-delete" onclick="deleteDemande(this)">Supprimer</button></div>
           </div>
           <div class="demande-item">
             <div class="demande-icon confirmed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
@@ -399,7 +404,7 @@
               <div class="demande-desc">Rénovation salle de bain complète</div>
               <div class="demande-meta">Renens · Rendez-vous · Hier</div>
             </div>
-            <div class="demande-actions"><button class="btn-sm btn-sm-view">Voir</button></div>
+            <div class="demande-actions"><button class="btn-sm btn-sm-view">Voir</button><button class="btn-sm btn-sm-delete" onclick="deleteDemande(this)">Supprimer</button></div>
           </div>
         </div>
         <div class="sidebar-stack">
@@ -648,6 +653,7 @@
           <div class="legend-item"><div class="legend-dot avail"></div> Disponible</div>
           <div class="legend-item"><div class="legend-dot unavail"></div> Indisponible</div>
           <div class="legend-item"><div class="legend-dot empty"></div> Non défini</div>
+          <div class="legend-item"><div class="legend-dot avail" style="position:relative;"><span style="position:absolute;top:-1px;right:-1px;width:5px;height:5px;background:var(--orange);border-radius:50%;"></span></div> Créneau personnalisé</div>
         </div>
 
         <!-- CUSTOM SLOT FORM -->
@@ -1020,30 +1026,38 @@
       clearSelection();
     }
 
-    /* ========== AGENDA: DRAG-TO-SELECT + POPUP ========== */
+    /* ========== AGENDA: DRAG-TO-SELECT + POPUP (multi-day rectangle) ========== */
     (function() {
       var isDragging = false;
-      var dragCol = null;
+      var dragStartCol = null;
       var dragStartRow = null;
+      var dragCurrentCol = null;
       var dragCurrentRow = null;
       var lastMouseEvent = null;
 
       var grid = document.getElementById('agendaGrid');
       if (!grid) return;
 
-      function getCellsInRange(col, rowMin, rowMax) {
-        return Array.from(grid.querySelectorAll('.agenda-cell[data-col="' + col + '"]')).filter(function(c) {
-          var r = parseInt(c.dataset.row);
-          return r >= rowMin && r <= rowMax && !c.classList.contains('past');
-        });
+      function getCellsInRange(colMin, colMax, rowMin, rowMax) {
+        var cells = [];
+        for (var c = colMin; c <= colMax; c++) {
+          var colCells = Array.from(grid.querySelectorAll('.agenda-cell[data-col="' + c + '"]')).filter(function(cell) {
+            var r = parseInt(cell.dataset.row);
+            return r >= rowMin && r <= rowMax && !cell.classList.contains('past');
+          });
+          cells = cells.concat(colCells);
+        }
+        return cells;
       }
 
       function updateDragPreview() {
         clearSelection();
-        if (dragCol === null || dragStartRow === null || dragCurrentRow === null) return;
+        if (dragStartCol === null || dragStartRow === null || dragCurrentCol === null || dragCurrentRow === null) return;
+        var minCol = Math.min(dragStartCol, dragCurrentCol);
+        var maxCol = Math.max(dragStartCol, dragCurrentCol);
         var minRow = Math.min(dragStartRow, dragCurrentRow);
         var maxRow = Math.max(dragStartRow, dragCurrentRow);
-        var cells = getCellsInRange(dragCol, minRow, maxRow);
+        var cells = getCellsInRange(minCol, maxCol, minRow, maxRow);
         cells.forEach(function(c) {
           c.classList.add('selected-cell');
         });
@@ -1060,7 +1074,8 @@
         clearSelection();
 
         isDragging = true;
-        dragCol = cell.dataset.col;
+        dragStartCol = parseInt(cell.dataset.col);
+        dragCurrentCol = dragStartCol;
         dragStartRow = parseInt(cell.dataset.row);
         dragCurrentRow = dragStartRow;
         lastMouseEvent = e;
@@ -1072,9 +1087,11 @@
       grid.addEventListener('mousemove', function(e) {
         if (!isDragging) return;
         var cell = e.target.closest('.agenda-cell');
-        if (!cell || cell.dataset.col !== dragCol) return;
+        if (!cell) return;
+        var col = parseInt(cell.dataset.col);
         var row = parseInt(cell.dataset.row);
-        if (row !== dragCurrentRow) {
+        if (col !== dragCurrentCol || row !== dragCurrentRow) {
+          dragCurrentCol = col;
           dragCurrentRow = row;
           lastMouseEvent = e;
           updateDragPreview();
@@ -1091,7 +1108,8 @@
           showPopup(anchor, lastMouseEvent || e);
         }
 
-        dragCol = null;
+        dragStartCol = null;
+        dragCurrentCol = null;
         dragStartRow = null;
         dragCurrentRow = null;
         lastMouseEvent = null;
@@ -1179,6 +1197,7 @@
             cell.classList.remove('available', 'unavailable');
             if (customSlotStatus === 'available') cell.classList.add('available');
             else if (customSlotStatus === 'unavailable') cell.classList.add('unavailable');
+            cell.classList.add('custom-set');
             affectedCount++;
           }
         }
@@ -1270,6 +1289,26 @@
       actions.innerHTML = '';
       if (viewBtn) actions.appendChild(viewBtn);
       closeRefuseModal();
+    }
+
+    /* ========== DEMANDES: DELETE ========== */
+    function deleteDemande(btn) {
+      var item = btn.closest('.demande-item');
+      if (!item) return;
+      if (!confirm('Supprimer cette demande ?')) return;
+      item.style.transition = 'opacity 0.3s, max-height 0.3s, padding 0.3s, margin 0.3s';
+      item.style.opacity = '0';
+      item.style.maxHeight = item.scrollHeight + 'px';
+      setTimeout(function() {
+        item.style.maxHeight = '0';
+        item.style.overflow = 'hidden';
+        item.style.paddingTop = '0';
+        item.style.paddingBottom = '0';
+        item.style.marginTop = '0';
+        item.style.marginBottom = '0';
+        item.style.borderTopWidth = '0';
+        setTimeout(function() { item.remove(); }, 300);
+      }, 100);
     }
 
     /* ========== AUTH CHECK + LOAD PROFILE ========== */
