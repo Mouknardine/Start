@@ -980,7 +980,7 @@
       <div class="search-title-row">
         <div>
           <h1 class="search-title">Plombier à <span>Lausanne</span></h1>
-          <div class="search-count">42 professionnels trouvés</div>
+          <div class="search-count">Recherche en cours...</div>
         </div>
       </div>
 
@@ -1010,7 +1010,7 @@
 
     <div class="sort-bar">
       <div class="sort-bar-left">
-        Affichage de <strong>1 à 5</strong> sur <strong>42</strong> résultats
+        Chargement...
       </div>
       <div class="sort-select">
         Trier par
@@ -1023,301 +1023,260 @@
       </div>
     </div>
 
-    <!-- CARD 1 -->
-    <div class="artisan-card" data-urgence="1" data-score="4.9" data-dispo="semaine" onclick="window.location.href='profil.html'">
-      <div class="card-img">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
-        <div class="card-img-badge">
-          <span class="badge-available">Disponible</span>
-        </div>
-      </div>
-      <div class="card-body">
-        
-          <h2 class="card-name">Müller & Fils</h2>
-          <div class="card-rating">
-            <span class="card-stars">★★★★★</span>
-            <span class="card-score">4.9</span>
-            <span class="card-reviews">(47 avis)</span>
-          </div>
-        <div class="card-trade">Plombier · Chauffagiste</div>
-        <div class="card-location">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Lausanne, Pully, Prilly, Renens et environs
-        </div>
-        <div class="card-tags">
-          <span class="card-tag">Dépannage urgent</span>
-          <span class="card-tag">Salle de bain</span>
-          <span class="card-tag">Chauffage</span>
-        </div>
-        <div class="card-description">Entreprise familiale active depuis plus de 15 ans. Intervention rapide pour tous vos besoins en plomberie et chauffage. Devis gratuit pour les travaux de plus de 500 francs.</div>
-        <a href="tel:+41211234567" class="card-urgence-badge" style="text-decoration:none; color:white; cursor:pointer;"><span class="urgence-dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 013.12 4.18 2 2 0 015.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg> Urgence — Appeler</a>
-      </div>
-      <div class="card-side">
-        <div class="card-avail">
-          <div class="card-avail-label">Prochaines disponibilités</div>
-          <div class="card-avail-value">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            Cette semaine
-          </div>
-        </div>
-        <div class="card-next-slots">
-          <span class="card-slot">Lundi 10h00</span>
-          <span class="card-slot">Mardi 14h00</span>
-          <span class="card-slot">Mercredi 8h00</span>
-        </div>
-        <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="demande.html" class="btn-contacter" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Contacter</a>
-      </div>
+    <!-- Loading state -->
+    <div id="loading-state" style="text-align:center; padding:60px 20px;">
+      <p style="color:var(--gray-500); font-size:15px;">Chargement des artisans...</p>
     </div>
 
-    <!-- CARD 2 -->
-    <div class="artisan-card" data-score="4.8" data-dispo="48h" onclick="window.location.href='profil.html'">
-      <div class="card-img">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
-        <div class="card-img-badge">
-          <span class="badge-available">Disponible</span>
-        </div>
-      </div>
-      <div class="card-body">
-        
-          <h2 class="card-name">Plomberie Léman</h2>
-          <div class="card-rating">
-            <span class="card-stars">★★★★★</span>
-            <span class="card-score">4.8</span>
-            <span class="card-reviews">(31 avis)</span>
-          </div>
-        <div class="card-trade">Plombier</div>
-        <div class="card-location">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Lausanne, Morges, Écublens, Crissier
-        </div>
-        <div class="card-tags">
-          <span class="card-tag">Fuite et canalisation</span>
-          <span class="card-tag">Rénovation sanitaire</span>
-        </div>
-        <div class="card-description">Spécialisés dans les réparations de fuite et la rénovation de salles de bain. Intervention possible le jour même en cas d'urgence sur Lausanne et communes voisines.</div>
-      </div>
-      <div class="card-side">
-        <div class="card-avail">
-          <div class="card-avail-label">Prochaines disponibilités</div>
-          <div class="card-avail-value">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            Sous 48 heures
-          </div>
-        </div>
-        <div class="card-next-slots">
-          <span class="card-slot">Mercredi 9h00</span>
-          <span class="card-slot">Jeudi 14h00</span>
-        </div>
-        <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="demande.html" class="btn-contacter" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Contacter</a>
-      </div>
+    <!-- Empty state (hidden by default) -->
+    <div id="empty-state" style="display:none; text-align:center; padding:60px 20px;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#8A8680" stroke-width="1.5" style="margin-bottom:16px;"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M8 11h6"/></svg>
+      <h3 style="font-family:'Sora',sans-serif; font-size:18px; font-weight:700; color:var(--dark); margin-bottom:8px;">Aucun artisan trouvé</h3>
+      <p style="color:var(--gray-500); font-size:14px; line-height:1.6;">Aucun artisan ne correspond à votre recherche.<br>Essayez avec d'autres critères.</p>
     </div>
 
-    <!-- CARD 3 -->
-    <div class="artisan-card" data-score="4.5" data-dispo="semaine" onclick="window.location.href='profil.html'">
-      <div class="card-img">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
-        <div class="card-img-badge">
-          <span class="badge-available">Disponible</span>
-        </div>
-      </div>
-      <div class="card-body">
-        
-          <h2 class="card-name">AquaFix Sàrl</h2>
-          <div class="card-rating">
-            <span class="card-stars">★★★★☆</span>
-            <span class="card-score">4.5</span>
-            <span class="card-reviews">(18 avis)</span>
-          </div>
-        <div class="card-trade">Plombier</div>
-        <div class="card-location">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Lausanne, Lutry, Vevey, Montreux
-        </div>
-        <div class="card-tags">
-          <span class="card-tag">Chauffe-eau</span>
-          <span class="card-tag">Boiler</span>
-          <span class="card-tag">Installation</span>
-        </div>
-        <div class="card-description">Installation et remplacement de chauffe-eau et boilers. Plus de 10 ans d'expérience dans la région. Travail soigné et tarifs transparents.</div>
-      </div>
-      <div class="card-side">
-        <div class="card-avail">
-          <div class="card-avail-label">Prochaines disponibilités</div>
-          <div class="card-avail-value">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            Cette semaine
-          </div>
-        </div>
-        <div class="card-next-slots">
-          <span class="card-slot">Lundi 14h00</span>
-          <span class="card-slot">Vendredi 9h00</span>
-        </div>
-        <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="demande.html" class="btn-contacter" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Contacter</a>
-      </div>
-    </div>
+    <!-- Dynamic artisan cards container -->
+    <div id="artisans-container"></div>
 
-    <!-- CARD 4 -->
-    <div class="artisan-card" data-urgence="1" data-score="4.7" data-dispo="aujourdhui" onclick="window.location.href='profil.html'">
-      <div class="card-img">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
-        <div class="card-img-badge">
-          <span class="badge-available">Disponible</span>
-        </div>
-      </div>
-      <div class="card-body">
-        
-          <h2 class="card-name">DépannEau 24</h2>
-          <div class="card-rating">
-            <span class="card-stars">★★★★★</span>
-            <span class="card-score">4.7</span>
-            <span class="card-reviews">(23 avis)</span>
-          </div>
-        <div class="card-trade">Plombier</div>
-        <div class="card-location">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Grand Lausanne et Riviera
-        </div>
-        <div class="card-tags">
-          <span class="card-tag">Dépannage urgent</span>
-          <span class="card-tag">Débouchage</span>
-        </div>
-        <div class="card-description">Service de dépannage plomberie rapide sur le Grand Lausanne. Disponible en urgence pour les fuites, bouchons et pannes sanitaires. Devis sur place gratuit.</div>
-        <a href="tel:+41211234567" class="card-urgence-badge" style="text-decoration:none; color:white; cursor:pointer;"><span class="urgence-dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 013.12 4.18 2 2 0 015.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg> Urgence — Appeler</a>
-      </div>
-      <div class="card-side">
-        <div class="card-avail">
-          <div class="card-avail-label">Prochaines disponibilités</div>
-          <div class="card-avail-value">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            Aujourd'hui
-          </div>
-        </div>
-        <div class="card-next-slots">
-          <span class="card-slot">Aujourd'hui 15h00</span>
-          <span class="card-slot">Demain 8h00</span>
-        </div>
-        <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="demande.html" class="btn-contacter" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Contacter</a>
-      </div>
-    </div>
-
-    <!-- CARD 5 -->
-    <div class="artisan-card" data-score="4.9" data-dispo="semaine-prochaine" onclick="window.location.href='profil.html'">
-      <div class="card-img">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
-        <div class="card-img-badge">
-          <span class="badge-available">Disponible</span>
-        </div>
-      </div>
-      <div class="card-body">
-        
-          <h2 class="card-name">Sanitaire Riviera</h2>
-          <div class="card-rating">
-            <span class="card-stars">★★★★★</span>
-            <span class="card-score">4.9</span>
-            <span class="card-reviews">(12 avis)</span>
-          </div>
-        <div class="card-trade">Plombier · Chauffagiste</div>
-        <div class="card-location">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Vevey, Montreux, Lausanne est
-        </div>
-        <div class="card-tags">
-          <span class="card-tag">Rénovation complète</span>
-          <span class="card-tag">Installation chauffage</span>
-          <span class="card-tag">Entretien</span>
-        </div>
-        <div class="card-description">Spécialiste en rénovation de salles de bain et installation de systèmes de chauffage. Approche personnalisée pour chaque projet. Garantie sur tous les travaux.</div>
-      </div>
-      <div class="card-side">
-        <div class="card-avail">
-          <div class="card-avail-label">Prochaines disponibilités</div>
-          <div class="card-avail-value">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            Semaine prochaine
-          </div>
-        </div>
-        <div class="card-next-slots">
-          <span class="card-slot">Lundi 16 mars</span>
-          <span class="card-slot">Mardi 17 mars</span>
-        </div>
-        <a href="profil.html" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>
-        <a href="demande.html" class="btn-contacter" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Contacter</a>
-      </div>
-    </div>
-
-    <!-- PAGINATION -->
-    <div class="pagination">
-      <button class="page-btn arrow">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <button class="page-btn active">1</button>
-      <button class="page-btn">2</button>
-      <button class="page-btn">3</button>
-      <button class="page-btn">4</button>
-      <button class="page-btn">...</button>
-      <button class="page-btn">9</button>
-      <button class="page-btn arrow">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
+    <!-- PAGINATION (hidden — all results loaded dynamically) -->
+    <div class="pagination" style="display:none;">
     </div>
 
   </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <script>
-(function() {
+// ===== HELPERS =====
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Global store for avis data (artisan_id -> { avg, count })
+var artisanRatings = {};
+
+function renderArtisanCard(a) {
+  var name = a.entreprise || ((a.prenom || '') + ' ' + (a.nom || '')).trim() || 'Artisan';
+  var metier = a.metier || 'Artisan';
+  var zones = (a.zones || []).join(', ') || 'Non spécifié';
+  var specialites = (a.specialites || []);
+  var description = a.description || '';
+  var urgence = a.urgence || false;
+  var telephone = a.telephone || '';
+
+  // Get rating from avis data
+  var rating = artisanRatings[a.id] || { avg: 0, count: 0 };
+  var score = rating.avg;
+  var avisCount = rating.count;
+
+  // Generate star display
+  var starsHtml = '';
+  var fullStars = Math.floor(score);
+  var hasHalf = (score - fullStars) >= 0.5;
+  for (var si = 0; si < 5; si++) {
+    if (si < fullStars) {
+      starsHtml += '\u2605';
+    } else if (si === fullStars && hasHalf) {
+      starsHtml += '\u2605';
+    } else {
+      starsHtml += '\u2606';
+    }
+  }
+
+  var scoreDisplay = avisCount > 0 ? score.toFixed(1) : '\u2014';
+  var reviewsDisplay = avisCount > 0 ? '(' + avisCount + ' avis)' : '(nouveau)';
+
+  // Determine availability based on horaires
+  var dispo = 'semaine';
+  var dispoLabel = 'Cette semaine';
+
+  // Build tags HTML
+  var tagsHtml = '';
+  specialites.slice(0, 3).forEach(function(s) {
+    tagsHtml += '<span class="card-tag">' + escapeHtml(s) + '</span>';
+  });
+
+  // Build urgence badge HTML
+  var urgenceHtml = '';
+  if (urgence && telephone) {
+    var tel = telephone.replace(/\s/g, '');
+    urgenceHtml = '<a href="tel:+41' + escapeHtml(tel) + '" class="card-urgence-badge" style="text-decoration:none; color:white; cursor:pointer;" onclick="event.stopPropagation()"><span class="urgence-dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 013.12 4.18 2 2 0 015.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg> Urgence \u2014 Appeler</a>';
+  }
+
+  var card = document.createElement('div');
+  card.className = 'artisan-card';
+  card.setAttribute('data-score', score.toString());
+  card.setAttribute('data-avis-count', avisCount.toString());
+  card.setAttribute('data-dispo', dispo);
+  if (urgence) card.setAttribute('data-urgence', '1');
+  card.onclick = function() { window.location.href = 'profil.html?id=' + a.id; };
+
+  card.innerHTML =
+    '<div class="card-img">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>' +
+      '<div class="card-img-badge"><span class="badge-available">Disponible</span></div>' +
+    '</div>' +
+    '<div class="card-body">' +
+      '<h2 class="card-name">' + escapeHtml(name) + '</h2>' +
+      '<div class="card-rating">' +
+        '<span class="card-stars">' + starsHtml + '</span>' +
+        '<span class="card-score">' + scoreDisplay + '</span>' +
+        '<span class="card-reviews">' + reviewsDisplay + '</span>' +
+      '</div>' +
+      '<div class="card-trade">' + escapeHtml(metier) + '</div>' +
+      '<div class="card-location">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>' +
+        escapeHtml(zones) +
+      '</div>' +
+      '<div class="card-tags">' + tagsHtml + '</div>' +
+      '<div class="card-description">' + escapeHtml(description) + '</div>' +
+      urgenceHtml +
+    '</div>' +
+    '<div class="card-side">' +
+      '<div class="card-avail">' +
+        '<div class="card-avail-label">Prochaines disponibilit\u00e9s</div>' +
+        '<div class="card-avail-value">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' +
+          dispoLabel +
+        '</div>' +
+      '</div>' +
+      '<a href="profil.html?id=' + a.id + '" class="btn-voir-profil" onclick="event.stopPropagation()">Voir le profil</a>' +
+      '<a href="demande.html?artisan=' + a.id + '" class="btn-contacter" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Contacter</a>' +
+    '</div>';
+
+  return card;
+}
+
+// ===== MAIN INIT =====
+(async function() {
   var params = new URLSearchParams(window.location.search);
-  var metier = params.get('metier') || 'Plombier';
-  var ville = params.get('ville') || 'Lausanne';
+  var metier = params.get('metier') || '';
+  var ville = params.get('ville') || '';
+  var urgenceParam = params.get('urgence');
+
   // Capitalize first letter
-  metier = metier.charAt(0).toUpperCase() + metier.slice(1);
-  ville = ville.charAt(0).toUpperCase() + ville.slice(1);
+  if (metier) metier = metier.charAt(0).toUpperCase() + metier.slice(1);
+  if (ville) ville = ville.charAt(0).toUpperCase() + ville.slice(1);
+
+  // Fallback display labels
+  var metierDisplay = metier || 'Artisan';
+  var villeDisplay = ville || 'Suisse romande';
 
   // Update title
   var h1 = document.querySelector('.search-title');
-  if (h1) h1.innerHTML = metier + ' à <span>' + ville + '</span>';
-
-  // Update count
-  var count = document.querySelector('.search-count');
-  if (count) count.textContent = Math.floor(Math.random() * 30 + 10) + ' professionnels trouvés';
+  if (h1) h1.innerHTML = escapeHtml(metierDisplay) + ' \u00e0 <span>' + escapeHtml(villeDisplay) + '</span>';
 
   // Update breadcrumb
   var breadcrumbLinks = document.querySelectorAll('.breadcrumb a');
-  if (breadcrumbLinks[1]) breadcrumbLinks[1].textContent = metier;
-  var breadcrumbSpans = document.querySelectorAll('.breadcrumb span');
-  // The last span (non-link) in breadcrumb shows the city
+  if (breadcrumbLinks[1]) breadcrumbLinks[1].textContent = metierDisplay;
   var lastBreadcrumb = document.querySelector('.breadcrumb span[style]');
-  if (lastBreadcrumb) lastBreadcrumb.textContent = ville;
+  if (lastBreadcrumb) lastBreadcrumb.textContent = villeDisplay;
 
   // Update nav search inputs
   var navInputs = document.querySelectorAll('.nav-search-field input');
-  if (navInputs[0]) navInputs[0].value = metier;
-  if (navInputs[1]) navInputs[1].value = ville;
+  if (navInputs[0]) navInputs[0].value = metierDisplay;
+  if (navInputs[1]) navInputs[1].value = villeDisplay;
 
   // Update page title
-  document.title = metier + ' à ' + ville + ' — Résultats | Artisano';
+  document.title = metierDisplay + ' \u00e0 ' + villeDisplay + ' \u2014 R\u00e9sultats | Artisano';
 
-  // Auto-activate urgence filter if URL param present
-  var urgence = params.get('urgence');
-  if (urgence === '1') {
-    var urgBtn = document.getElementById('filter-urgence');
-    if (urgBtn) {
-      urgBtn.classList.add('active');
-      document.getElementById('filter-tous').classList.remove('active');
+  // ===== FETCH ARTISANS FROM SUPABASE =====
+  try {
+    // Query all artisans
+    var { data: artisans, error: artErr } = await _sb.from('artisans').select('*');
+    if (artErr) throw artErr;
+
+    if (!artisans) artisans = [];
+
+    // Filter by metier if param exists (case-insensitive)
+    if (metier) {
+      artisans = artisans.filter(function(a) {
+        return a.metier && a.metier.toLowerCase() === metier.toLowerCase();
+      });
     }
-    applyFilters();
+
+    // Filter by ville/zone if param exists (check if any zone matches, case-insensitive)
+    if (ville) {
+      artisans = artisans.filter(function(a) {
+        if (!a.zones || !Array.isArray(a.zones) || a.zones.length === 0) return false;
+        var villeLower = ville.toLowerCase();
+        return a.zones.some(function(z) {
+          return z.toLowerCase().indexOf(villeLower) !== -1 || villeLower.indexOf(z.toLowerCase()) !== -1;
+        });
+      });
+    }
+
+    // ===== FETCH AVIS (ratings) FROM SUPABASE =====
+    var { data: avisData, error: avisErr } = await _sb.from('avis').select('artisan_id, note');
+    if (!avisErr && avisData) {
+      // Group by artisan_id and compute averages
+      var grouped = {};
+      avisData.forEach(function(av) {
+        if (!grouped[av.artisan_id]) grouped[av.artisan_id] = [];
+        grouped[av.artisan_id].push(av.note);
+      });
+      Object.keys(grouped).forEach(function(aid) {
+        var notes = grouped[aid];
+        var sum = notes.reduce(function(a, b) { return a + b; }, 0);
+        artisanRatings[aid] = {
+          avg: Math.round((sum / notes.length) * 10) / 10,
+          count: notes.length
+        };
+      });
+    }
+
+    // Hide loading state
+    var loadingEl = document.getElementById('loading-state');
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    // Update count
+    var count = document.querySelector('.search-count');
+    if (count) count.textContent = artisans.length + ' professionnel' + (artisans.length > 1 ? 's' : '') + ' trouv\u00e9' + (artisans.length > 1 ? 's' : '');
+
+    // Show empty state or render cards
+    if (artisans.length === 0) {
+      document.getElementById('empty-state').style.display = '';
+      // Update sort bar
+      var sortBarLeft = document.querySelector('.sort-bar-left');
+      if (sortBarLeft) sortBarLeft.innerHTML = '<strong>0</strong> r\u00e9sultat';
+    } else {
+      var container = document.getElementById('artisans-container');
+      artisans.forEach(function(a, idx) {
+        var card = renderArtisanCard(a);
+        card.style.animationDelay = (0.05 * (idx + 1)) + 's';
+        container.appendChild(card);
+      });
+
+      // Update sort bar count
+      var sortBarLeft = document.querySelector('.sort-bar-left');
+      if (sortBarLeft) {
+        sortBarLeft.innerHTML = 'Affichage de <strong>1 \u00e0 ' + artisans.length + '</strong> sur <strong>' + artisans.length + '</strong> r\u00e9sultats';
+      }
+    }
+
+    // Auto-activate urgence filter if URL param present
+    if (urgenceParam === '1') {
+      var urgBtn = document.getElementById('filter-urgence');
+      if (urgBtn) {
+        urgBtn.classList.add('active');
+        document.getElementById('filter-tous').classList.remove('active');
+      }
+      applyFilters();
+    }
+
+  } catch (err) {
+    console.error('Erreur chargement artisans:', err);
+    var loadingEl = document.getElementById('loading-state');
+    if (loadingEl) loadingEl.innerHTML = '<p style="color:#D32F2F; font-size:15px;">Erreur lors du chargement. Veuillez r\u00e9essayer.</p>';
   }
 })();
 
 // ===== FILTER SYSTEM =====
-var dispoValues = ['aujourdhui', '48h', 'semaine']; // "cette semaine" includes today, 48h and semaine
+var dispoValues = ['aujourdhui', '48h', 'semaine'];
 
 function toggleFilter(btn, type) {
   btn.classList.toggle('active');
-  // Remove "Tous" active if any filter is on
   var tousBtn = document.getElementById('filter-tous');
   var anyActive = document.querySelector('.filter-btn.active:not(#filter-tous)');
   if (anyActive) {
@@ -1333,7 +1292,6 @@ function toggleUrgenceFilter(btn) {
 }
 
 function resetFilters() {
-  // Remove active from all filter buttons except Tous
   document.querySelectorAll('.filter-btn').forEach(function(btn) {
     btn.classList.remove('active');
   });
@@ -1346,25 +1304,22 @@ function applyFilters() {
   var filterNote = document.getElementById('filter-note').classList.contains('active');
   var filterUrgence = document.getElementById('filter-urgence').classList.contains('active');
 
-  var cards = document.querySelectorAll('.artisan-card');
+  var cards = document.querySelectorAll('#artisans-container .artisan-card');
   var visibleCount = 0;
 
   cards.forEach(function(card) {
     var show = true;
 
-    // Filtre "Disponible cette semaine" : aujourdhui, 48h, semaine
     if (filterDispo) {
       var dispo = card.getAttribute('data-dispo');
       if (dispoValues.indexOf(dispo) === -1) show = false;
     }
 
-    // Filtre "Note 4 étoiles et plus"
     if (filterNote) {
       var score = parseFloat(card.getAttribute('data-score') || '0');
       if (score < 4) show = false;
     }
 
-    // Filtre "Urgence"
     if (filterUrgence) {
       if (!card.hasAttribute('data-urgence')) show = false;
     }
@@ -1377,24 +1332,58 @@ function applyFilters() {
     }
   });
 
+  // Show/hide empty state based on filter results
+  var emptyState = document.getElementById('empty-state');
+  var loadingState = document.getElementById('loading-state');
+  var hasAnyFilter = filterDispo || filterNote || filterUrgence;
+  if (visibleCount === 0 && cards.length > 0 && hasAnyFilter) {
+    if (emptyState) emptyState.style.display = '';
+  } else if (cards.length > 0) {
+    if (emptyState) emptyState.style.display = 'none';
+  }
+
   // Update result count
   var sortBarLeft = document.querySelector('.sort-bar-left');
   if (sortBarLeft) {
     var totalCards = cards.length;
-    var hasFilter = filterDispo || filterNote || filterUrgence;
-    if (hasFilter) {
+    if (hasAnyFilter) {
       var labels = [];
       if (filterUrgence) labels.push('urgence');
       if (filterDispo) labels.push('disponibles cette semaine');
-      if (filterNote) labels.push('4★+');
-      sortBarLeft.innerHTML = '<strong>' + visibleCount + '</strong> artisan' + (visibleCount > 1 ? 's' : '') + ' — ' + labels.join(', ');
+      if (filterNote) labels.push('4\u2605+');
+      sortBarLeft.innerHTML = '<strong>' + visibleCount + '</strong> artisan' + (visibleCount > 1 ? 's' : '') + ' \u2014 ' + labels.join(', ');
     } else {
-      sortBarLeft.innerHTML = 'Affichage de <strong>1 à ' + totalCards + '</strong> sur <strong>' + totalCards + '</strong> résultats';
+      sortBarLeft.innerHTML = 'Affichage de <strong>1 \u00e0 ' + totalCards + '</strong> sur <strong>' + totalCards + '</strong> r\u00e9sultats';
     }
   }
 }
 
+// ===== SORT SYSTEM =====
+(function() {
+  var sortSelect = document.querySelector('.sort-select select');
+  if (sortSelect) {
+    sortSelect.addEventListener('change', function() {
+      var val = this.value;
+      var container = document.getElementById('artisans-container');
+      var cards = Array.from(container.querySelectorAll('.artisan-card'));
 
+      if (val === 'Meilleure note') {
+        cards.sort(function(a, b) {
+          return parseFloat(b.getAttribute('data-score') || '0') - parseFloat(a.getAttribute('data-score') || '0');
+        });
+      } else if (val === "Plus d'avis") {
+        cards.sort(function(a, b) {
+          return parseInt(b.getAttribute('data-avis-count') || '0') - parseInt(a.getAttribute('data-avis-count') || '0');
+        });
+      }
+      // Re-append in sorted order
+      cards.forEach(function(card, idx) {
+        card.style.animationDelay = (0.05 * (idx + 1)) + 's';
+        container.appendChild(card);
+      });
+    });
+  }
+})();
 </script>
 <script src="artisano-common.js"></script>
 </body>

@@ -1519,6 +1519,9 @@
     </a>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+
   <script>
     // Tab switching
     document.querySelectorAll('.profile-tab').forEach(tab => {
@@ -1558,11 +1561,39 @@
 
     document.querySelectorAll('.card').forEach(el => observer.observe(el));
 
-    // Load profile from localStorage
-    (function() {
-      var data = localStorage.getItem('artisano-profil');
-      var p;
-      try { p = data ? JSON.parse(data) : null; } catch(e) { p = null; }
+    // Load profile from Supabase (if ?id=UUID) or localStorage fallback
+    (async function() {
+      var params = new URLSearchParams(window.location.search);
+      var artisanId = params.get('id');
+      var p = null;
+      var reviews = [];
+
+      if (artisanId) {
+        // Load from Supabase
+        try {
+          var { data: dbRow, error } = await _sb.from('artisans').select('*').eq('id', artisanId).single();
+          if (dbRow && !error) {
+            p = dbProfileToLocal(dbRow);
+            p._id = artisanId;
+          }
+        } catch(e) {
+          console.error('Error loading profile from Supabase:', e);
+        }
+
+        // Load reviews from avis table
+        try {
+          var { data: avisData } = await _sb.from('avis').select('*').eq('artisan_id', artisanId).order('created_at', { ascending: false });
+          if (avisData) reviews = avisData;
+        } catch(e) {
+          console.error('Error loading reviews:', e);
+        }
+      }
+
+      // Fallback to localStorage if no Supabase data
+      if (!p) {
+        var data = localStorage.getItem('artisano-profil');
+        try { p = data ? JSON.parse(data) : null; } catch(e) { p = null; }
+      }
 
       // Urgence badge
       var artisanUrgence = p ? p.urgence : true; // default demo = true
@@ -1647,7 +1678,7 @@
         contactItems[2].innerHTML = contactItems[2].querySelector('svg').outerHTML + ' ' + p.adresse;
       }
 
-      // Sidebar: horaires
+      // Sidebar: horaires in contact card
       if (contactItems[3] && p.horaires) {
         var svgHTML = contactItems[3].querySelector('svg').outerHTML;
         var horaireText = '';
@@ -1660,12 +1691,209 @@
         contactItems[3].innerHTML = svgHTML + ' ' + horaireText;
       }
 
+      // Sidebar: availability card — render from horaires
+      if (p.horaires && p.horaires.length > 0) {
+        var daysContainer = document.querySelector('.avail-days');
+        if (daysContainer) {
+          daysContainer.innerHTML = '';
+          var joursFr = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+          // Calculate dates for current week starting from Monday
+          var today = new Date();
+          var dayOfWeek = today.getDay(); // 0=Sun, 1=Mon...
+          var mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+          var monday = new Date(today);
+          monday.setDate(today.getDate() + mondayOffset);
+
+          // Update week label
+          var weekLabel = document.querySelector('.avail-week-label');
+          if (weekLabel) {
+            weekLabel.textContent = 'Semaine du ' + monday.getDate() + ' ' + ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'][monday.getMonth()];
+          }
+
+          joursFr.forEach(function(jourNom, idx) {
+            var currentDate = new Date(monday);
+            currentDate.setDate(monday.getDate() + idx);
+            var dateStr = currentDate.getDate() + ' ' + ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'][currentDate.getMonth()];
+
+            // Find matching horaire entry
+            var h = p.horaires.find(function(entry) {
+              return entry.jour && entry.jour.toLowerCase() === jourNom.toLowerCase();
+            });
+
+            var dayDiv = document.createElement('div');
+            dayDiv.className = 'avail-day';
+
+            var nameSpan = document.createElement('span');
+            nameSpan.className = 'avail-day-name';
+            nameSpan.textContent = jourNom;
+            dayDiv.appendChild(nameSpan);
+
+            var dateSpan = document.createElement('span');
+            dateSpan.className = 'avail-day-date';
+            dateSpan.textContent = dateStr;
+            dayDiv.appendChild(dateSpan);
+
+            if (h && h.ouvert) {
+              var slotsDiv = document.createElement('div');
+              slotsDiv.className = 'avail-slots';
+              // Generate slots from debut to fin
+              var startH = parseInt(h.debut);
+              var endH = parseInt(h.fin);
+              if (!isNaN(startH) && !isNaN(endH)) {
+                for (var hour = startH; hour < endH; hour += 2) {
+                  var slot = document.createElement('span');
+                  slot.className = 'avail-slot';
+                  slot.textContent = hour + 'h00';
+                  slotsDiv.appendChild(slot);
+                }
+              }
+              dayDiv.appendChild(slotsDiv);
+            } else {
+              var closedSpan = document.createElement('span');
+              closedSpan.className = 'avail-closed';
+              closedSpan.textContent = 'Fermé';
+              dayDiv.appendChild(closedSpan);
+            }
+
+            daysContainer.appendChild(dayDiv);
+          });
+
+          // Re-bind slot click events for dynamically created slots
+          document.querySelectorAll('.avail-slot').forEach(function(slot) {
+            slot.addEventListener('click', function() {
+              document.querySelectorAll('.avail-slot').forEach(function(s) { s.classList.remove('selected'); });
+              this.classList.add('selected');
+              var day = this.closest('.avail-day').querySelector('.avail-day-name').textContent.trim();
+              var date = this.closest('.avail-day').querySelector('.avail-day-date').textContent.trim();
+              var time = this.textContent.trim();
+              var slotParams = 'jour=' + encodeURIComponent(day) + '&date=' + encodeURIComponent(date) + '&heure=' + encodeURIComponent(time);
+              if (artisanId) slotParams += '&artisan=' + encodeURIComponent(artisanId);
+              window.location.href = 'demande.html?' + slotParams;
+            });
+          });
+        }
+      }
+
       // Title tag
       var name = p.entreprise || ((p.prenom || '') + ' ' + (p.nom || '')).trim();
       if (name) {
         document.title = name + ' — ' + (p.metier || 'Artisan') + ' | Artisano';
       }
+
+      // Update Contacter / demande links to include artisan ID
+      if (artisanId) {
+        document.querySelectorAll('a[href="demande.html"]').forEach(function(link) {
+          link.href = 'demande.html?artisan=' + artisanId;
+        });
+        // Also update the floating CTA link which has inline style
+        document.querySelectorAll('a.btn-primary').forEach(function(link) {
+          if (link.getAttribute('href') && link.getAttribute('href').indexOf('demande.html') === 0 && link.getAttribute('href').indexOf('artisan=') === -1) {
+            link.href = 'demande.html?artisan=' + artisanId;
+          }
+        });
+      }
+
+      // Render real reviews from Supabase (replaces hardcoded ones)
+      if (reviews.length > 0) {
+        renderReviews(reviews, p);
+      }
+
     })();
+
+    // Render Supabase reviews into the avis card
+    function renderReviews(reviews, profile) {
+      var avisCard = document.getElementById('avis');
+      if (!avisCard) return;
+
+      // Compute average rating
+      var total = 0;
+      reviews.forEach(function(r) { total += (r.note || 0); });
+      var avg = reviews.length > 0 ? (total / reviews.length).toFixed(1) : '0.0';
+
+      // Update the summary score
+      var bigScore = avisCard.querySelector('.reviews-big-score');
+      if (bigScore) bigScore.textContent = avg;
+
+      // Update summary stars
+      var summaryStars = avisCard.querySelector('.reviews-summary-stars');
+      if (summaryStars) {
+        var fullStars = Math.round(parseFloat(avg));
+        summaryStars.textContent = '';
+        for (var i = 0; i < 5; i++) {
+          summaryStars.textContent += i < fullStars ? '\u2605' : '\u2606';
+        }
+      }
+
+      // Update summary count
+      var summaryCount = avisCard.querySelector('.reviews-summary-count');
+      if (summaryCount) summaryCount.textContent = 'Basé sur ' + reviews.length + ' avis vérifiés';
+
+      // Update tab label
+      var avisTab = document.querySelector('.profile-tab[href="#avis"]');
+      if (avisTab) avisTab.textContent = 'Avis (' + reviews.length + ')';
+
+      // Update hero rating
+      var heroScore = document.querySelector('.rating-score');
+      if (heroScore) heroScore.textContent = avg;
+      var heroCount = document.querySelector('.rating-count');
+      if (heroCount) heroCount.textContent = '· ' + reviews.length + ' avis vérifiés';
+      var heroStars = document.querySelector('.rating-stars');
+      if (heroStars) {
+        var fullHero = Math.round(parseFloat(avg));
+        heroStars.innerHTML = '';
+        for (var i = 0; i < 5; i++) {
+          var span = document.createElement('span');
+          span.className = i < fullHero ? 'star-filled' : 'star-empty';
+          span.textContent = '\u2605';
+          heroStars.appendChild(span);
+        }
+      }
+
+      // Remove existing review items and "voir plus" link
+      var existingReviews = avisCard.querySelectorAll('.review-item');
+      existingReviews.forEach(function(el) { el.remove(); });
+      var moreLink = avisCard.querySelector('.reviews-more');
+      if (moreLink) moreLink.remove();
+
+      // Render each review
+      var moisFr = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+      reviews.forEach(function(r) {
+        var item = document.createElement('div');
+        item.className = 'review-item';
+
+        // Date formatting
+        var dateStr = '';
+        if (r.created_at) {
+          var d = new Date(r.created_at);
+          dateStr = d.getDate() + ' ' + moisFr[d.getMonth()] + ' ' + d.getFullYear();
+        }
+
+        // Stars
+        var starsStr = '';
+        var note = r.note || 5;
+        for (var i = 0; i < 5; i++) {
+          starsStr += i < note ? '\u2605' : '\u2606';
+        }
+
+        // Author name
+        var authorName = r.nom_client || 'Client';
+
+        item.innerHTML =
+          '<div class="review-top">' +
+            '<div class="review-author">' + authorName + '</div>' +
+            '<div class="review-date">' + dateStr + '</div>' +
+          '</div>' +
+          '<div class="review-stars">' + starsStr + '</div>' +
+          '<div class="review-text">' + (r.commentaire || '') + '</div>' +
+          '<div class="review-badge">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
+            ' Avis vérifié' +
+          '</div>';
+
+        avisCard.appendChild(item);
+      });
+    }
 
   </script>
   <script src="artisano-common.js"></script>
