@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon profil | Artisano</title>
+<meta name="description" content="Modifiez votre profil artisan Artisano : informations, horaires, urgences, spécialités et plus.">
+<meta name="theme-color" content="#E8700A">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23E8700A'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #E8700A; --orange-light: #F08A2E; --orange-dark: #CC5F00;
+    --yellow: #F0B429; --dark: #1A2744; --dark-mid: #213052;
+    --white: #FAFAF8; --gray-100: #F2F1EE; --gray-200: #E5E3DE;
+    --gray-300: #D1CEC7; --gray-500: #8A8680; --gray-700: #55524D;
+    --green: #2E7D32; --green-light: #E8F5E9;
+    --red: #D32F2F; --red-light: #FFEBEE;
+    --blue: #1565C0; --blue-light: #E3F2FD;
+    --radius: 16px; --radius-sm: 10px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--gray-100); color:var(--dark); -webkit-font-smoothing:antialiased; }
+
+  /* NAV */
+  nav { position:fixed; top:0; left:0; right:0; z-index:100; padding:14px 40px; display:flex; align-items:center; justify-content:space-between; background:rgba(250,250,248,0.92); backdrop-filter:blur(20px); border-bottom:1px solid rgba(0,0,0,0.05); }
+  .logo { font-family:'Sora',sans-serif; font-weight:800; font-size:24px; color:var(--dark); text-decoration:none; display:flex; align-items:center; gap:6px; }
+  .logo-dot { width:8px; height:8px; background:var(--orange); border-radius:50%; }
+  .nav-user { display:flex; align-items:center; gap:16px; }
+  .nav-user-name { font-weight:600; font-size:14px; }
+  .nav-user-avatar { width:36px; height:36px; background:var(--dark); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-family:'Sora',sans-serif; font-weight:800; font-size:13px; }
+  .nav-links { display:flex; gap:24px; list-style:none; }
+  .nav-links a { text-decoration:none; color:var(--gray-500); font-weight:500; font-size:14px; padding:6px 0; border-bottom:2px solid transparent; transition:all 0.2s; }
+  .nav-links a:hover { color:var(--dark); }
+  .nav-links a.active { color:var(--orange); border-bottom-color:var(--orange); }
+  .hamburger { display:none; background:none; border:none; cursor:pointer; padding:8px; color:var(--dark); }
+
+  /* LAYOUT */
+  .page { max-width:800px; margin:0 auto; padding:90px 40px 80px; }
+  .page-header { margin-bottom:32px; }
+  .page-title { font-family:'Sora',sans-serif; font-size:28px; font-weight:800; }
+  .page-subtitle { font-size:14px; color:var(--gray-500); margin-top:4px; }
+
+  /* CARDS */
+  .card { background:white; border-radius:var(--radius); padding:28px; border:1px solid var(--gray-200); margin-bottom:20px; }
+  .card-title { font-family:'Sora',sans-serif; font-size:18px; font-weight:700; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+  .card-title svg { width:20px; height:20px; color:var(--orange); flex-shrink:0; }
+
+  /* FORM */
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .form-row.single { grid-template-columns:1fr; }
+  .form-group { margin-bottom:16px; }
+  .form-group:last-child { margin-bottom:0; }
+  .form-label { display:block; font-size:13px; font-weight:600; color:var(--dark); margin-bottom:6px; }
+  .form-hint { font-size:12px; color:var(--gray-500); margin-top:4px; }
+  input[type="text"], input[type="email"], input[type="tel"], input[type="url"], input[type="number"], input[type="time"], select, textarea {
+    width:100%; padding:12px 14px; border:2px solid var(--gray-200); border-radius:var(--radius-sm);
+    font-family:'DM Sans',sans-serif; font-size:14px; color:var(--dark); background:white; transition:all 0.2s; outline:none;
+  }
+  input:focus, select:focus, textarea:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.1); }
+  input::placeholder, textarea::placeholder { color:var(--gray-500); }
+  textarea { resize:vertical; min-height:100px; }
+  select { cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238A8680' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:36px; }
+
+  /* TAGS */
+  .tags-container { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
+  .tag { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background:var(--gray-100); border-radius:50px; font-size:13px; font-weight:500; transition:all 0.2s; }
+  .tag-remove { width:16px; height:16px; border-radius:50%; background:var(--gray-300); color:white; border:none; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition:all 0.2s; line-height:1; }
+  .tag-remove:hover { background:var(--red); }
+  .tag-input-row { display:flex; gap:8px; }
+  .tag-input-row input { flex:1; }
+  .btn-add-tag { padding:10px 18px; border-radius:var(--radius-sm); border:2px solid var(--gray-200); background:white; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; color:var(--dark); cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+  .btn-add-tag:hover { border-color:var(--orange); color:var(--orange); }
+
+  /* TOGGLES */
+  .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--gray-100); }
+  .toggle-row:last-child { border-bottom:none; }
+  .toggle-info { flex:1; }
+  .toggle-title { font-size:14px; font-weight:600; }
+  .toggle-desc { font-size:12px; color:var(--gray-500); margin-top:2px; }
+  .toggle { width:48px; height:28px; border-radius:50px; background:var(--gray-300); cursor:pointer; position:relative; transition:all 0.3s; flex-shrink:0; }
+  .toggle.active { background:var(--green); }
+  .toggle::after { content:''; position:absolute; top:3px; left:3px; width:22px; height:22px; background:white; border-radius:50%; transition:all 0.3s; box-shadow:0 1px 4px rgba(0,0,0,0.15); }
+  .toggle.active::after { left:23px; }
+
+  /* URGENCE SECTION */
+  .urgence-fields { max-height:0; overflow:hidden; transition:max-height 0.4s ease; }
+  .urgence-fields.open { max-height:400px; }
+  .urgence-fields-inner { padding-top:16px; }
+  .urgence-days { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+  .urgence-day { padding:8px 14px; border-radius:50px; border:2px solid var(--gray-200); background:white; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+  .urgence-day.active { background:var(--red); color:white; border-color:var(--red); }
+
+  /* HORAIRES */
+  .horaire-day { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--gray-100); }
+  .horaire-day:last-child { border-bottom:none; }
+  .horaire-day-name { width:80px; font-size:14px; font-weight:600; flex-shrink:0; }
+  .horaire-toggle { width:42px; height:24px; border-radius:50px; background:var(--gray-300); cursor:pointer; position:relative; transition:all 0.3s; flex-shrink:0; }
+  .horaire-toggle.active { background:var(--green); }
+  .horaire-toggle::after { content:''; position:absolute; top:2px; left:2px; width:20px; height:20px; background:white; border-radius:50%; transition:all 0.3s; box-shadow:0 1px 3px rgba(0,0,0,0.15); }
+  .horaire-toggle.active::after { left:20px; }
+  .horaire-times { display:flex; align-items:center; gap:8px; flex:1; }
+  .horaire-times input { width:80px; padding:8px 10px; font-size:13px; text-align:center; }
+  .horaire-sep { font-size:13px; color:var(--gray-500); }
+  .horaire-closed { font-size:13px; color:var(--gray-500); font-style:italic; }
+
+  /* AVATAR */
+  .avatar-section { display:flex; align-items:center; gap:20px; }
+  .avatar-preview { width:80px; height:80px; border-radius:50%; background:var(--dark); display:flex; align-items:center; justify-content:center; color:white; font-family:'Sora',sans-serif; font-weight:800; font-size:24px; flex-shrink:0; overflow:hidden; }
+  .avatar-preview img { width:100%; height:100%; object-fit:cover; }
+  .avatar-actions { display:flex; flex-direction:column; gap:6px; }
+  .btn-upload { padding:10px 20px; border-radius:50px; border:2px solid var(--gray-200); background:white; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; color:var(--dark); cursor:pointer; transition:all 0.2s; }
+  .btn-upload:hover { border-color:var(--orange); color:var(--orange); }
+
+  /* CONTACT PREFS */
+  .contact-option { display:flex; align-items:center; gap:12px; padding:12px 16px; border:2px solid var(--gray-200); border-radius:var(--radius-sm); margin-bottom:8px; cursor:pointer; transition:all 0.2s; }
+  .contact-option:hover { border-color:var(--gray-300); }
+  .contact-option.selected { border-color:var(--orange); background:rgba(232,112,10,0.03); }
+  .contact-checkbox { width:20px; height:20px; border:2px solid var(--gray-300); border-radius:5px; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0; }
+  .contact-option.selected .contact-checkbox { background:var(--orange); border-color:var(--orange); }
+  .contact-option-text { font-size:14px; font-weight:500; }
+
+  /* BUTTONS */
+  .btn-save { background:var(--orange); color:white; padding:16px 40px; border-radius:50px; font-family:'Sora',sans-serif; font-weight:700; font-size:15px; border:none; cursor:pointer; transition:all 0.3s; display:inline-flex; align-items:center; gap:8px; }
+  .btn-save:hover { background:var(--orange-dark); transform:translateY(-2px); box-shadow:0 8px 24px rgba(232,112,10,0.3); }
+  .btn-preview { background:white; color:var(--dark); padding:16px 32px; border-radius:50px; font-family:'Sora',sans-serif; font-weight:700; font-size:15px; border:2px solid var(--gray-200); cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:8px; }
+  .btn-preview:hover { border-color:var(--gray-300); background:var(--gray-100); }
+  .actions-bar { display:flex; gap:12px; justify-content:flex-end; margin-top:32px; }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:14px 28px; border-radius:50px; font-weight:600; font-size:14px; display:flex; align-items:center; gap:10px; box-shadow:0 8px 32px rgba(0,0,0,0.15); z-index:999; transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+  .toast svg { width:18px; height:18px; color:var(--green); }
+
+  /* RESPONSIVE */
+  @media (max-width:768px) {
+    nav { padding:12px 16px; }
+    .nav-links { display:none; position:fixed; top:56px; left:0; right:0; background:white; flex-direction:column; padding:20px; gap:12px; box-shadow:0 8px 32px rgba(0,0,0,0.1); border-bottom:1px solid var(--gray-200); z-index:99; list-style:none; }
+    .nav-links.open { display:flex; }
+    .hamburger { display:block; }
+    .nav-user-name { display:none; }
+    .page { padding:70px 16px 100px; }
+    .page-title { font-size:22px; }
+    .card { padding:20px; }
+    .form-row { grid-template-columns:1fr; }
+    .horaire-day { flex-wrap:wrap; gap:8px; }
+    .horaire-day-name { width:60px; }
+    .horaire-times input { width:70px; }
+    .avatar-section { flex-direction:column; align-items:flex-start; }
+    .actions-bar { flex-direction:column; }
+    .btn-save, .btn-preview { width:100%; justify-content:center; }
+    .urgence-days { gap:4px; }
+    .urgence-day { padding:6px 10px; font-size:12px; }
+  }
+</style>
+</head>
+<body>
+  <nav>
+    <a href="index.html" class="logo">artisano<span class="logo-dot"></span></a>
+    <button class="hamburger" aria-label="Menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+    <ul class="nav-links">
+      <li><a href="dashboard.html">Tableau de bord</a></li>
+      <li><a href="#" onclick="return false;">Demandes</a></li>
+      <li><a href="mon-profil.html" class="active">Mon profil</a></li>
+      <li><a href="#" onclick="return false;">Agenda</a></li>
+    </ul>
+    <div class="nav-user">
+      <span class="nav-user-name" id="nav-name">Müller & Fils</span>
+      <div class="nav-user-avatar" id="nav-avatar">MF</div>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="page-header">
+      <h1 class="page-title">Mon profil</h1>
+      <p class="page-subtitle">Modifiez vos informations visibles sur votre page artisan</p>
+    </div>
+
+    <!-- PHOTO / AVATAR -->
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Photo de profil
+      </div>
+      <div class="avatar-section">
+        <div class="avatar-preview" id="avatar-preview">MF</div>
+        <div class="avatar-actions">
+          <button class="btn-upload" onclick="document.getElementById('avatar-input').click()">Changer la photo</button>
+          <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="handleAvatarUpload(this)">
+          <span class="form-hint">JPG ou PNG, max 2 Mo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- INFORMATIONS ENTREPRISE -->
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Informations de l'entreprise
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Prénom</label>
+          <input type="text" id="prenom" placeholder="Jean">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nom</label>
+          <input type="text" id="nom" placeholder="Müller">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nom de l'entreprise</label>
+        <input type="text" id="entreprise" placeholder="Müller & Fils">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Téléphone</label>
+          <input type="tel" id="telephone" placeholder="021 123 45 67">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email professionnel</label>
+          <input type="email" id="email" placeholder="contact@muller-fils.ch">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Adresse de l'entreprise</label>
+        <input type="text" id="adresse" placeholder="Rue du Lac 15, 1003 Lausanne">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Site internet <span style="font-weight:400;color:var(--gray-500)">(optionnel)</span></label>
+        <input type="url" id="site" placeholder="https://www.muller-fils.ch">
+      </div>
+    </div>
+
+    <!-- ACTIVITÉ -->
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        Activité
+      </div>
+      <div class="form-group">
+        <label class="form-label">Métier principal</label>
+        <select id="metier">
+          <option value="">Sélectionnez votre métier</option>
+          <option value="Plombier">Plombier</option>
+          <option value="Électricien">Électricien</option>
+          <option value="Serrurier">Serrurier</option>
+          <option value="Chauffagiste">Chauffagiste</option>
+          <option value="Peintre">Peintre</option>
+          <option value="Menuisier">Menuisier</option>
+          <option value="Carreleur">Carreleur</option>
+          <option value="Maçon">Maçon</option>
+          <option value="Couvreur">Couvreur</option>
+          <option value="Jardinier">Jardinier</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Spécialités</label>
+        <div class="tags-container" id="specialites-tags"></div>
+        <div class="tag-input-row">
+          <input type="text" id="specialite-input" placeholder="Ex: Dépannage urgent, Salle de bain...">
+          <button class="btn-add-tag" onclick="addTag('specialites')">Ajouter</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Zones d'intervention (communes)</label>
+        <div class="tags-container" id="zones-tags"></div>
+        <div class="tag-input-row">
+          <input type="text" id="zone-input" placeholder="Ex: Lausanne, Pully, Morges...">
+          <button class="btn-add-tag" onclick="addTag('zones')">Ajouter</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description de votre activité</label>
+        <textarea id="description" placeholder="Décrivez vos services, votre expérience, vos points forts..."></textarea>
+      </div>
+    </div>
+
+    <!-- HORAIRES -->
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Horaires d'ouverture
+      </div>
+      <div id="horaires-list">
+        <div class="horaire-day" data-day="Lundi">
+          <span class="horaire-day-name">Lundi</span>
+          <div class="horaire-toggle active" onclick="toggleHoraire(this)"></div>
+          <div class="horaire-times">
+            <input type="text" value="07:30" class="h-start">
+            <span class="horaire-sep">à</span>
+            <input type="text" value="18:00" class="h-end">
+          </div>
+        </div>
+        <div class="horaire-day" data-day="Mardi">
+          <span class="horaire-day-name">Mardi</span>
+          <div class="horaire-toggle active" onclick="toggleHoraire(this)"></div>
+          <div class="horaire-times">
+            <input type="text" value="07:30" class="h-start">
+            <span class="horaire-sep">à</span>
+            <input type="text" value="18:00" class="h-end">
+          </div>
+        </div>
+        <div class="horaire-day" data-day="Mercredi">
+          <span class="horaire-day-name">Mercredi</span>
+          <div class="horaire-toggle active" onclick="toggleHoraire(this)"></div>
+          <div class="horaire-times">
+            <input type="text" value="07:30" class="h-start">
+            <span class="horaire-sep">à</span>
+            <input type="text" value="18:00" class="h-end">
+          </div>
+        </div>
+        <div class="horaire-day" data-day="Jeudi">
+          <span class="horaire-day-name">Jeudi</span>
+          <div class="horaire-toggle active" onclick="toggleHoraire(this)"></div>
+          <div class="horaire-times">
+            <input type="text" value="07:30" class="h-start">
+            <span class="horaire-sep">à</span>
+            <input type="text" value="18:00" class="h-end">
+          </div>
+        </div>
+        <div class="horaire-day" data-day="Vendredi">
+          <span class="horaire-day-name">Vendredi</span>
+          <div class="horaire-toggle active" onclick="toggleHoraire(this)"></div>
+          <div class="horaire-times">
+            <input type="text" value="07:30" class="h-start">
+            <span class="horaire-sep">à</span>
+            <input type="text" value="18:00" class="h-end">
+          </div>
+        </div>
+        <div class="horaire-day" data-day="Samedi">
+          <span class="horaire-day-name">Samedi</span>
+          <div class="horaire-toggle" onclick="toggleHoraire(this)"></div>
+          <div class="horaire-times" style="display:none;">
+            <input type="text" value="08:00" class="h-start">
+            <span class="horaire-sep">à</span>
+            <input type="text" value="12:00" class="h-end">
+          </div>
+          <span class="horaire-closed">Fermé</span>
+        </div>
+        <div class="horaire-day" data-day="Dimanche">
+          <span class="horaire-day-name">Dimanche</span>
+          <div class="horaire-toggle" onclick="toggleHoraire(this)"></div>
+          <div class="horaire-times" style="display:none;">
+            <input type="text" value="08:00" class="h-start">
+            <span class="horaire-sep">à</span>
+            <input type="text" value="12:00" class="h-end">
+          </div>
+          <span class="horaire-closed">Fermé</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- URGENCES -->
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Disponibilité urgences
+      </div>
+      <div class="toggle-row" style="border-bottom:none; padding-top:0;">
+        <div class="toggle-info">
+          <div class="toggle-title">Activer les urgences</div>
+          <div class="toggle-desc">Votre profil affichera un badge urgence et les clients pourront vous appeler directement</div>
+        </div>
+        <div class="toggle" id="urgence-toggle" onclick="toggleUrgence()"></div>
+      </div>
+      <div class="urgence-fields" id="urgence-fields">
+        <div class="urgence-fields-inner">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Supplément urgence (CHF)</label>
+              <input type="number" id="urgence-supplement" placeholder="Ex: 50">
+              <span class="form-hint">Laissez vide si pas de supplément</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Rayon d'intervention (km)</label>
+              <input type="number" id="urgence-rayon" placeholder="Ex: 15">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Disponible de</label>
+              <input type="time" id="urgence-heure-debut" value="07:00">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Jusqu'à</label>
+              <input type="time" id="urgence-heure-fin" value="22:00">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jours de disponibilité urgence</label>
+            <div class="urgence-days" id="urgence-days">
+              <button class="urgence-day active" onclick="toggleUrgDay(this)">Lun</button>
+              <button class="urgence-day active" onclick="toggleUrgDay(this)">Mar</button>
+              <button class="urgence-day active" onclick="toggleUrgDay(this)">Mer</button>
+              <button class="urgence-day active" onclick="toggleUrgDay(this)">Jeu</button>
+              <button class="urgence-day active" onclick="toggleUrgDay(this)">Ven</button>
+              <button class="urgence-day" onclick="toggleUrgDay(this)">Sam</button>
+              <button class="urgence-day" onclick="toggleUrgDay(this)">Dim</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PREFERENCES DE CONTACT -->
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+        Préférences de contact
+      </div>
+      <div class="contact-option selected" onclick="toggleContact(this)" data-pref="complete">
+        <div class="contact-checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <span class="contact-option-text">Demande complète (formulaire)</span>
+      </div>
+      <div class="contact-option" onclick="toggleContact(this)" data-pref="message">
+        <div class="contact-checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <span class="contact-option-text">Message rapide</span>
+      </div>
+      <div class="contact-option" onclick="toggleContact(this)" data-pref="appel">
+        <div class="contact-checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <span class="contact-option-text">Appel téléphonique direct</span>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="actions-bar">
+      <a href="profil.html" class="btn-preview">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Voir mon profil public
+      </a>
+      <button class="btn-save" onclick="saveProfile()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Enregistrer les modifications
+      </button>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    Profil enregistré avec succès
+  </div>
+
+<script>
+  // ====== TAG SYSTEM ======
+  var profileTags = { specialites: [], zones: [] };
+
+  function addTag(type) {
+    var inputId = type === 'specialites' ? 'specialite-input' : 'zone-input';
+    var input = document.getElementById(inputId);
+    var val = input.value.trim();
+    if (!val) return;
+    if (profileTags[type].indexOf(val) !== -1) { input.value = ''; return; }
+    profileTags[type].push(val);
+    input.value = '';
+    renderTags(type);
+  }
+
+  function removeTag(type, idx) {
+    profileTags[type].splice(idx, 1);
+    renderTags(type);
+  }
+
+  function renderTags(type) {
+    var container = document.getElementById(type + '-tags');
+    container.innerHTML = '';
+    profileTags[type].forEach(function(tag, i) {
+      var el = document.createElement('span');
+      el.className = 'tag';
+      el.innerHTML = tag + ' <button class="tag-remove" onclick="removeTag(\'' + type + '\',' + i + ')">&times;</button>';
+      container.appendChild(el);
+    });
+  }
+
+  // Enter key to add tag
+  document.getElementById('specialite-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); addTag('specialites'); } });
+  document.getElementById('zone-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); addTag('zones'); } });
+
+  // ====== HORAIRES TOGGLE ======
+  function toggleHoraire(el) {
+    el.classList.toggle('active');
+    var row = el.closest('.horaire-day');
+    var times = row.querySelector('.horaire-times');
+    var closed = row.querySelector('.horaire-closed');
+    if (el.classList.contains('active')) {
+      times.style.display = 'flex';
+      if (closed) closed.style.display = 'none';
+    } else {
+      times.style.display = 'none';
+      if (closed) closed.style.display = '';
+    }
+  }
+
+  // ====== URGENCE TOGGLE ======
+  function toggleUrgence() {
+    var toggle = document.getElementById('urgence-toggle');
+    toggle.classList.toggle('active');
+    var fields = document.getElementById('urgence-fields');
+    if (toggle.classList.contains('active')) {
+      fields.classList.add('open');
+    } else {
+      fields.classList.remove('open');
+    }
+  }
+
+  function toggleUrgDay(btn) {
+    btn.classList.toggle('active');
+  }
+
+  // ====== CONTACT PREFS ======
+  function toggleContact(el) {
+    el.classList.toggle('selected');
+  }
+
+  // ====== AVATAR ======
+  function handleAvatarUpload(input) {
+    if (input.files && input.files[0]) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var preview = document.getElementById('avatar-preview');
+        preview.innerHTML = '<img src="' + e.target.result + '" alt="Photo de profil">';
+        localStorage.setItem('artisano-avatar', e.target.result);
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  // ====== SAVE PROFILE ======
+  function saveProfile() {
+    var horaires = [];
+    document.querySelectorAll('.horaire-day').forEach(function(row) {
+      var toggle = row.querySelector('.horaire-toggle');
+      var open = toggle.classList.contains('active');
+      var start = row.querySelector('.h-start') ? row.querySelector('.h-start').value : '';
+      var end = row.querySelector('.h-end') ? row.querySelector('.h-end').value : '';
+      horaires.push({
+        jour: row.getAttribute('data-day'),
+        ouvert: open,
+        debut: start,
+        fin: end
+      });
+    });
+
+    var urgToggle = document.getElementById('urgence-toggle');
+    var urgDays = [];
+    document.querySelectorAll('#urgence-days .urgence-day.active').forEach(function(b) {
+      urgDays.push(b.textContent.trim());
+    });
+
+    var contactPrefs = {};
+    document.querySelectorAll('.contact-option').forEach(function(el) {
+      contactPrefs[el.getAttribute('data-pref')] = el.classList.contains('selected');
+    });
+
+    var profile = {
+      prenom: document.getElementById('prenom').value,
+      nom: document.getElementById('nom').value,
+      entreprise: document.getElementById('entreprise').value,
+      telephone: document.getElementById('telephone').value,
+      email: document.getElementById('email').value,
+      adresse: document.getElementById('adresse').value,
+      site: document.getElementById('site').value,
+      metier: document.getElementById('metier').value,
+      specialites: profileTags.specialites,
+      zones: profileTags.zones,
+      description: document.getElementById('description').value,
+      horaires: horaires,
+      urgence: urgToggle.classList.contains('active'),
+      urgenceSupplement: document.getElementById('urgence-supplement').value,
+      urgenceRayon: document.getElementById('urgence-rayon').value,
+      urgenceHeureDebut: document.getElementById('urgence-heure-debut').value,
+      urgenceHeureFin: document.getElementById('urgence-heure-fin').value,
+      urgenceJours: urgDays,
+      contactPrefs: contactPrefs
+    };
+
+    localStorage.setItem('artisano-profil', JSON.stringify(profile));
+
+    // Also update contact prefs in the old key for compatibility
+    var oldPrefs = {
+      complete: contactPrefs.complete || false,
+      message: contactPrefs.message || false,
+      appel: contactPrefs.appel || false,
+      urgence: profile.urgence,
+      urgenceSupplement: profile.urgenceSupplement,
+      urgenceRayon: profile.urgenceRayon,
+      urgenceHeureDebut: profile.urgenceHeureDebut,
+      urgenceHeureFin: profile.urgenceHeureFin,
+      urgenceJours: urgDays
+    };
+    localStorage.setItem('artisano-contact-prefs', JSON.stringify(oldPrefs));
+
+    showToast();
+  }
+
+  // ====== LOAD PROFILE ======
+  function loadProfile() {
+    var data = localStorage.getItem('artisano-profil');
+    if (!data) {
+      // Load defaults from demo
+      loadDefaults();
+      return;
+    }
+    var p = JSON.parse(data);
+    document.getElementById('prenom').value = p.prenom || '';
+    document.getElementById('nom').value = p.nom || '';
+    document.getElementById('entreprise').value = p.entreprise || '';
+    document.getElementById('telephone').value = p.telephone || '';
+    document.getElementById('email').value = p.email || '';
+    document.getElementById('adresse').value = p.adresse || '';
+    document.getElementById('site').value = p.site || '';
+    document.getElementById('metier').value = p.metier || '';
+    document.getElementById('description').value = p.description || '';
+
+    // Tags
+    profileTags.specialites = p.specialites || [];
+    profileTags.zones = p.zones || [];
+    renderTags('specialites');
+    renderTags('zones');
+
+    // Horaires
+    if (p.horaires) {
+      var rows = document.querySelectorAll('.horaire-day');
+      p.horaires.forEach(function(h, i) {
+        if (!rows[i]) return;
+        var toggle = rows[i].querySelector('.horaire-toggle');
+        var times = rows[i].querySelector('.horaire-times');
+        var closed = rows[i].querySelector('.horaire-closed');
+        if (h.ouvert) {
+          toggle.classList.add('active');
+          times.style.display = 'flex';
+          if (closed) closed.style.display = 'none';
+        } else {
+          toggle.classList.remove('active');
+          times.style.display = 'none';
+          if (closed) closed.style.display = '';
+        }
+        var startInput = rows[i].querySelector('.h-start');
+        var endInput = rows[i].querySelector('.h-end');
+        if (startInput) startInput.value = h.debut || '';
+        if (endInput) endInput.value = h.fin || '';
+      });
+    }
+
+    // Urgence
+    if (p.urgence) {
+      document.getElementById('urgence-toggle').classList.add('active');
+      document.getElementById('urgence-fields').classList.add('open');
+    }
+    document.getElementById('urgence-supplement').value = p.urgenceSupplement || '';
+    document.getElementById('urgence-rayon').value = p.urgenceRayon || '';
+    document.getElementById('urgence-heure-debut').value = p.urgenceHeureDebut || '07:00';
+    document.getElementById('urgence-heure-fin').value = p.urgenceHeureFin || '22:00';
+
+    if (p.urgenceJours) {
+      document.querySelectorAll('#urgence-days .urgence-day').forEach(function(btn) {
+        if (p.urgenceJours.indexOf(btn.textContent.trim()) !== -1) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    // Contact prefs
+    if (p.contactPrefs) {
+      document.querySelectorAll('.contact-option').forEach(function(el) {
+        var key = el.getAttribute('data-pref');
+        if (p.contactPrefs[key]) {
+          el.classList.add('selected');
+        } else {
+          el.classList.remove('selected');
+        }
+      });
+    }
+
+    // Avatar
+    var avatar = localStorage.getItem('artisano-avatar');
+    if (avatar) {
+      document.getElementById('avatar-preview').innerHTML = '<img src="' + avatar + '" alt="Photo de profil">';
+    }
+
+    // Update nav name
+    updateNavName(p);
+  }
+
+  function loadDefaults() {
+    document.getElementById('prenom').value = 'Jean';
+    document.getElementById('nom').value = 'Müller';
+    document.getElementById('entreprise').value = 'Müller & Fils';
+    document.getElementById('telephone').value = '021 123 45 67';
+    document.getElementById('email').value = 'contact@muller-fils.ch';
+    document.getElementById('adresse').value = 'Rue du Lac 15, 1003 Lausanne';
+    document.getElementById('metier').value = 'Plombier';
+    document.getElementById('description').value = 'Entreprise familiale depuis plus de 15 ans, nous intervenons pour tous vos besoins en plomberie et chauffage : dépannage urgent, installation, rénovation de salles de bain et entretien de chauffage. Devis gratuit et sans engagement.';
+
+    profileTags.specialites = ['Salle de bain complète', 'Dépannage urgent', 'Installation chauffage', 'Fuite et canalisation', 'Rénovation sanitaire', 'Chauffe-eau et boiler', 'Entretien chauffage'];
+    profileTags.zones = ['Lausanne', 'Pully', 'Prilly', 'Renens', 'Morges', 'Lutry', 'Vevey', 'Écublens', 'Crissier', 'Chavannes'];
+    renderTags('specialites');
+    renderTags('zones');
+
+    // Contact prefs defaults
+    document.querySelector('.contact-option[data-pref="complete"]').classList.add('selected');
+  }
+
+  function updateNavName(p) {
+    var name = p.entreprise || ((p.prenom || '') + ' ' + (p.nom || '')).trim() || 'Mon profil';
+    var navName = document.getElementById('nav-name');
+    if (navName) navName.textContent = name;
+    var initials = '';
+    if (p.entreprise) {
+      var words = p.entreprise.split(/[\s&]+/).filter(function(w) { return w.length > 0; });
+      initials = words.slice(0, 2).map(function(w) { return w[0].toUpperCase(); }).join('');
+    } else {
+      initials = ((p.prenom || '')[0] || '') + ((p.nom || '')[0] || '');
+      initials = initials.toUpperCase();
+    }
+    var navAvatar = document.getElementById('nav-avatar');
+    if (navAvatar && !localStorage.getItem('artisano-avatar')) {
+      navAvatar.textContent = initials || 'A';
+    }
+    var avatarPreview = document.getElementById('avatar-preview');
+    if (avatarPreview && !localStorage.getItem('artisano-avatar')) {
+      avatarPreview.textContent = initials || 'A';
+    }
+  }
+
+  // ====== TOAST ======
+  function showToast() {
+    var toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(function() { toast.classList.remove('show'); }, 3000);
+  }
+
+  // ====== INIT ======
+  loadProfile();
+</script>
+</body>
+</html>
