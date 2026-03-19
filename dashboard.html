@@ -451,7 +451,6 @@
   /* ===== MODULE FACTURATION ===== */
   .facturation-section { display:none; }
   .facturation-section.active { display:block; }
-  .fact-stats { margin-bottom:24px; }
   .fact-view { display:none; }
   .fact-view.active { display:block; }
 
@@ -1253,14 +1252,6 @@
 
   <!-- ===== FACTURATION TAB ===== -->
   <div class="facturation-section" id="tab-facturation" style="display:none;">
-
-    <!-- Stats -->
-    <div class="stats-grid fact-stats">
-      <div class="stat-card"><div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Devis en cours</div><div class="stat-value" id="statDevisEnCours">0</div><div class="stat-sub" id="statDevisMontant">0 CHF en attente</div></div>
-      <div class="stat-card"><div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Factures impayées</div><div class="stat-value" id="statFacturesImpayees">0</div><div class="stat-sub" style="color:var(--red);" id="statRetardMontant">0 CHF</div></div>
-      <div class="stat-card"><div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg> CA ce mois</div><div class="stat-value" id="statCaMois">0 CHF</div><div class="stat-sub" id="statCaEvolution">--</div></div>
-      <div class="stat-card"><div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Taux conversion</div><div class="stat-value" id="statTauxConversion">--</div><div class="stat-sub" id="statConversionDetail">Devis → Factures</div></div>
-    </div>
 
     <!-- VIEW: LIST -->
     <div class="fact-view active" id="factViewList">
@@ -2928,7 +2919,7 @@
         factPrestations = await loadPrestations(user.id);
         factDataLoaded = true;
         factRenderList();
-        factUpdateStats();
+
       } catch(e) {
         console.warn('Facturation load error:', e);
       }
@@ -2989,36 +2980,6 @@
     }
     function factFilterStatus(val) { factCurrentStatus = val; factRenderList(); }
     function factSearch(val) { factSearchTerm = val; factRenderList(); }
-
-    // ===== STATS =====
-    function factUpdateStats() {
-      var now = new Date();
-      var thisMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-      var devisEnCours = 0, devisMontant = 0, impayees = 0, retardMontant = 0, caMois = 0;
-      var totalDevis = 0, devisAcceptes = 0;
-      factDocuments.forEach(function(d) {
-        if (d.type === 'devis') {
-          totalDevis++;
-          if (d.statut === 'envoye') { devisEnCours++; devisMontant += parseFloat(d.total_ttc || 0); }
-          if (d.statut === 'accepte' || d.statut === 'converti') devisAcceptes++;
-        }
-        if (d.type === 'facture') {
-          if (d.statut === 'envoyee' || d.statut === 'en_retard') { impayees++; retardMontant += parseFloat(d.total_ttc || 0); }
-          if (d.statut === 'payee' && d.date_paiement && d.date_paiement.substring(0,7) === thisMonth) {
-            caMois += parseFloat(d.total_ttc || 0);
-          }
-        }
-      });
-      var taux = totalDevis > 0 ? Math.round((devisAcceptes / totalDevis) * 100) : 0;
-      var el = function(id) { return document.getElementById(id); };
-      if (el('statDevisEnCours')) el('statDevisEnCours').textContent = devisEnCours;
-      if (el('statDevisMontant')) el('statDevisMontant').textContent = factFormatCHF(devisMontant) + ' en attente';
-      if (el('statFacturesImpayees')) el('statFacturesImpayees').textContent = impayees;
-      if (el('statRetardMontant')) el('statRetardMontant').textContent = factFormatCHF(retardMontant);
-      if (el('statCaMois')) el('statCaMois').textContent = factFormatCHF(caMois);
-      if (el('statTauxConversion')) el('statTauxConversion').textContent = taux + '%';
-      if (el('statConversionDetail')) el('statConversionDetail').textContent = devisAcceptes + '/' + totalDevis + ' devis acceptés';
-    }
 
     // ===== VIEW SWITCHING =====
     function factShowView(viewId) {
@@ -3368,7 +3329,7 @@
         factDocuments = factDocuments.filter(function(d) { return d.id !== factDeleteTarget; });
         factCloseDeleteModal();
         factRenderList();
-        factUpdateStats();
+
         factToast('success', 'Document supprimé');
       } catch(e) { factToast('error', 'Erreur: ' + e.message); }
     }
