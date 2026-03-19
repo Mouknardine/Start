@@ -475,20 +475,29 @@
   .fact-search:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.1); }
 
   /* Document list */
-  .fact-list { padding:0 24px; }
-  .fact-doc-item { display:flex; align-items:center; gap:14px; padding:14px 0; border-top:1px solid var(--gray-100); cursor:pointer; transition:background 0.15s; }
-  .fact-doc-item:first-child { border-top:none; }
-  .fact-doc-item:hover { background:rgba(232,112,10,0.02); margin:0 -12px; padding-left:12px; padding-right:12px; border-radius:var(--radius-sm); }
-  .fact-doc-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .fact-list { padding:8px 16px; }
+  .fact-doc-item { display:flex; align-items:center; gap:14px; padding:14px 16px; margin-bottom:6px; border-radius:12px; border:1px solid var(--gray-200); cursor:pointer; transition:all 0.2s; background:white; }
+  .fact-doc-item:hover { border-color:var(--gray-300); box-shadow:0 2px 8px rgba(0,0,0,0.04); transform:translateY(-1px); }
+  .fact-doc-icon { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .fact-doc-icon.devis { background:rgba(232,112,10,0.08); color:var(--orange); }
   .fact-doc-icon.facture { background:var(--blue-light); color:var(--blue); }
   .fact-doc-icon svg { width:18px; height:18px; }
   .fact-doc-body { flex:1; min-width:0; }
   .fact-doc-title { font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; }
-  .fact-doc-client { font-size:12px; color:var(--gray-500); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .fact-doc-meta { display:flex; align-items:center; gap:16px; flex-shrink:0; }
+  .fact-doc-label { font-size:12px; color:var(--gray-500); margin-top:2px; display:flex; align-items:center; gap:4px; }
+  .fact-doc-label-text { cursor:text; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+  .fact-doc-label-text:hover { color:var(--orange); }
+  .fact-doc-label-input { border:1px solid var(--orange); border-radius:4px; padding:1px 6px; font-size:12px; font-family:'DM Sans',sans-serif; outline:none; width:180px; color:var(--dark); }
+  .fact-doc-label-edit { width:14px; height:14px; color:var(--gray-300); cursor:pointer; flex-shrink:0; transition:color 0.15s; }
+  .fact-doc-label-edit:hover { color:var(--orange); }
+  .fact-doc-client { font-size:11px; color:var(--gray-400); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fact-doc-right { display:flex; align-items:center; gap:12px; flex-shrink:0; }
   .fact-doc-amount { font-family:'Sora',sans-serif; font-weight:700; font-size:15px; white-space:nowrap; }
+  .fact-doc-date-pdf { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
   .fact-doc-date { font-size:11px; color:var(--gray-500); white-space:nowrap; }
+  .fact-doc-pdf-btn { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; border:1px solid var(--gray-200); background:white; font-size:10px; font-weight:700; font-family:'Sora',sans-serif; color:var(--gray-700); cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+  .fact-doc-pdf-btn:hover { border-color:var(--orange); color:var(--orange); background:rgba(232,112,10,0.03); }
+  .fact-doc-pdf-btn svg { width:12px; height:12px; }
   .fact-doc-actions { display:flex; gap:4px; flex-shrink:0; }
 
   /* Status badges */
@@ -669,13 +678,13 @@
     .fact-line-input.desc { grid-column:1/-1; }
     .fact-line-delete { position:absolute; top:4px; right:4px; }
     .fact-line-row { position:relative; }
-    .fact-doc-item { gap:10px; }
-    .fact-doc-meta { flex-direction:column; align-items:flex-end; gap:4px; }
+    .fact-doc-item { gap:10px; padding:12px; }
+    .fact-doc-right { flex-direction:column; align-items:flex-end; gap:6px; }
     .fact-cat-form { grid-template-columns:1fr; }
   }
   @media (max-width:500px) {
     .fact-doc-item { flex-direction:column; align-items:flex-start; }
-    .fact-doc-meta { width:100%; flex-direction:row; justify-content:space-between; }
+    .fact-doc-right { width:100%; flex-direction:row; justify-content:space-between; }
     .fact-editor-actions { width:100%; flex-wrap:wrap; }
     .fact-editor-actions .fact-btn-new, .fact-editor-actions .btn-sm { flex:1; justify-content:center; text-align:center; }
     .fact-form-grid { grid-template-columns:1fr; }
@@ -2933,7 +2942,7 @@
       if (factSearchTerm) {
         var s = factSearchTerm.toLowerCase();
         docs = docs.filter(function(d) {
-          return (d.client_nom || '').toLowerCase().indexOf(s) !== -1 || (d.numero || '').toLowerCase().indexOf(s) !== -1;
+          return (d.client_nom || '').toLowerCase().indexOf(s) !== -1 || (d.numero || '').toLowerCase().indexOf(s) !== -1 || (d.label || '').toLowerCase().indexOf(s) !== -1;
         });
       }
       return docs;
@@ -2955,21 +2964,73 @@
         var icon = d.type === 'devis'
           ? '<div class="fact-doc-icon devis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>'
           : '<div class="fact-doc-icon facture"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>';
+        var label = d.label || (d.client_nom ? d.client_nom : 'Sans titre');
         return '<div class="fact-doc-item" onclick="factOpenEditor(\'' + d.id + '\')">'
           + icon
           + '<div class="fact-doc-body">'
           + '<div class="fact-doc-title">' + d.numero + ' <span class="fact-status fact-status-' + d.statut + '">' + factStatusLabel(d.statut) + '</span></div>'
+          + '<div class="fact-doc-label"><span class="fact-doc-label-text" id="label-' + d.id + '" onclick="event.stopPropagation();factEditLabel(\'' + d.id + '\')" title="Cliquer pour renommer">' + label + '</span><svg class="fact-doc-label-edit" onclick="event.stopPropagation();factEditLabel(\'' + d.id + '\')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>'
           + '<div class="fact-doc-client">' + (d.client_nom || 'Sans client') + '</div>'
           + '</div>'
-          + '<div class="fact-doc-meta">'
+          + '<div class="fact-doc-right">'
           + '<span class="fact-doc-amount">' + factFormatCHF(d.total_ttc) + '</span>'
+          + '<div class="fact-doc-date-pdf">'
           + '<span class="fact-doc-date">' + factFormatDate(d.date_emission) + '</span>'
+          + '<button class="fact-doc-pdf-btn" onclick="event.stopPropagation();factQuickPDF(\'' + d.id + '\')" title="Télécharger le PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PDF</button>'
+          + '</div>'
           + '</div>'
           + '<div class="fact-doc-actions">'
           + '<button class="btn-sm btn-sm-delete" onclick="event.stopPropagation();factAskDelete(\'' + d.id + '\')" title="Supprimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>'
           + '</div>'
           + '</div>';
       }).join('');
+    }
+
+    // ===== LABEL EDITING (inline rename) =====
+    function factEditLabel(docId) {
+      var doc = factDocuments.find(function(d) { return d.id === docId; });
+      if (!doc) return;
+      var span = document.getElementById('label-' + docId);
+      if (!span) return;
+      var currentLabel = doc.label || doc.client_nom || '';
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'fact-doc-label-input';
+      input.value = currentLabel;
+      input.placeholder = 'Nom du document...';
+      span.parentNode.replaceChild(input, span);
+      input.focus();
+      input.select();
+      function save() {
+        var newLabel = input.value.trim();
+        doc.label = newLabel;
+        saveDocumentToDB(doc).then(function() {
+          var idx = factDocuments.findIndex(function(x) { return x.id === docId; });
+          if (idx !== -1) factDocuments[idx].label = newLabel;
+          factRenderList();
+          factToast('success', 'Nom mis à jour');
+        }).catch(function(e) {
+          factRenderList();
+          factToast('error', 'Erreur: ' + e.message);
+        });
+      }
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { factRenderList(); }
+      });
+    }
+
+    // ===== QUICK PDF FROM LIST =====
+    function factQuickPDF(docId) {
+      var doc = factDocuments.find(function(d) { return d.id === docId; });
+      if (!doc) return;
+      var prevDoc = factCurrentDoc;
+      factCurrentDoc = JSON.parse(JSON.stringify(doc));
+      if (typeof factCurrentDoc.lignes === 'string') factCurrentDoc.lignes = JSON.parse(factCurrentDoc.lignes);
+      if (!Array.isArray(factCurrentDoc.lignes)) factCurrentDoc.lignes = [];
+      factExportPDF();
+      factCurrentDoc = prevDoc;
     }
 
     function factFilterType(type, btn) {
@@ -2998,6 +3059,7 @@
           artisan_id: user.id,
           type: type,
           numero: numero,
+          label: '',
           statut: 'brouillon',
           client_nom: '', client_email: '', client_telephone: '', client_adresse: '',
           lignes: [],
@@ -3028,7 +3090,6 @@
       factCurrentDoc = null;
       factShowView('factViewList');
       factRenderList();
-      factUpdateStats();
     }
 
     function factPopulateEditor() {

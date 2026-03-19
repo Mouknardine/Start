@@ -145,6 +145,7 @@ CREATE TABLE documents (
   artisan_id UUID REFERENCES artisans(id) ON DELETE CASCADE NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('devis', 'facture')),
   numero TEXT NOT NULL,
+  label TEXT,
   statut TEXT NOT NULL DEFAULT 'brouillon',
   client_nom TEXT,
   client_email TEXT,
