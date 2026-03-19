@@ -608,29 +608,46 @@
   .fact-picker-name { font-weight:700; font-size:13px; flex:1; }
   .fact-picker-price { font-family:'Sora',sans-serif; font-weight:700; font-size:13px; color:var(--orange); }
 
-  /* Preview modal */
-  .fact-preview { background:white; padding:40px; max-width:700px; margin:0 auto; font-family:'DM Sans',sans-serif; }
-  .fact-preview-header { display:flex; justify-content:space-between; margin-bottom:30px; }
-  .fact-preview-company { font-size:13px; line-height:1.6; }
-  .fact-preview-company strong { font-family:'Sora',sans-serif; font-size:18px; display:block; margin-bottom:4px; }
-  .fact-preview-type { text-align:right; }
-  .fact-preview-type h2 { font-family:'Sora',sans-serif; font-size:24px; color:var(--orange); margin:0; }
-  .fact-preview-type .numero { font-size:13px; color:var(--gray-500); }
-  .fact-preview-type .dates { font-size:12px; color:var(--gray-500); margin-top:4px; }
-  .fact-preview-client { background:var(--gray-100); padding:16px; border-radius:var(--radius-sm); margin-bottom:24px; }
-  .fact-preview-client strong { font-size:11px; text-transform:uppercase; color:var(--gray-500); letter-spacing:0.5px; display:block; margin-bottom:4px; }
-  .fact-preview-table { width:100%; border-collapse:collapse; margin-bottom:20px; }
-  .fact-preview-table th { background:var(--dark); color:white; padding:8px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.3px; text-align:left; }
-  .fact-preview-table th:last-child { text-align:right; }
-  .fact-preview-table td { padding:8px 10px; font-size:13px; border-bottom:1px solid var(--gray-100); }
-  .fact-preview-table td:last-child { text-align:right; font-weight:600; }
-  .fact-preview-table tr:nth-child(even) td { background:rgba(0,0,0,0.01); }
-  .fact-preview-totals { display:flex; justify-content:flex-end; margin-bottom:24px; }
-  .fact-preview-totals-inner { width:240px; }
-  .fact-preview-totals-row { display:flex; justify-content:space-between; padding:4px 0; font-size:13px; }
-  .fact-preview-totals-row.final { border-top:2px solid var(--dark); padding-top:8px; margin-top:4px; font-family:'Sora',sans-serif; font-weight:800; font-size:16px; }
-  .fact-preview-notes { font-size:12px; color:var(--gray-500); border-top:1px solid var(--gray-200); padding-top:16px; line-height:1.6; }
-  .fact-preview-footer { text-align:center; font-size:10px; color:var(--gray-400); margin-top:24px; }
+  /* Preview modal — Nespresso-inspired style */
+  .fact-preview { background:white; padding:40px; max-width:700px; margin:0 auto; font-family:'DM Sans',sans-serif; color:#1a1a1a; }
+  .fact-preview-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; }
+  .fact-preview-company { font-size:13px; line-height:1.7; }
+  .fact-preview-company strong { font-family:'Sora',sans-serif; font-size:20px; display:block; margin-bottom:6px; color:#1a1a1a; }
+  .fact-preview-company .company-detail { font-size:11px; color:#666; text-transform:uppercase; letter-spacing:0.5px; margin-top:8px; }
+  .fact-preview-client-block { text-align:right; }
+  .fact-preview-client-block .client-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#999; margin-bottom:4px; }
+  .fact-preview-client-block .client-name { font-weight:700; font-size:14px; }
+  .fact-preview-client-block .client-info { font-size:13px; color:#444; line-height:1.6; }
+  .fact-preview-meta { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; background:#f5f5f0; border:1px solid #e0e0d8; margin-bottom:24px; }
+  .fact-preview-meta-item { padding:12px 16px; border-right:1px solid #e0e0d8; }
+  .fact-preview-meta-item:last-child { border-right:none; }
+  .fact-preview-meta-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#888; margin-bottom:4px; }
+  .fact-preview-meta-value { font-weight:700; font-size:13px; }
+  .fact-preview-table { width:100%; border-collapse:collapse; margin-bottom:6px; }
+  .fact-preview-table th { background:#f5f5f0; padding:10px 12px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.3px; text-align:left; border-bottom:2px solid #ccc; color:#555; }
+  .fact-preview-table th:nth-child(n+3) { text-align:right; }
+  .fact-preview-table td { padding:10px 12px; font-size:13px; border-bottom:1px solid #eee; }
+  .fact-preview-table td:nth-child(n+3) { text-align:right; }
+  .fact-preview-table td:last-child { font-weight:700; }
+  .fact-preview-table tr:hover td { background:rgba(0,0,0,0.01); }
+  .fact-preview-bottom { display:grid; grid-template-columns:1fr auto; gap:40px; background:#f5f5f0; border:1px solid #e0e0d8; padding:20px; margin-top:0; }
+  .fact-preview-bottom-left { font-size:12px; color:#666; line-height:1.7; }
+  .fact-preview-bottom-left .tva-detail { margin-top:8px; font-size:11px; color:#888; }
+  .fact-preview-bottom-right { text-align:right; }
+  .fact-preview-total-label { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.3px; color:#555; }
+  .fact-preview-total-amount { font-family:'Sora',sans-serif; font-size:22px; font-weight:800; color:#1a1a1a; margin-top:2px; }
+  .fact-preview-total-thanks { font-size:11px; color:#888; font-style:italic; margin-top:6px; }
+  .fact-preview-notes { font-size:12px; color:#666; border-top:1px solid #e0e0d8; padding-top:14px; margin-top:20px; line-height:1.6; }
+  .fact-preview-payment { border-top:2px dashed #ccc; margin-top:24px; padding-top:20px; }
+  .fact-preview-payment-title { font-family:'Sora',sans-serif; font-weight:700; font-size:14px; margin-bottom:12px; }
+  .fact-preview-payment-grid { display:grid; grid-template-columns:120px 1fr; gap:16px; align-items:start; }
+  .fact-preview-qr { width:120px; height:120px; border:1px solid #ddd; display:flex; align-items:center; justify-content:center; background:white; }
+  .fact-preview-qr img { width:100%; height:100%; }
+  .fact-preview-payment-info { font-size:12px; line-height:1.7; }
+  .fact-preview-payment-info .pay-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#888; margin-top:8px; }
+  .fact-preview-payment-info .pay-label:first-child { margin-top:0; }
+  .fact-preview-payment-ref { font-family:monospace; letter-spacing:1px; }
+  .fact-preview-footer { text-align:center; font-size:10px; color:#bbb; margin-top:24px; }
 
   /* Toast */
   .fact-toast { position:fixed; bottom:24px; right:24px; z-index:300; background:var(--dark); color:white; padding:14px 20px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; display:flex; align-items:center; gap:10px; box-shadow:0 8px 30px rgba(0,0,0,0.2); transform:translateY(100px); opacity:0; transition:all 0.3s ease; pointer-events:none; }
@@ -664,8 +681,14 @@
     .fact-editor-actions .fact-btn-new, .fact-editor-actions .btn-sm { flex:1; justify-content:center; text-align:center; }
     .fact-form-grid { grid-template-columns:1fr; }
     .fact-preview { padding:20px; }
-    .fact-preview-header { flex-direction:column; gap:12px; }
-    .fact-preview-type { text-align:left; }
+    .fact-preview-top { flex-direction:column; gap:12px; }
+    .fact-preview-client-block { text-align:left; }
+    .fact-preview-meta { grid-template-columns:1fr; }
+    .fact-preview-meta-item { border-right:none; border-bottom:1px solid #e0e0d8; }
+    .fact-preview-meta-item:last-child { border-bottom:none; }
+    .fact-preview-bottom { grid-template-columns:1fr; gap:16px; }
+    .fact-preview-bottom-right { text-align:left; }
+    .fact-preview-payment-grid { grid-template-columns:1fr; }
   }
 </style>
 </head>
@@ -1438,6 +1461,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <script>
     /* ========== TAB SWITCHING ========== */
     function switchDashTab(tab) {
@@ -3476,40 +3500,162 @@
     }
 
     // ===== PREVIEW =====
+    // ===== QR CODE HELPERS =====
+    function factFormatIBAN(iban) {
+      if (!iban) return '';
+      return iban.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim();
+    }
+
+    function factGenerateQRPayload(doc, prof) {
+      // Swiss QR-facture payload (simplified SPC format)
+      var iban = (prof.bankIban || '').replace(/\s/g, '');
+      var titulaire = prof.bankTitulaire || prof.entreprise || ((prof.prenom || '') + ' ' + (prof.nom || '')).trim();
+      var bankAddr = prof.bankAdresse || prof.adresse || '';
+      var amount = parseFloat(doc.total_ttc || 0).toFixed(2);
+      var clientNom = doc.client_nom || '';
+      var clientAddr = doc.client_adresse || '';
+      // SPC (Swiss Payment Code) format
+      var lines = [
+        'SPC',           // QR Type
+        '0200',          // Version
+        '1',             // Coding Type (UTF-8)
+        iban,            // IBAN
+        'K',             // Address Type (Combined)
+        titulaire,       // Name
+        bankAddr,        // Address combined
+        '',              // (empty for combined)
+        '',              // Postal code (empty for K type)
+        '',              // City (empty for K type)
+        'CH',            // Country
+        '',              // Ultimate Creditor (empty)
+        '',              // empty
+        '',              // empty
+        '',              // empty
+        '',              // empty
+        '',              // empty
+        '',              // empty
+        amount,          // Amount
+        'CHF',           // Currency
+        'K',             // Debtor address type
+        clientNom,       // Debtor name
+        clientAddr,      // Debtor address
+        '',              // empty
+        '',              // empty
+        '',              // empty
+        'CH',            // Debtor country
+        'NON',           // Reference type (NON = without reference)
+        '',              // Reference
+        doc.numero || '',// Unstructured message (invoice number)
+        'EPD',           // Trailer
+        ''               // Bill information
+      ];
+      return lines.join('\n');
+    }
+
+    function factGenerateQRImage(data) {
+      if (typeof qrcode === 'undefined') return '';
+      try {
+        var qr = qrcode(0, 'M');
+        qr.addData(data);
+        qr.make();
+        return qr.createDataURL(4, 0);
+      } catch(e) {
+        console.warn('QR generation error:', e);
+        return '';
+      }
+    }
+
+    // ===== PREVIEW =====
     function factPreview() {
       if (!factCurrentDoc) return;
       factCollectData();
       var d = factCurrentDoc;
       var prof = factArtisanProfile || {};
       var companyName = prof.entreprise || ((prof.prenom || '') + ' ' + (prof.nom || '')).trim() || 'Mon Entreprise';
-      var html = '<div class="fact-preview">'
-        + '<div class="fact-preview-header">'
-        + '<div class="fact-preview-company"><strong>' + companyName + '</strong>' + (prof.adresse ? '<br>' + prof.adresse : '') + (prof.telephone ? '<br>' + prof.telephone : '') + (prof.email ? '<br>' + prof.email : '') + '</div>'
-        + '<div class="fact-preview-type"><h2>' + (d.type === 'devis' ? 'DEVIS' : 'FACTURE') + '</h2><div class="numero">' + d.numero + '</div><div class="dates">Date : ' + factFormatDate(d.date_emission) + (d.date_echeance ? '<br>Échéance : ' + factFormatDate(d.date_echeance) : '') + '</div></div>'
+      var docLabel = d.type === 'devis' ? 'DEVIS' : 'FACTURE';
+      var companyLine = [prof.adresse, prof.telephone, prof.email, prof.site].filter(Boolean).join(' | ');
+
+      var html = '<div class="fact-preview">';
+      // TOP: company left, client right
+      html += '<div class="fact-preview-top">'
+        + '<div class="fact-preview-company"><strong>' + companyName + '</strong>'
+        + (prof.adresse ? '<br>' + prof.adresse : '')
+        + (prof.telephone ? '<br>' + prof.telephone : '')
+        + (prof.email ? '<br>' + prof.email : '')
+        + (companyLine ? '<div class="company-detail">' + companyLine + '</div>' : '')
         + '</div>'
-        + '<div class="fact-preview-client"><strong>Client</strong>' + (d.client_nom || '-') + (d.client_adresse ? '<br>' + d.client_adresse : '') + (d.client_email ? '<br>' + d.client_email : '') + (d.client_telephone ? '<br>' + d.client_telephone : '') + '</div>'
-        + '<table class="fact-preview-table"><thead><tr><th>Description</th><th>Qté</th><th>Unité</th><th>Prix unit.</th><th>Total</th></tr></thead><tbody>';
+        + '<div class="fact-preview-client-block">'
+        + '<div class="client-label">' + docLabel + ' à :</div>'
+        + '<div class="client-name">' + (d.client_nom || '-') + '</div>'
+        + '<div class="client-info">' + [d.client_adresse, d.client_email, d.client_telephone].filter(Boolean).join('<br>') + '</div>'
+        + '</div>'
+        + '</div>';
+      // META BAR: N° facture, date, échéance
+      html += '<div class="fact-preview-meta">'
+        + '<div class="fact-preview-meta-item"><div class="fact-preview-meta-label">N° de ' + (d.type === 'devis' ? 'devis' : 'facture') + '</div><div class="fact-preview-meta-value">' + d.numero + '</div></div>'
+        + '<div class="fact-preview-meta-item"><div class="fact-preview-meta-label">Date d\'émission</div><div class="fact-preview-meta-value">' + factFormatDate(d.date_emission) + '</div></div>'
+        + '<div class="fact-preview-meta-item"><div class="fact-preview-meta-label">' + (d.type === 'devis' ? 'Valable jusqu\'au' : 'Échéance') + '</div><div class="fact-preview-meta-value">' + (d.date_echeance ? factFormatDate(d.date_echeance) : '-') + '</div></div>'
+        + '</div>';
+      // TABLE
+      html += '<table class="fact-preview-table"><thead><tr><th>Description</th><th>TVA</th><th>Quantité</th><th>Prix</th><th>Montant</th></tr></thead><tbody>';
       (d.lignes || []).forEach(function(l) {
-        html += '<tr><td>' + (l.description || '') + '</td><td>' + l.quantite + '</td><td>' + (l.unite || '') + '</td><td>' + parseFloat(l.prix_unitaire).toFixed(2) + '</td><td>' + parseFloat(l.total).toFixed(2) + '</td></tr>';
+        html += '<tr><td>' + (l.description || '') + '</td><td>' + d.taux_tva + '%</td><td>' + l.quantite + '</td><td>' + parseFloat(l.prix_unitaire).toFixed(2) + '</td><td>' + parseFloat(l.total).toFixed(2) + '</td></tr>';
       });
-      html += '</tbody></table>'
-        + '<div class="fact-preview-totals"><div class="fact-preview-totals-inner">'
-        + '<div class="fact-preview-totals-row"><span>Sous-total</span><span>' + factFormatCHF(d.sous_total) + '</span></div>';
-      if (d.remise_type !== 'aucune' && d.montant_remise > 0) {
-        html += '<div class="fact-preview-totals-row"><span>Remise</span><span>-' + factFormatCHF(d.montant_remise) + '</span></div>';
-      }
-      html += '<div class="fact-preview-totals-row"><span>TVA ' + d.taux_tva + '%</span><span>' + factFormatCHF(d.montant_tva) + '</span></div>'
-        + '<div class="fact-preview-totals-row final"><span>Total TTC</span><span>' + factFormatCHF(d.total_ttc) + '</span></div>'
+      html += '</tbody></table>';
+      // BOTTOM BAR: notes + TVA detail left, total right
+      html += '<div class="fact-preview-bottom">'
+        + '<div class="fact-preview-bottom-left">';
+      if (d.notes) html += d.notes + '<br>';
+      if (d.conditions) html += d.conditions + '<br>';
+      var sousTotal = parseFloat(d.sous_total) || 0;
+      var remise = (d.remise_type !== 'aucune' && d.montant_remise > 0) ? parseFloat(d.montant_remise) : 0;
+      var baseHT = sousTotal - remise;
+      html += '<div class="tva-detail">Détail TVA :<br>' + d.taux_tva + '% de ' + baseHT.toFixed(2) + ' = CHF ' + parseFloat(d.montant_tva).toFixed(2);
+      if (remise > 0) html += '<br>Remise : -CHF ' + remise.toFixed(2);
+      html += '</div></div>'
+        + '<div class="fact-preview-bottom-right">'
+        + '<div class="fact-preview-total-label">Total ' + (d.type === 'devis' ? 'devis' : 'facture') + '</div>'
+        + '<div class="fact-preview-total-amount">' + factFormatCHF(d.total_ttc) + '</div>'
+        + '<div class="fact-preview-total-thanks">Avec nos remerciements.</div>'
         + '</div></div>';
-      if (d.notes) html += '<div class="fact-preview-notes"><strong>Notes :</strong> ' + d.notes + '</div>';
-      if (d.conditions) html += '<div class="fact-preview-notes"><strong>Conditions :</strong> ' + d.conditions + '</div>';
+      // NOTES
+      if (d.notes || d.conditions) {
+        html += '<div class="fact-preview-notes">';
+        if (d.notes) html += '<strong>Notes :</strong> ' + d.notes + '<br>';
+        if (d.conditions) html += '<strong>Conditions :</strong> ' + d.conditions;
+        html += '</div>';
+      }
+      // PAYMENT SECTION (for factures only, with bank info)
+      if (d.type === 'facture' && prof.bankIban) {
+        var qrData = factGenerateQRPayload(d, prof);
+        var qrImgSrc = factGenerateQRImage(qrData);
+        var titulaire = prof.bankTitulaire || companyName;
+        var bankAddr = prof.bankAdresse || prof.adresse || '';
+        html += '<div class="fact-preview-payment">'
+          + '<div class="fact-preview-payment-title">Section paiement</div>'
+          + '<div class="fact-preview-payment-grid">'
+          + '<div class="fact-preview-qr"><img src="' + qrImgSrc + '" alt="QR Code paiement"></div>'
+          + '<div class="fact-preview-payment-info">'
+          + '<div class="pay-label">Compte / Payable à</div>'
+          + '<div>' + titulaire + '</div>'
+          + (bankAddr ? '<div>' + bankAddr + '</div>' : '')
+          + '<div class="pay-label">IBAN</div>'
+          + '<div class="fact-preview-payment-ref">' + factFormatIBAN(prof.bankIban) + '</div>'
+          + '<div class="pay-label">Référence</div>'
+          + '<div class="fact-preview-payment-ref">' + d.numero + '</div>'
+          + '<div class="pay-label">Payable par</div>'
+          + '<div>' + (d.client_nom || '-') + '</div>'
+          + (d.client_adresse ? '<div>' + d.client_adresse + '</div>' : '')
+          + '<div style="margin-top:8px"><strong>Monnaie</strong> CHF &nbsp;&nbsp;&nbsp; <strong>Montant</strong> ' + parseFloat(d.total_ttc).toFixed(2) + '</div>'
+          + '</div></div></div>';
+      }
       html += '<div class="fact-preview-footer">Document généré via Artisano</div></div>';
       document.getElementById('factPreviewContent').innerHTML = html;
       document.getElementById('factPreviewModal').classList.add('active');
     }
     function factClosePreview() { document.getElementById('factPreviewModal').classList.remove('active'); }
 
-    // ===== PDF EXPORT =====
+    // ===== PDF EXPORT (Nespresso-inspired layout) =====
     function factExportPDF() {
       if (!factCurrentDoc) return;
       factCollectData();
@@ -3518,85 +3664,222 @@
       var companyName = prof.entreprise || ((prof.prenom || '') + ' ' + (prof.nom || '')).trim() || 'Mon Entreprise';
       if (typeof jspdf === 'undefined') { factToast('error', 'Bibliothèque PDF non chargée.'); return; }
       var pdf = new jspdf.jsPDF({ unit: 'mm', format: 'a4' });
-      var W = 210, M = 20, CW = W - M * 2, y = M;
+      var W = 210, M = 15, CW = W - M * 2, y = M;
+      var docLabel = d.type === 'devis' ? 'DEVIS' : 'FACTURE';
 
-      // Company
-      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(18);
-      pdf.text(companyName, M, y); y += 6;
-      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(100);
+      // ── COMPANY NAME (top left, bold) ──
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(20); pdf.setTextColor(26, 26, 26);
+      pdf.text(companyName, M, y + 6); y += 10;
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(80);
       if (prof.adresse) { pdf.text(prof.adresse, M, y); y += 4; }
       if (prof.telephone) { pdf.text(prof.telephone, M, y); y += 4; }
       if (prof.email) { pdf.text(prof.email, M, y); y += 4; }
+      if (prof.site) { pdf.text(prof.site, M, y); y += 4; }
+      // Company detail line
+      var companyDetail = [companyName.toUpperCase(), prof.adresse, prof.telephone, prof.site].filter(Boolean).join(' | ');
+      y += 2;
+      pdf.setFontSize(7); pdf.setTextColor(140);
+      var detailLines = pdf.splitTextToSize(companyDetail, CW * 0.55);
+      pdf.text(detailLines, M, y); y += detailLines.length * 3;
 
-      // Type + number (right)
-      pdf.setTextColor(232, 112, 10); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(22);
-      pdf.text(d.type === 'devis' ? 'DEVIS' : 'FACTURE', W - M, M, { align: 'right' });
-      pdf.setTextColor(60); pdf.setFontSize(11);
-      pdf.text(d.numero, W - M, M + 7, { align: 'right' });
-      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(120);
-      pdf.text('Date : ' + factFormatDate(d.date_emission), W - M, M + 12, { align: 'right' });
-      if (d.date_echeance) pdf.text('Échéance : ' + factFormatDate(d.date_echeance), W - M, M + 16, { align: 'right' });
+      // ── CLIENT BLOCK (top right) ──
+      var clientX = W - M - 70;
+      var clientY = M;
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(150);
+      pdf.text(docLabel + ' \u00c0 :', clientX, clientY + 6);
+      clientY += 10;
+      pdf.setTextColor(26, 26, 26); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11);
+      if (d.client_nom) { pdf.text(d.client_nom, clientX, clientY); clientY += 5; }
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(60);
+      if (d.client_adresse) { pdf.text(d.client_adresse, clientX, clientY); clientY += 4; }
+      if (d.client_email) { pdf.text(d.client_email, clientX, clientY); clientY += 4; }
+      if (d.client_telephone) { pdf.text(d.client_telephone, clientX, clientY); clientY += 4; }
 
-      // Client block
-      y = Math.max(y + 8, 52);
-      pdf.setFillColor(242, 241, 238); pdf.roundedRect(W - M - 80, y - 4, 80, 26, 2, 2, 'F');
-      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(140);
-      pdf.text('CLIENT', W - M - 76, y + 1);
-      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10); pdf.setTextColor(40);
-      var cy = y + 6;
-      if (d.client_nom) { pdf.text(d.client_nom, W - M - 76, cy); cy += 4; }
-      if (d.client_adresse) { pdf.text(d.client_adresse, W - M - 76, cy); cy += 4; }
-      if (d.client_email) { pdf.setFontSize(8); pdf.text(d.client_email, W - M - 76, cy); cy += 3.5; }
-      if (d.client_telephone) { pdf.setFontSize(8); pdf.text(d.client_telephone, W - M - 76, cy); }
+      // ── META BAR (N° facture, Date, Échéance) ──
+      y = Math.max(y + 6, clientY + 6, 56);
+      var barH = 12;
+      pdf.setFillColor(245, 245, 240); pdf.setDrawColor(224, 224, 216);
+      pdf.rect(M, y, CW, barH, 'FD');
+      // 3 columns
+      var col1 = M, col2 = M + CW / 3, col3 = M + CW * 2 / 3;
+      pdf.setDrawColor(224, 224, 216);
+      pdf.line(col2, y, col2, y + barH);
+      pdf.line(col3, y, col3, y + barH);
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7); pdf.setTextColor(140);
+      pdf.text('N\u00b0 DE ' + (d.type === 'devis' ? 'DEVIS' : 'FACTURE'), col1 + 4, y + 4.5);
+      pdf.text('DATE D\u2019\u00c9MISSION', col2 + 4, y + 4.5);
+      pdf.text(d.type === 'devis' ? 'VALABLE JUSQU\u2019AU' : '\u00c9CH\u00c9ANCE', col3 + 4, y + 4.5);
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10); pdf.setTextColor(26, 26, 26);
+      pdf.text(d.numero, col1 + 4, y + 9.5);
+      pdf.text(factFormatDate(d.date_emission), col2 + 4, y + 9.5);
+      pdf.text(d.date_echeance ? factFormatDate(d.date_echeance) : '-', col3 + 4, y + 9.5);
+      y += barH + 6;
 
-      // Table
-      y = Math.max(y + 30, 85);
-      pdf.setFillColor(26, 39, 68); pdf.rect(M, y, CW, 8, 'F');
-      pdf.setTextColor(255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8);
-      pdf.text('Description', M + 3, y + 5.5);
-      pdf.text('Qté', M + CW * 0.55, y + 5.5);
-      pdf.text('Unité', M + CW * 0.65, y + 5.5);
-      pdf.text('Prix unit.', M + CW * 0.78, y + 5.5);
-      pdf.text('Total', W - M - 3, y + 5.5, { align: 'right' });
+      // ── TABLE ──
+      var colWidths = [CW * 0.42, CW * 0.10, CW * 0.14, CW * 0.16, CW * 0.18];
+      var colX = [M];
+      for (var ci = 1; ci < 5; ci++) colX.push(colX[ci - 1] + colWidths[ci - 1]);
+      // Header
+      pdf.setFillColor(245, 245, 240); pdf.rect(M, y, CW, 8, 'F');
+      pdf.setDrawColor(200, 200, 190); pdf.line(M, y + 8, M + CW, y + 8);
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(90);
+      var headers = ['Description', 'TVA', 'Quantit\u00e9', 'Prix', 'Montant'];
+      headers.forEach(function(h, i) {
+        if (i >= 1) pdf.text(h, colX[i] + colWidths[i] - 2, y + 5.5, { align: 'right' });
+        else pdf.text(h, colX[i] + 3, y + 5.5);
+      });
       y += 8;
-      pdf.setTextColor(40); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9);
-      (d.lignes || []).forEach(function(l, i) {
-        if (i % 2 === 0) { pdf.setFillColor(250, 250, 248); pdf.rect(M, y, CW, 7, 'F'); }
-        pdf.text((l.description || '').substring(0, 50), M + 3, y + 5);
-        pdf.text(String(l.quantite), M + CW * 0.55, y + 5);
-        pdf.text(l.unite || '', M + CW * 0.65, y + 5);
-        pdf.text(parseFloat(l.prix_unitaire).toFixed(2), M + CW * 0.78, y + 5);
-        pdf.text(parseFloat(l.total).toFixed(2), W - M - 3, y + 5, { align: 'right' });
+
+      // Rows
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(30);
+      (d.lignes || []).forEach(function(l) {
+        var desc = (l.description || '').substring(0, 55);
+        pdf.text(desc, colX[0] + 3, y + 5);
+        pdf.text(d.taux_tva + '%', colX[1] + colWidths[1] - 2, y + 5, { align: 'right' });
+        pdf.text(String(l.quantite), colX[2] + colWidths[2] - 2, y + 5, { align: 'right' });
+        pdf.text(parseFloat(l.prix_unitaire).toFixed(2), colX[3] + colWidths[3] - 2, y + 5, { align: 'right' });
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(parseFloat(l.total).toFixed(2), colX[4] + colWidths[4] - 2, y + 5, { align: 'right' });
+        pdf.setFont('helvetica', 'normal');
         y += 7;
-        if (y > 265) { pdf.addPage(); y = M; }
+        pdf.setDrawColor(238, 238, 230); pdf.line(M, y, M + CW, y);
+        if (y > 240) { pdf.addPage(); y = M; }
       });
 
-      // Totals
-      y += 6;
-      var tx = M + CW * 0.6, tw = CW * 0.4;
-      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9);
-      pdf.text('Sous-total', tx, y + 4); pdf.text(factFormatCHF(d.sous_total), W - M - 3, y + 4, { align: 'right' }); y += 6;
-      if (d.remise_type !== 'aucune' && d.montant_remise > 0) {
-        pdf.text('Remise', tx, y + 4); pdf.text('-' + factFormatCHF(d.montant_remise), W - M - 3, y + 4, { align: 'right' }); y += 6;
+      // ── BOTTOM BAR (notes left, total right) ──
+      y += 4;
+      var bottomY = y;
+      var bottomH = 30;
+      pdf.setFillColor(245, 245, 240); pdf.setDrawColor(224, 224, 216);
+      pdf.rect(M, y, CW, bottomH, 'FD');
+      // Left side: notes + TVA detail
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(100);
+      var noteY = y + 6;
+      if (d.notes) {
+        var noteLines = pdf.splitTextToSize(d.notes, CW * 0.55);
+        pdf.text(noteLines, M + 4, noteY);
+        noteY += noteLines.length * 3.5;
       }
-      pdf.text('TVA ' + d.taux_tva + '%', tx, y + 4); pdf.text(factFormatCHF(d.montant_tva), W - M - 3, y + 4, { align: 'right' }); y += 7;
-      pdf.setDrawColor(26, 39, 68); pdf.line(tx, y, W - M, y); y += 2;
-      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(12);
-      pdf.text('Total TTC', tx, y + 5); pdf.text(factFormatCHF(d.total_ttc), W - M - 3, y + 5, { align: 'right' }); y += 12;
+      var sousTotal = parseFloat(d.sous_total) || 0;
+      var remise = (d.remise_type !== 'aucune' && d.montant_remise > 0) ? parseFloat(d.montant_remise) : 0;
+      var baseHT = sousTotal - remise;
+      pdf.setFontSize(7); pdf.setTextColor(130);
+      pdf.text('D\u00e9tail TVA :', M + 4, noteY + 2);
+      pdf.text(d.taux_tva + '% de ' + baseHT.toFixed(2) + ' = CHF ' + parseFloat(d.montant_tva).toFixed(2), M + 4, noteY + 5.5);
+      if (remise > 0) pdf.text('Remise : -CHF ' + remise.toFixed(2), M + 4, noteY + 9);
+      // Right side: total
+      var totalX = W - M - 4;
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(90);
+      pdf.text('Total ' + (d.type === 'devis' ? 'devis' : 'facture') + ' :', totalX, y + 7, { align: 'right' });
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(18); pdf.setTextColor(26, 26, 26);
+      pdf.text('CHF ' + parseFloat(d.total_ttc).toFixed(2), totalX, y + 15, { align: 'right' });
+      pdf.setFont('helvetica', 'italic'); pdf.setFontSize(8); pdf.setTextColor(140);
+      pdf.text('Avec nos remerciements.', totalX, y + 20, { align: 'right' });
+      y += bottomH + 4;
 
-      // Notes
-      if (d.notes || d.conditions) {
-        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(120);
-        if (d.notes) { pdf.text('Notes : ' + d.notes, M, y); y += 5; }
-        if (d.conditions) { pdf.text('Conditions : ' + d.conditions, M, y); y += 5; }
+      // ── CONDITIONS ──
+      if (d.conditions) {
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(120);
+        var condLines = pdf.splitTextToSize('Conditions : ' + d.conditions, CW);
+        pdf.text(condLines, M, y + 3);
+        y += condLines.length * 3 + 4;
       }
 
-      // Footer
+      // ── PAYMENT SECTION (factures with bank details only) ──
+      if (d.type === 'facture' && prof.bankIban) {
+        // Check if we need a new page for QR section
+        if (y > 210) { pdf.addPage(); y = M; }
+        // Dashed line separator
+        pdf.setDrawColor(180); pdf.setLineDashPattern([2, 2], 0);
+        pdf.line(M, y, W - M, y);
+        pdf.setLineDashPattern([], 0);
+        y += 2;
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(100);
+        pdf.text('A d\u00e9tacher avant le versement', W / 2, y + 3, { align: 'center' });
+        y += 8;
+
+        // QR code image
+        var qrData = factGenerateQRPayload(d, prof);
+        var qrImgSrc = factGenerateQRImage(qrData);
+        var qrSize = 35;
+        var titulaire = prof.bankTitulaire || companyName;
+        var bankAddr = prof.bankAdresse || prof.adresse || '';
+
+        // ── Récépissé (left) ──
+        var recX = M;
+        var recY = y;
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); pdf.setTextColor(26, 26, 26);
+        pdf.text('R\u00e9c\u00e9piss\u00e9', recX, recY); recY += 6;
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7); pdf.setTextColor(26, 26, 26);
+        pdf.text('Compte / Payable \u00e0', recX, recY); recY += 3.5;
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(26, 26, 26);
+        pdf.text(titulaire, recX, recY); recY += 3.5;
+        if (bankAddr) { var bLines = pdf.splitTextToSize(bankAddr, 50); pdf.text(bLines, recX, recY); recY += bLines.length * 3.5; }
+        recY += 2;
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7);
+        pdf.text('R\u00e9f\u00e9rence', recX, recY); recY += 3.5;
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8);
+        pdf.text(d.numero, recX, recY); recY += 5;
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7);
+        pdf.text('Payable par', recX, recY); recY += 3.5;
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8);
+        if (d.client_nom) { pdf.text(d.client_nom, recX, recY); recY += 3.5; }
+        if (d.client_adresse) { pdf.text(d.client_adresse, recX, recY); recY += 3.5; }
+        recY += 3;
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7);
+        pdf.text('Monnaie', recX, recY);
+        pdf.text('Montant', recX + 22, recY); recY += 3.5;
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9);
+        pdf.text('CHF', recX, recY);
+        pdf.text(parseFloat(d.total_ttc).toFixed(2), recX + 22, recY);
+
+        // ── Section paiement (right, with QR) ──
+        var payX = M + 65;
+        var payY = y;
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); pdf.setTextColor(26, 26, 26);
+        pdf.text('Section paiement', payX, payY); payY += 6;
+        // QR Code
+        if (qrImgSrc) {
+          try { pdf.addImage(qrImgSrc, 'PNG', payX, payY, qrSize, qrSize); } catch(e) { /* ignore QR image error */ }
+        }
+        // Info next to QR
+        var infoX = payX + qrSize + 6;
+        var infoY = payY;
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7); pdf.setTextColor(26, 26, 26);
+        pdf.text('Compte / Payable \u00e0', infoX, infoY); infoY += 3.5;
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8);
+        pdf.text(titulaire, infoX, infoY); infoY += 3.5;
+        if (bankAddr) { var bl2 = pdf.splitTextToSize(bankAddr, 55); pdf.text(bl2, infoX, infoY); infoY += bl2.length * 3.5; }
+        infoY += 2;
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7);
+        pdf.text('IBAN', infoX, infoY); infoY += 3.5;
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8);
+        pdf.text(factFormatIBAN(prof.bankIban), infoX, infoY); infoY += 5;
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7);
+        pdf.text('R\u00e9f\u00e9rence', infoX, infoY); infoY += 3.5;
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8);
+        pdf.text(d.numero, infoX, infoY); infoY += 5;
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7);
+        pdf.text('Payable par', infoX, infoY); infoY += 3.5;
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8);
+        if (d.client_nom) { pdf.text(d.client_nom, infoX, infoY); infoY += 3.5; }
+        if (d.client_adresse) { pdf.text(d.client_adresse, infoX, infoY); infoY += 3.5; }
+        infoY += 3;
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7);
+        pdf.text('Monnaie', payX + qrSize + 6, Math.max(payY + qrSize + 4, infoY));
+        pdf.text('Montant', payX + qrSize + 28, Math.max(payY + qrSize + 4, infoY));
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9);
+        var monY = Math.max(payY + qrSize + 4, infoY) + 3.5;
+        pdf.text('CHF', payX + qrSize + 6, monY);
+        pdf.text(parseFloat(d.total_ttc).toFixed(2), payX + qrSize + 28, monY);
+      }
+
+      // ── FOOTER ──
       pdf.setFontSize(7); pdf.setTextColor(180);
-      pdf.text('Document généré via Artisano', W / 2, 287, { align: 'center' });
+      pdf.text('Document g\u00e9n\u00e9r\u00e9 via Artisano', W / 2, 290, { align: 'center' });
 
       pdf.save(d.numero + '.pdf');
-      factToast('success', 'PDF téléchargé : ' + d.numero + '.pdf');
+      factToast('success', 'PDF t\u00e9l\u00e9charg\u00e9 : ' + d.numero + '.pdf');
     }
 
     // ===== KEYBOARD SHORTCUTS =====

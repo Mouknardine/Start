@@ -26,6 +26,11 @@ CREATE TABLE artisans (
   urgence_jours TEXT[] DEFAULT '{}',
   contact_prefs JSONB DEFAULT '{"complete": true, "message": true, "appel": true}',
   avatar_url TEXT,
+  gallery_urls TEXT[] DEFAULT '{}',
+  bank_iban TEXT,
+  bank_titulaire TEXT,
+  bank_adresse TEXT,
+  bank_bic TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

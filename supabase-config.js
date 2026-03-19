@@ -82,7 +82,11 @@ async function saveArtisanProfile(userId, profileData) {
     urgence_jours: profileData.urgenceJours || [],
     contact_prefs: profileData.contactPrefs || { complete: true, message: true, appel: true },
     avatar_url: profileData.avatarUrl || '',
-    gallery_urls: profileData.galleryUrls || []
+    gallery_urls: profileData.galleryUrls || [],
+    bank_iban: profileData.bankIban || '',
+    bank_titulaire: profileData.bankTitulaire || '',
+    bank_adresse: profileData.bankAdresse || '',
+    bank_bic: profileData.bankBic || ''
   };
 
   var { data, error } = await _sb.from('artisans').upsert(row);
@@ -122,7 +126,11 @@ function dbProfileToLocal(dbRow) {
     contactPrefs: dbRow.contact_prefs || { complete: true, message: true, appel: true },
     disponibilites: dbRow.disponibilites || null,
     avatarUrl: dbRow.avatar_url || '',
-    galleryUrls: dbRow.gallery_urls || []
+    galleryUrls: dbRow.gallery_urls || [],
+    bankIban: dbRow.bank_iban || '',
+    bankTitulaire: dbRow.bank_titulaire || '',
+    bankAdresse: dbRow.bank_adresse || '',
+    bankBic: dbRow.bank_bic || ''
   };
 }
 

@@ -470,6 +470,33 @@
       </div>
     </div>
 
+    <!-- COORDONNÉES BANCAIRES -->
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Coordonnées bancaires
+      </div>
+      <p class="form-hint" style="margin-bottom:14px">Ces informations apparaîtront sur vos factures et permettront à vos clients de vous payer. Elles ne sont jamais partagées publiquement.</p>
+      <div class="form-group">
+        <label class="form-label">IBAN</label>
+        <input type="text" id="bank-iban" placeholder="CH93 0076 2011 6238 5295 7" style="font-family:monospace;letter-spacing:1px">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Titulaire du compte</label>
+        <input type="text" id="bank-titulaire" placeholder="Jean Müller / Müller & Fils Sàrl">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Adresse du titulaire</label>
+          <input type="text" id="bank-adresse" placeholder="Rue du Lac 15, 1003 Lausanne">
+        </div>
+        <div class="form-group">
+          <label class="form-label">BIC/SWIFT <span style="font-weight:400;color:var(--gray-500)">(optionnel)</span></label>
+          <input type="text" id="bank-bic" placeholder="UBSWCHZH80A">
+        </div>
+      </div>
+    </div>
+
     <!-- ACTIONS -->
     <div class="actions-bar">
       <a href="profil.html" class="btn-preview">
@@ -725,7 +752,11 @@
       urgenceJours: urgDays,
       contactPrefs: contactPrefs,
       avatarUrl: localStorage.getItem('artisano-avatar-url') || '',
-      galleryUrls: galleryUrls
+      galleryUrls: galleryUrls,
+      bankIban: document.getElementById('bank-iban').value,
+      bankTitulaire: document.getElementById('bank-titulaire').value,
+      bankAdresse: document.getElementById('bank-adresse').value,
+      bankBic: document.getElementById('bank-bic').value
     };
 
     localStorage.setItem('artisano-profil', JSON.stringify(profile));
@@ -844,6 +875,12 @@
     // Galerie
     galleryUrls = p.galleryUrls || [];
     renderGalleryGrid();
+
+    // Coordonnées bancaires
+    document.getElementById('bank-iban').value = p.bankIban || '';
+    document.getElementById('bank-titulaire').value = p.bankTitulaire || '';
+    document.getElementById('bank-adresse').value = p.bankAdresse || '';
+    document.getElementById('bank-bic').value = p.bankBic || '';
 
     // Update nav name
     updateNavName(p);
