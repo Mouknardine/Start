@@ -2964,13 +2964,12 @@
         var icon = d.type === 'devis'
           ? '<div class="fact-doc-icon devis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>'
           : '<div class="fact-doc-icon facture"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>';
-        var label = d.label || (d.client_nom ? d.client_nom : 'Sans titre');
+        var displayName = d.label || d.numero;
         return '<div class="fact-doc-item" onclick="factOpenEditor(\'' + d.id + '\')">'
           + icon
           + '<div class="fact-doc-body">'
-          + '<div class="fact-doc-title">' + d.numero + ' <span class="fact-status fact-status-' + d.statut + '">' + factStatusLabel(d.statut) + '</span></div>'
-          + '<div class="fact-doc-label"><span class="fact-doc-label-text" id="label-' + d.id + '" onclick="event.stopPropagation();factEditLabel(\'' + d.id + '\')" title="Cliquer pour renommer">' + label + '</span><svg class="fact-doc-label-edit" onclick="event.stopPropagation();factEditLabel(\'' + d.id + '\')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>'
-          + '<div class="fact-doc-client">' + (d.client_nom || 'Sans client') + '</div>'
+          + '<div class="fact-doc-title"><span class="fact-doc-label-text" id="label-' + d.id + '" onclick="event.stopPropagation();factEditLabel(\'' + d.id + '\')" title="Cliquer pour renommer">' + displayName + '</span><svg class="fact-doc-label-edit" onclick="event.stopPropagation();factEditLabel(\'' + d.id + '\')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> <span class="fact-status fact-status-' + d.statut + '">' + factStatusLabel(d.statut) + '</span></div>'
+          + '<div class="fact-doc-client">' + d.numero + (d.client_nom ? ' · ' + d.client_nom : '') + '</div>'
           + '</div>'
           + '<div class="fact-doc-right">'
           + '<span class="fact-doc-amount">' + factFormatCHF(d.total_ttc) + '</span>'
@@ -2992,7 +2991,7 @@
       if (!doc) return;
       var span = document.getElementById('label-' + docId);
       if (!span) return;
-      var currentLabel = doc.label || doc.client_nom || '';
+      var currentLabel = doc.label || doc.numero || '';
       var input = document.createElement('input');
       input.type = 'text';
       input.className = 'fact-doc-label-input';
