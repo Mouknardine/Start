@@ -439,47 +439,171 @@
     gap: 8px;
   }
 
-  /* GALERIE */
-  .gallery-grid {
+  /* GALERIE MOSAIC - style Booking */
+  .gallery-mosaic {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-  }
-
-  .gallery-item {
-    aspect-ratio: 4/3;
-    background: linear-gradient(135deg, var(--gray-200) 0%, var(--gray-300) 100%);
-    border-radius: var(--radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    color: var(--gray-500);
-    cursor: pointer;
-    transition: all 0.3s;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 240px 120px;
+    gap: 4px;
+    border-radius: 16px;
     overflow: hidden;
+    cursor: pointer;
+  }
+  .gallery-mosaic-main {
+    grid-row: 1 / 3;
     position: relative;
+    overflow: hidden;
   }
-
-  .gallery-item:hover {
-    transform: scale(1.03);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-  }
-
-  .gallery-item.more {
-    background: var(--dark);
-    color: white;
-    font-family: 'Sora', sans-serif;
-    font-weight: 700;
-    font-size: 15px;
-  }
-
-  .gallery-item img {
+  .gallery-mosaic-main img, .gallery-mosaic-thumb img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    transition: transform 0.3s;
   }
+  .gallery-mosaic-main:hover img, .gallery-mosaic-thumb:hover img {
+    transform: scale(1.05);
+  }
+  .gallery-mosaic-thumb {
+    position: relative;
+    overflow: hidden;
+  }
+  .gallery-mosaic-more {
+    position: absolute;
+    bottom: 0; left: 0; right: 0; top: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    gap: 6px;
+    transition: background 0.2s;
+  }
+  .gallery-mosaic-more:hover { background: rgba(0,0,0,0.7); }
+  .gallery-mosaic-more svg { width: 20px; height: 20px; }
+  .gallery-show-all {
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    border: 2px solid var(--gray-200);
+    border-radius: 50px;
+    padding: 10px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dark);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .gallery-show-all:hover { border-color: var(--orange); color: var(--orange); }
+  .gallery-show-all svg { width: 16px; height: 16px; }
+
+  /* LIGHTBOX PRO */
+  .lb-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 9999;
+    flex-direction: column;
+  }
+  .lb-overlay.open { display: flex; }
+  .lb-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    color: white;
+    flex-shrink: 0;
+  }
+  .lb-counter {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .lb-close {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  .lb-close:hover { background: rgba(255,255,255,0.25); }
+  .lb-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .lb-main img {
+    max-width: 85%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    transition: opacity 0.25s ease;
+    user-select: none;
+  }
+  .lb-main img.lb-fade { opacity: 0; }
+  .lb-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.12);
+    border: none;
+    color: white;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+  }
+  .lb-nav:hover { background: rgba(255,255,255,0.3); transform: translateY(-50%) scale(1.08); }
+  .lb-prev { left: 20px; }
+  .lb-next { right: 20px; }
+  .lb-thumbs {
+    display: flex;
+    gap: 8px;
+    padding: 16px 24px;
+    overflow-x: auto;
+    justify-content: center;
+    flex-shrink: 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  .lb-thumbs::-webkit-scrollbar { height: 0; }
+  .lb-thumb {
+    width: 64px;
+    height: 48px;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    flex-shrink: 0;
+    border: 2px solid transparent;
+    opacity: 0.5;
+    transition: all 0.2s;
+  }
+  .lb-thumb.active { border-color: var(--orange); opacity: 1; }
+  .lb-thumb:hover { opacity: 0.85; }
+  .lb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
   /* AVIS */
   .reviews-header {
@@ -982,11 +1106,15 @@
     .card { padding: 20px; }
     .card-title { font-size: 18px; margin-bottom: 16px; }
 
-    /* Gallery: 2 columns on tablet/mobile */
-    .gallery-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
+    /* Gallery mosaic responsive */
+    .gallery-mosaic {
+      grid-template-rows: 200px 100px;
     }
+    .lb-nav { width: 40px; height: 40px; font-size: 18px; }
+    .lb-prev { left: 10px; }
+    .lb-next { right: 10px; }
+    .lb-main img { max-width: 95%; }
+    .lb-thumb { width: 50px; height: 38px; }
 
     /* Reviews */
     .review-item { padding: 16px 0; }
@@ -1074,10 +1202,9 @@
     .specialite-chip { padding: 7px 12px; font-size: 12px; }
     .specialite-chip .chip-icon { font-size: 14px; }
 
-    /* Gallery */
-    .gallery-grid { gap: 6px; }
-    .gallery-item { font-size: 11px; border-radius: 8px; }
-    .gallery-item.more { font-size: 13px; }
+    /* Gallery mosaic small */
+    .gallery-mosaic { grid-template-rows: 180px 90px; border-radius: 12px; }
+    .lb-thumbs { padding: 12px 16px; gap: 6px; }
 
     /* Reviews */
     .reviews-big-score { font-size: 36px; }
@@ -1305,13 +1432,8 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           Galerie de réalisations
         </div>
-        <div class="gallery-grid">
-          <div class="gallery-item">Salle de bain rénovée</div>
-          <div class="gallery-item">Installation chauffage</div>
-          <div class="gallery-item">Réparation fuite</div>
-          <div class="gallery-item">Pose de sanitaire</div>
-          <div class="gallery-item">Remplacement boiler</div>
-          <div class="gallery-item more">+12 photos</div>
+        <div class="gallery-mosaic" id="gallery-mosaic">
+          <!-- Rempli dynamiquement par JS -->
         </div>
       </div>
 
@@ -1832,21 +1954,14 @@
         }
       }
 
-      // Galerie
-      var galleryContainer = document.querySelector('.gallery-grid');
-      if (galleryContainer) {
+      // Galerie mosaic
+      var mosaicEl = document.getElementById('gallery-mosaic');
+      if (mosaicEl) {
         if (p.galleryUrls && p.galleryUrls.length > 0) {
-          galleryContainer.innerHTML = '';
-          p.galleryUrls.forEach(function(url, idx) {
-            var item = document.createElement('div');
-            item.className = 'gallery-item';
-            item.innerHTML = '<img src="' + url + '?t=' + Date.now() + '" alt="Réalisation ' + (idx+1) + '">';
-            item.onclick = function() { openLightbox(url); };
-            galleryContainer.appendChild(item);
-          });
+          window._galleryUrls = p.galleryUrls;
+          renderGalleryMosaic(p.galleryUrls);
         } else {
-          // Hide gallery section if no photos
-          var gallerySection = galleryContainer.closest('.card') || galleryContainer.closest('.profile-section');
+          var gallerySection = mosaicEl.closest('.card');
           if (gallerySection) gallerySection.style.display = 'none';
         }
       }
@@ -1948,26 +2063,120 @@
       });
     }
 
-    // Lightbox functions
-    function openLightbox(url) {
+    // ===== GALERIE MOSAIC + LIGHTBOX PRO =====
+    function renderGalleryMosaic(urls) {
+      var mosaic = document.getElementById('gallery-mosaic');
+      mosaic.innerHTML = '';
+      if (urls.length === 0) return;
+      // Image principale (grande à gauche)
+      var main = document.createElement('div');
+      main.className = 'gallery-mosaic-main';
+      main.innerHTML = '<img src="' + urls[0] + '?t=' + Date.now() + '" alt="Réalisation 1">';
+      main.onclick = function() { openLightbox(0); };
+      mosaic.appendChild(main);
+
+      // 2 miniatures à droite (ou 1 si seulement 2 photos)
+      var thumbCount = Math.min(urls.length - 1, 2);
+      for (var i = 0; i < thumbCount; i++) {
+        var thumb = document.createElement('div');
+        thumb.className = 'gallery-mosaic-thumb';
+        thumb.innerHTML = '<img src="' + urls[i+1] + '?t=' + Date.now() + '" alt="Réalisation ' + (i+2) + '">';
+        (function(idx) {
+          thumb.onclick = function() { openLightbox(idx); };
+        })(i + 1);
+        // Overlay "+X photos" sur la dernière miniature si plus de 3 images
+        if (i === thumbCount - 1 && urls.length > 3) {
+          thumb.innerHTML += '<div class="gallery-mosaic-more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> +' + (urls.length - 3) + ' photos</div>';
+          thumb.onclick = function() { openLightbox(0); };
+        }
+        mosaic.appendChild(thumb);
+      }
+    }
+
+    // Lightbox pro avec navigation
+    var lbIndex = 0;
+    function openLightbox(idx) {
+      lbIndex = idx;
       var lb = document.getElementById('lightbox');
-      document.getElementById('lightbox-img').src = url + '?t=' + Date.now();
-      lb.style.display = 'flex';
+      lb.classList.add('open');
       document.body.style.overflow = 'hidden';
+      lbShow();
+      lbRenderThumbs();
     }
     function closeLightbox() {
-      document.getElementById('lightbox').style.display = 'none';
+      document.getElementById('lightbox').classList.remove('open');
       document.body.style.overflow = '';
     }
-    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
+    function lbNav(dir) {
+      var urls = window._galleryUrls || [];
+      if (urls.length === 0) return;
+      lbIndex = (lbIndex + dir + urls.length) % urls.length;
+      lbShow();
+      lbHighlightThumb();
+    }
+    function lbShow() {
+      var urls = window._galleryUrls || [];
+      if (urls.length === 0) return;
+      var img = document.getElementById('lb-img');
+      img.classList.add('lb-fade');
+      setTimeout(function() {
+        img.src = urls[lbIndex] + '?t=' + Date.now();
+        img.onload = function() { img.classList.remove('lb-fade'); };
+      }, 150);
+      document.getElementById('lb-counter').textContent = (lbIndex + 1) + ' / ' + urls.length;
+    }
+    function lbRenderThumbs() {
+      var urls = window._galleryUrls || [];
+      var container = document.getElementById('lb-thumbs');
+      container.innerHTML = '';
+      urls.forEach(function(url, idx) {
+        var t = document.createElement('div');
+        t.className = 'lb-thumb' + (idx === lbIndex ? ' active' : '');
+        t.innerHTML = '<img src="' + url + '?t=' + Date.now() + '" alt="">';
+        t.onclick = function(e) { e.stopPropagation(); lbIndex = idx; lbShow(); lbHighlightThumb(); };
+        container.appendChild(t);
+      });
+    }
+    function lbHighlightThumb() {
+      var thumbs = document.querySelectorAll('.lb-thumb');
+      thumbs.forEach(function(t, i) {
+        t.className = 'lb-thumb' + (i === lbIndex ? ' active' : '');
+      });
+      // Scroll la miniature active en vue
+      if (thumbs[lbIndex]) thumbs[lbIndex].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+    document.addEventListener('keydown', function(e) {
+      if (!document.getElementById('lightbox').classList.contains('open')) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') lbNav(-1);
+      if (e.key === 'ArrowRight') lbNav(1);
+    });
+    // Swipe sur mobile
+    (function() {
+      var lb = document.getElementById('lightbox');
+      var startX = 0;
+      lb.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, { passive: true });
+      lb.addEventListener('touchend', function(e) {
+        var diff = e.changedTouches[0].clientX - startX;
+        if (Math.abs(diff) > 50) lbNav(diff > 0 ? -1 : 1);
+      }, { passive: true });
+    })();
 
   </script>
   <script src="artisano-common.js"></script>
 
-  <!-- Lightbox overlay -->
-  <div id="lightbox" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:9999;align-items:center;justify-content:center;cursor:pointer" onclick="closeLightbox()">
-    <img id="lightbox-img" src="" alt="" style="max-width:90%;max-height:90%;object-fit:contain;border-radius:8px">
-    <button onclick="closeLightbox()" style="position:absolute;top:20px;right:20px;background:none;border:none;color:white;font-size:32px;cursor:pointer">&times;</button>
+  <!-- Lightbox pro -->
+  <div class="lb-overlay" id="lightbox">
+    <div class="lb-header">
+      <span class="lb-counter" id="lb-counter">1 / 5</span>
+      <button class="lb-close" onclick="closeLightbox()">✕</button>
+    </div>
+    <div class="lb-main">
+      <button class="lb-nav lb-prev" onclick="lbNav(-1)">&#8249;</button>
+      <img id="lb-img" src="" alt="">
+      <button class="lb-nav lb-next" onclick="lbNav(1)">&#8250;</button>
+    </div>
+    <div class="lb-thumbs" id="lb-thumbs"></div>
   </div>
 </body>
 </html>
