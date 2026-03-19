@@ -235,6 +235,80 @@
   .btn-abo { display:block; margin-top:14px; padding:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:50px; font-size:12px; font-weight:600; text-align:center; text-decoration:none; transition:all 0.2s; cursor:pointer; }
   .btn-abo:hover { background:rgba(255,255,255,0.15); }
 
+  /* ====== RECURRENCE MODAL ====== */
+  .recurrence-day-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--gray-100); }
+  .recurrence-day-row:last-child { border-bottom:none; }
+  .recurrence-day-name { width:90px; font-weight:700; font-size:14px; font-family:'Sora',sans-serif; }
+  .recurrence-toggle { width:44px; height:24px; background:var(--gray-200); border-radius:12px; position:relative; cursor:pointer; border:none; transition:background 0.2s; flex-shrink:0; }
+  .recurrence-toggle.active { background:var(--green); }
+  .recurrence-toggle::after { content:''; position:absolute; top:2px; left:2px; width:20px; height:20px; background:white; border-radius:50%; transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+  .recurrence-toggle.active::after { transform:translateX(20px); }
+  .recurrence-times { display:flex; gap:8px; align-items:center; }
+  .recurrence-times input[type="time"] { padding:6px 10px; border:1px solid var(--gray-200); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; }
+  .recurrence-times input:disabled { opacity:0.35; }
+  .recurrence-times span { font-size:13px; color:var(--gray-500); }
+
+  /* ====== BLOCKED DAYS ====== */
+  .agenda-cell.blocked { background:var(--gray-300) !important; cursor:not-allowed !important; position:relative; }
+  .agenda-cell.blocked::before { content:''; position:absolute; inset:0; background:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(211,47,47,0.15) 4px,rgba(211,47,47,0.15) 8px); }
+  .agenda-day-header.blocked-day { background:rgba(211,47,47,0.08); }
+  .agenda-day-header.blocked-day::after { content:'Bloqué'; display:block; font-size:9px; color:var(--red); font-weight:700; text-transform:uppercase; letter-spacing:0.3px; }
+  .block-day-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin:16px 0; }
+  .block-day-btn { padding:14px 8px; border-radius:var(--radius-sm); border:2px solid var(--gray-200); background:white; cursor:pointer; text-align:center; font-family:'Sora',sans-serif; font-size:12px; font-weight:700; transition:all 0.2s; }
+  .block-day-btn:hover { border-color:var(--red); }
+  .block-day-btn.blocked { background:rgba(211,47,47,0.08); border-color:var(--red); color:var(--red); }
+  .block-range-row { display:flex; gap:10px; align-items:center; margin-top:16px; flex-wrap:wrap; }
+  .block-range-row label { font-size:12px; font-weight:700; color:var(--gray-500); }
+  .block-range-row input[type="date"] { padding:8px 12px; border:1px solid var(--gray-200); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; }
+
+  /* ====== VIEW TOGGLE SEMAINE/MOIS ====== */
+  .agenda-view-toggle { display:flex; background:var(--gray-200); border-radius:8px; padding:3px; }
+  .view-toggle-btn { padding:6px 16px; border-radius:6px; border:none; font-family:'Sora',sans-serif; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:var(--gray-500); transition:all 0.2s; }
+  .view-toggle-btn.active { background:white; color:var(--dark); box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+
+  /* ====== MONTH VIEW ====== */
+  .month-view { display:none; padding:24px; }
+  .month-view.active { display:block; }
+  .month-nav { display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:20px; }
+  .month-label { font-family:'Sora',sans-serif; font-size:18px; font-weight:700; min-width:180px; text-align:center; }
+  .month-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .month-day-header { text-align:center; font-size:11px; font-weight:700; color:var(--gray-500); padding:8px 4px; text-transform:uppercase; }
+  .month-day-cell { aspect-ratio:1; border-radius:var(--radius-sm); border:1px solid var(--gray-100); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; background:white; }
+  .month-day-cell:hover { border-color:var(--orange); background:rgba(232,112,10,0.02); }
+  .month-day-cell.other-month { opacity:0.25; cursor:default; }
+  .month-day-cell.today { border-color:var(--orange); border-width:2px; }
+  .month-day-num { font-family:'Sora',sans-serif; font-size:14px; font-weight:700; color:var(--dark); }
+  .month-day-dot { width:8px; height:8px; border-radius:50%; margin-top:4px; }
+  .month-day-dot.mostly-available { background:var(--green); }
+  .month-day-dot.mostly-unavailable { background:var(--red); }
+  .month-day-dot.blocked { background:var(--gray-500); }
+  .month-day-dot.undefined { background:var(--gray-200); }
+
+  /* ====== INTERVENTION TYPES ====== */
+  .intervention-list { display:flex; flex-direction:column; gap:10px; margin:16px 0; max-height:260px; overflow-y:auto; }
+  .intervention-item { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--gray-100); border-radius:var(--radius-sm); }
+  .intervention-color-dot { width:16px; height:16px; border-radius:4px; flex-shrink:0; }
+  .intervention-name { font-weight:700; font-size:14px; flex:1; }
+  .intervention-duration { font-size:12px; color:var(--gray-500); }
+  .intervention-delete { background:none; border:none; color:var(--red); cursor:pointer; padding:4px; font-size:18px; }
+  .intervention-add-form { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-top:12px; padding-top:12px; border-top:1px solid var(--gray-200); }
+  .intervention-add-form input, .intervention-add-form select { padding:8px 10px; border:1px solid var(--gray-200); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; }
+  .agenda-cell .intervention-marker { position:absolute; top:0; left:0; bottom:0; width:3px; border-radius:0 2px 2px 0; z-index:1; }
+
+  /* ====== NOTES ====== */
+  .agenda-cell .note-icon { position:absolute; bottom:1px; left:1px; width:12px; height:12px; z-index:2; }
+  .agenda-cell .note-icon svg { width:10px; height:10px; color:var(--orange); }
+  .note-tooltip { display:none; position:fixed; z-index:200; background:var(--dark); color:white; padding:8px 12px; border-radius:var(--radius-sm); font-size:12px; max-width:200px; box-shadow:0 4px 12px rgba(0,0,0,0.2); pointer-events:none; }
+  .note-tooltip.active { display:block; }
+  .note-input-popup { display:none; position:fixed; z-index:200; background:white; padding:12px; border-radius:var(--radius-sm); box-shadow:0 8px 30px rgba(0,0,0,0.15); border:1px solid var(--gray-200); width:220px; }
+  .note-input-popup.active { display:block; }
+  .note-input-popup textarea { width:100%; min-height:60px; border:1px solid var(--gray-200); border-radius:8px; padding:8px; font-family:'DM Sans',sans-serif; font-size:12px; resize:vertical; box-sizing:border-box; }
+  .note-input-popup textarea:focus { outline:none; border-color:var(--orange); }
+  .note-input-actions { display:flex; gap:6px; margin-top:8px; }
+  .note-input-actions button { flex:1; padding:8px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid var(--gray-200); background:white; transition:all 0.2s; }
+  .note-input-actions .note-save { background:var(--orange); color:white; border-color:var(--orange); }
+  .note-input-actions .note-delete { color:var(--red); }
+
   /* Scroll wrapper for agenda grid (enables horizontal scroll on mobile) */
   .agenda-grid-scroll { overflow:visible; }
 
@@ -295,6 +369,30 @@
 
     /* Modal */
     .modal-card { margin:16px; width:calc(100% - 32px); max-width:440px; }
+
+    /* Recurrence modal responsive */
+    .recurrence-day-row { flex-wrap:wrap; gap:8px; }
+    .recurrence-day-name { width:70px; font-size:12px; }
+    .recurrence-times input[type="time"] { width:100px; font-size:12px; padding:5px 8px; }
+
+    /* Block day grid responsive */
+    .block-day-grid { grid-template-columns:repeat(4,1fr); }
+    .block-range-row { flex-direction:column; align-items:stretch; }
+    .block-range-row input[type="date"] { width:100%; }
+
+    /* Month view responsive */
+    .month-day-cell { min-height:50px; }
+    .month-day-num { font-size:12px; }
+
+    /* Intervention form responsive */
+    .intervention-add-form { flex-direction:column; }
+    .intervention-add-form input, .intervention-add-form select { width:100%; }
+
+    /* View toggle responsive */
+    .agenda-view-toggle { align-self:center; }
+
+    /* Note input popup responsive */
+    .note-input-popup { width:calc(100vw - 32px); max-width:280px; }
 
     /* Agenda info */
     .agenda-info { font-size:12px; padding:12px 16px; flex-direction:column; text-align:center; }
@@ -449,9 +547,15 @@
             <span class="agenda-week" id="agendaWeekLabel">Semaine du 16 au 22 mars 2026</span>
             <button class="agenda-btn" onclick="navigateWeek(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
           </div>
+          <div class="agenda-view-toggle">
+            <button class="view-toggle-btn active" id="viewWeekBtn" onclick="switchAgendaView('week')">Semaine</button>
+            <button class="view-toggle-btn" id="viewMonthBtn" onclick="switchAgendaView('month')">Mois</button>
+          </div>
           <div class="agenda-actions">
-            <button class="agenda-sync"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9"/></svg> Connecter Google Calendar</button>
-            <button class="agenda-publish" id="agendaPublishBtn" onclick="publishDisponibilites()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Publier les disponibilités</button>
+            <button class="agenda-sync" onclick="openRecurrenceModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg> Horaires de base</button>
+            <button class="agenda-sync" onclick="openBlockModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="9" y1="10" x2="15" y2="16"/><line x1="15" y1="10" x2="9" y2="16"/></svg> Bloquer des jours</button>
+            <button class="agenda-sync" onclick="openInterventionTypesPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m-7-3.5l5.2-3m1.6-.9L17 3.5M5 3.5l5.2 3m1.6.9L17 10.5"/></svg> Interventions</button>
+            <button class="agenda-publish" id="agendaPublishBtn" onclick="publishDisponibilites()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Publier</button>
           </div>
         </div>
 
@@ -665,6 +769,25 @@
           <div class="agenda-cell" data-col="6" data-row="19"></div>
           </div>
         </div><!-- /.agenda-grid-scroll -->
+
+        <!-- MONTH VIEW -->
+        <div class="month-view" id="monthView">
+          <div class="month-nav">
+            <button class="agenda-btn" onclick="navigateMonth(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <span class="month-label" id="monthLabel">Mars 2026</span>
+            <button class="agenda-btn" onclick="navigateMonth(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+          </div>
+          <div class="month-grid" id="monthGrid">
+            <div class="month-day-header">Lun</div>
+            <div class="month-day-header">Mar</div>
+            <div class="month-day-header">Mer</div>
+            <div class="month-day-header">Jeu</div>
+            <div class="month-day-header">Ven</div>
+            <div class="month-day-header">Sam</div>
+            <div class="month-day-header">Dim</div>
+          </div>
+        </div>
+
         <div class="agenda-legend">
           <div class="legend-item"><div class="legend-dot avail"></div> Disponible</div>
           <div class="legend-item"><div class="legend-dot unavail"></div> Indisponible</div>
@@ -725,12 +848,92 @@
           <span class="popup-dot"></span> Indisponible
         </button>
         <div class="cell-popup-divider"></div>
+        <div id="popupInterventionSection" style="display:none;padding:4px 0;">
+          <div style="font-size:10px;font-weight:700;color:var(--gray-500);text-transform:uppercase;margin-bottom:4px;">Type d'intervention</div>
+          <select id="popupInterventionSelect" style="width:100%;padding:6px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;">
+            <option value="">— Aucun —</option>
+          </select>
+        </div>
+        <div class="cell-popup-divider"></div>
         <button class="cell-popup-btn popup-clear" onclick="applyPopupState('clear')">
           <span class="popup-dot"></span> Effacer
         </button>
       </div>
     </div>
 
+  </div>
+
+  <!-- RECURRENCE MODAL -->
+  <div class="modal-overlay" id="recurrenceModal">
+    <div class="modal-card" style="max-width:520px;">
+      <div class="modal-title">Horaires de base</div>
+      <div class="modal-subtitle">Définissez vos horaires récurrents. Ils seront appliqués automatiquement aux nouvelles semaines.</div>
+      <div id="recurrenceDays"></div>
+      <div class="modal-actions" style="margin-top:20px;">
+        <button class="modal-btn modal-btn-cancel" onclick="closeRecurrenceModal()">Annuler</button>
+        <button class="modal-btn" style="background:var(--green);color:white;" onclick="applyRecurrence()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOCK DAYS MODAL -->
+  <div class="modal-overlay" id="blockModal">
+    <div class="modal-card" style="max-width:520px;">
+      <div class="modal-title">Bloquer des jours</div>
+      <div class="modal-subtitle">Sélectionnez les jours de la semaine en cours à bloquer, ou définissez une plage de dates.</div>
+      <div class="block-day-grid" id="blockDayGrid"></div>
+      <button class="modal-btn" style="background:var(--red);color:white;width:100%;margin-top:4px;" onclick="blockAllWeek()">Bloquer toute la semaine</button>
+      <div class="block-range-row">
+        <label>Du</label>
+        <input type="date" id="blockFrom">
+        <label>Au</label>
+        <input type="date" id="blockTo">
+        <button class="modal-btn" style="background:var(--orange);color:white;" onclick="blockDateRange()">Bloquer la plage</button>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--gray-500);" id="blockedDaysSummary"></div>
+      <div class="modal-actions" style="margin-top:20px;">
+        <button class="modal-btn modal-btn-cancel" onclick="closeBlockModal()">Annuler</button>
+        <button class="modal-btn" style="background:var(--green);color:white;" onclick="saveBlockedDays()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERVENTION TYPES MODAL -->
+  <div class="modal-overlay" id="interventionModal">
+    <div class="modal-card" style="max-width:520px;">
+      <div class="modal-title">Types d'interventions</div>
+      <div class="modal-subtitle">Définissez les types d'interventions que vous proposez.</div>
+      <div class="intervention-list" id="interventionList"></div>
+      <div class="intervention-add-form">
+        <input type="text" id="intName" placeholder="Nom (ex: Dépannage)" style="flex:1;">
+        <select id="intDuration">
+          <option value="30">30 min</option>
+          <option value="60" selected>1h</option>
+          <option value="90">1h30</option>
+          <option value="120">2h</option>
+          <option value="180">3h</option>
+          <option value="240">4h</option>
+        </select>
+        <input type="color" id="intColor" value="#2E7D32" style="width:40px;height:36px;border:none;cursor:pointer;">
+        <button class="modal-btn" style="background:var(--orange);color:white;" onclick="addInterventionType()">Ajouter</button>
+      </div>
+      <div class="modal-actions" style="margin-top:20px;">
+        <button class="modal-btn modal-btn-cancel" onclick="closeInterventionModal()">Annuler</button>
+        <button class="modal-btn" style="background:var(--green);color:white;" onclick="saveInterventionTypes()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTE TOOLTIP (floating, follows cursor) -->
+  <div class="note-tooltip" id="noteTooltip"></div>
+
+  <!-- NOTE INPUT POPUP -->
+  <div class="note-input-popup" id="noteInputPopup">
+    <textarea id="noteText" placeholder="Ajouter une note..."></textarea>
+    <div class="note-input-actions">
+      <button class="note-delete" onclick="deleteNote()">Supprimer</button>
+      <button class="note-save" onclick="saveNote()">Enregistrer</button>
+    </div>
   </div>
 
   <!-- REFUSE MODAL -->
@@ -852,19 +1055,29 @@
     function navigateWeek(direction) {
       // Save current state before navigating
       saveAgendaToLocalForWeek();
+      saveNotesForWeek();
       currentWeekOffset += direction;
       updateAgendaHeaders();
       // Clear the grid
       clearAgendaGrid();
       // Load state for new week
       loadAgendaForCurrentWeek();
+      // Load notes and blocked days for new week
+      loadNotesForWeek();
+      blockedDays = JSON.parse(localStorage.getItem('artisano-blocked-days') || '[]');
+      applyBlockedDaysToGrid();
     }
 
     function clearAgendaGrid() {
       var cells = document.querySelectorAll('.agenda-cell');
       cells.forEach(function(cell) {
-        cell.classList.remove('available', 'unavailable', 'selected-cell');
+        cell.classList.remove('available', 'unavailable', 'selected-cell', 'blocked', 'custom-set');
+        var noteIcon = cell.querySelector('.note-icon');
+        if (noteIcon) noteIcon.remove();
+        var marker = cell.querySelector('.intervention-marker');
+        if (marker) marker.remove();
       });
+      document.querySelectorAll('.agenda-day-header.blocked-day').forEach(function(h) { h.classList.remove('blocked-day'); });
     }
 
     function getWeekStorageKey() {
@@ -954,20 +1167,32 @@
       btn.disabled = true;
       btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Publication...';
 
+      // Save current notes
+      saveNotesForWeek();
+
       var state = collectAgendaState();
+
+      // Build v2 data structure
+      var v2Data = {
+        version: 2,
+        week_start: state.week_start,
+        slots: state.slots,
+        recurrence: JSON.parse(localStorage.getItem('artisano-recurrence') || '{}'),
+        blocked_days: JSON.parse(localStorage.getItem('artisano-blocked-days') || '[]'),
+        intervention_types: JSON.parse(localStorage.getItem('artisano-intervention-types') || '[]'),
+        notes: agendaNotes
+      };
 
       // Always save to localStorage
       localStorage.setItem(getWeekStorageKey(), JSON.stringify(state));
-      // Also save as the global key for Supabase sync
-      localStorage.setItem('artisano-agenda', JSON.stringify(state));
+      localStorage.setItem('artisano-agenda', JSON.stringify(v2Data));
 
       // Try to save to Supabase
       var user = await getUser();
       if (user) {
         try {
-          var { error } = await _sb.from('artisans').update({ disponibilites: state }).eq('id', user.id);
+          var { error } = await _sb.from('artisans').update({ disponibilites: v2Data }).eq('id', user.id);
           if (error) {
-            // Column might not exist yet
             console.warn('Supabase save error (column may not exist):', error.message);
             showAgendaFeedback('success', 'Disponibilités enregistrées localement. Pour la sauvegarde en ligne, ajoutez la colonne "disponibilites" (voir console).');
             console.info('SQL a executer dans Supabase: ALTER TABLE artisans ADD COLUMN IF NOT EXISTS disponibilites JSONB DEFAULT \'{}\';');
@@ -1232,6 +1457,587 @@
       }, 4000);
     }
 
+    /* ========== AGENDA VIEW TOGGLE (WEEK/MONTH) ========== */
+    var currentAgendaView = 'week';
+    var currentMonthOffset = 0;
+
+    function switchAgendaView(view) {
+      currentAgendaView = view;
+      document.getElementById('viewWeekBtn').classList.toggle('active', view === 'week');
+      document.getElementById('viewMonthBtn').classList.toggle('active', view === 'month');
+
+      var weekEls = [document.querySelector('.agenda-grid-scroll'), document.querySelector('.agenda-legend'), document.querySelector('.custom-slot-section'), document.querySelector('.agenda-info')];
+      weekEls.forEach(function(el) { if (el) el.style.display = view === 'week' ? '' : 'none'; });
+
+      var monthView = document.getElementById('monthView');
+      if (monthView) {
+        monthView.classList.toggle('active', view === 'month');
+      }
+      if (view === 'month') {
+        currentMonthOffset = 0;
+        renderMonthView();
+      }
+    }
+
+    /* ========== MONTH VIEW ========== */
+    function navigateMonth(dir) {
+      currentMonthOffset += dir;
+      renderMonthView();
+    }
+
+    function renderMonthView() {
+      var now = new Date();
+      var year = now.getFullYear();
+      var month = now.getMonth() + currentMonthOffset;
+      // Normalize
+      while (month < 0) { month += 12; year--; }
+      while (month > 11) { month -= 12; year++; }
+
+      var moisNoms = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+      document.getElementById('monthLabel').textContent = moisNoms[month] + ' ' + year;
+
+      var grid = document.getElementById('monthGrid');
+      // Remove existing day cells (keep headers)
+      var cells = grid.querySelectorAll('.month-day-cell');
+      cells.forEach(function(c) { c.remove(); });
+
+      var firstDay = new Date(year, month, 1);
+      var lastDay = new Date(year, month + 1, 0);
+      // Monday=0 in our system
+      var startDow = (firstDay.getDay() + 6) % 7; // convert Sun=0 to Mon=0
+
+      var today = new Date();
+      today.setHours(0,0,0,0);
+
+      // Fill leading empty days from previous month
+      var prevMonth = new Date(year, month, 0);
+      for (var i = startDow - 1; i >= 0; i--) {
+        var dayNum = prevMonth.getDate() - i;
+        var cell = document.createElement('div');
+        cell.className = 'month-day-cell other-month';
+        cell.innerHTML = '<div class="month-day-num">' + dayNum + '</div>';
+        grid.appendChild(cell);
+      }
+
+      // Fill current month days
+      for (var d = 1; d <= lastDay.getDate(); d++) {
+        var dateObj = new Date(year, month, d);
+        var dateStr = dateObj.getFullYear() + '-' + String(dateObj.getMonth()+1).padStart(2,'0') + '-' + String(dateObj.getDate()).padStart(2,'0');
+        var cell = document.createElement('div');
+        cell.className = 'month-day-cell';
+        if (dateObj.getTime() === today.getTime()) cell.classList.add('today');
+
+        var status = getDaySummaryStatus(dateStr);
+        var dotClass = 'undefined';
+        if (status === 'blocked') dotClass = 'blocked';
+        else if (status === 'available') dotClass = 'mostly-available';
+        else if (status === 'unavailable') dotClass = 'mostly-unavailable';
+
+        cell.innerHTML = '<div class="month-day-num">' + d + '</div><div class="month-day-dot ' + dotClass + '"></div>';
+        cell.dataset.date = dateStr;
+        cell.onclick = function() {
+          var ds = this.dataset.date;
+          if (!ds) return;
+          jumpToWeekFromMonth(ds);
+        };
+        grid.appendChild(cell);
+      }
+
+      // Fill trailing empty days
+      var totalCells = startDow + lastDay.getDate();
+      var remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (var i = 1; i <= remaining; i++) {
+        var cell = document.createElement('div');
+        cell.className = 'month-day-cell other-month';
+        cell.innerHTML = '<div class="month-day-num">' + i + '</div>';
+        grid.appendChild(cell);
+      }
+    }
+
+    function getDaySummaryStatus(dateStr) {
+      // Check blocked
+      var blocked = JSON.parse(localStorage.getItem('artisano-blocked-days') || '[]');
+      if (blocked.indexOf(dateStr) !== -1) return 'blocked';
+
+      // Find which week this date belongs to
+      var d = new Date(dateStr + 'T00:00:00');
+      var monday = getMonday(new Date(d));
+      var weekKey = 'artisano-agenda-' + formatWeekStart(monday);
+      var weekData = null;
+      try { weekData = JSON.parse(localStorage.getItem(weekKey)); } catch(e) {}
+
+      if (!weekData || !weekData.slots) {
+        // Check recurrence
+        var rec = JSON.parse(localStorage.getItem('artisano-recurrence') || '{}');
+        var dow = (d.getDay() + 6) % 7;
+        if (rec[dow] && rec[dow].enabled) return 'available';
+        return 'none';
+      }
+
+      var dow = (d.getDay() + 6) % 7;
+      var col = String(dow);
+      var colSlots = weekData.slots[col];
+      if (!colSlots) return 'none';
+
+      var avail = 0, unavail = 0;
+      for (var r in colSlots) {
+        if (colSlots[r] === 'available') avail++;
+        else if (colSlots[r] === 'unavailable') unavail++;
+      }
+      if (avail === 0 && unavail === 0) return 'none';
+      return avail >= unavail ? 'available' : 'unavailable';
+    }
+
+    function jumpToWeekFromMonth(dateStr) {
+      var target = new Date(dateStr + 'T00:00:00');
+      var currentMonday = getMonday(new Date());
+      var targetMonday = getMonday(new Date(target));
+      var diffDays = Math.round((targetMonday - currentMonday) / (1000 * 60 * 60 * 24));
+      var weekDiff = Math.round(diffDays / 7);
+
+      saveAgendaToLocalForWeek();
+      currentWeekOffset = weekDiff;
+      updateAgendaHeaders();
+      clearAgendaGrid();
+      loadAgendaForCurrentWeek();
+      switchAgendaView('week');
+    }
+
+    /* ========== RECURRENCE (HORAIRES DE BASE) ========== */
+    var recurrenceData = {};
+    var dayNames = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+
+    function openRecurrenceModal() {
+      recurrenceData = JSON.parse(localStorage.getItem('artisano-recurrence') || '{}');
+      // Default: Lun-Ven 8h-17h
+      for (var i = 0; i < 7; i++) {
+        if (!recurrenceData[i]) {
+          recurrenceData[i] = { enabled: i < 5, start: '08:00', end: '17:00' };
+        }
+      }
+      renderRecurrenceDays();
+      document.getElementById('recurrenceModal').classList.add('active');
+    }
+
+    function closeRecurrenceModal() {
+      document.getElementById('recurrenceModal').classList.remove('active');
+    }
+
+    function renderRecurrenceDays() {
+      var container = document.getElementById('recurrenceDays');
+      container.innerHTML = '';
+      for (var i = 0; i < 7; i++) {
+        var d = recurrenceData[i];
+        var row = document.createElement('div');
+        row.className = 'recurrence-day-row';
+        row.innerHTML =
+          '<span class="recurrence-day-name">' + dayNames[i] + '</span>' +
+          '<button class="recurrence-toggle' + (d.enabled ? ' active' : '') + '" data-day="' + i + '" onclick="toggleRecurrenceDay(' + i + ')"></button>' +
+          '<div class="recurrence-times">' +
+            '<input type="time" value="' + (d.start || '08:00') + '" data-day="' + i + '" data-field="start" ' + (d.enabled ? '' : 'disabled') + ' onchange="updateRecurrenceTime(this)">' +
+            '<span>à</span>' +
+            '<input type="time" value="' + (d.end || '17:00') + '" data-day="' + i + '" data-field="end" ' + (d.enabled ? '' : 'disabled') + ' onchange="updateRecurrenceTime(this)">' +
+          '</div>';
+        container.appendChild(row);
+      }
+    }
+
+    function toggleRecurrenceDay(dayIdx) {
+      recurrenceData[dayIdx].enabled = !recurrenceData[dayIdx].enabled;
+      renderRecurrenceDays();
+    }
+
+    function updateRecurrenceTime(input) {
+      var day = parseInt(input.dataset.day);
+      var field = input.dataset.field;
+      recurrenceData[day][field] = input.value;
+    }
+
+    function applyRecurrence() {
+      localStorage.setItem('artisano-recurrence', JSON.stringify(recurrenceData));
+      applyRecurrenceToGrid(recurrenceData);
+      closeRecurrenceModal();
+      showAgendaFeedback('success', 'Horaires de base enregistrés et appliqués à la semaine courante.');
+    }
+
+    function applyRecurrenceToGrid(rec) {
+      var grid = document.getElementById('agendaGrid');
+      if (!grid) return;
+      for (var col = 0; col < 7; col++) {
+        var d = rec[col];
+        if (!d || !d.enabled) continue;
+        var startParts = d.start.split(':');
+        var endParts = d.end.split(':');
+        var startMin = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+        var endMin = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+        var gridStart = 480; // 8h00
+
+        for (var row = 0; row < 20; row++) {
+          var rowStart = gridStart + row * 30;
+          var rowEnd = rowStart + 30;
+          if (rowStart >= startMin && rowEnd <= endMin) {
+            var cell = grid.querySelector('.agenda-cell[data-col="' + col + '"][data-row="' + row + '"]');
+            if (cell && !cell.classList.contains('past') && !cell.classList.contains('blocked')) {
+              // Only auto-fill empty cells
+              if (!cell.classList.contains('available') && !cell.classList.contains('unavailable')) {
+                cell.classList.add('available');
+              }
+            }
+          }
+        }
+      }
+    }
+
+    /* ========== BLOCKED DAYS ========== */
+    var blockedDays = [];
+    var tempBlockedDays = [];
+
+    function openBlockModal() {
+      blockedDays = JSON.parse(localStorage.getItem('artisano-blocked-days') || '[]');
+      tempBlockedDays = blockedDays.slice();
+      renderBlockDayGrid();
+      updateBlockedSummary();
+      document.getElementById('blockModal').classList.add('active');
+    }
+
+    function closeBlockModal() {
+      document.getElementById('blockModal').classList.remove('active');
+    }
+
+    function renderBlockDayGrid() {
+      var container = document.getElementById('blockDayGrid');
+      container.innerHTML = '';
+      var monday = getCurrentWeekMonday();
+      for (var i = 0; i < 7; i++) {
+        var d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        var dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        var btn = document.createElement('button');
+        btn.className = 'block-day-btn';
+        if (tempBlockedDays.indexOf(dateStr) !== -1) btn.classList.add('blocked');
+        btn.innerHTML = dayNames[i].substring(0,3) + '<br>' + d.getDate();
+        btn.dataset.date = dateStr;
+        btn.onclick = function() {
+          var ds = this.dataset.date;
+          var idx = tempBlockedDays.indexOf(ds);
+          if (idx === -1) { tempBlockedDays.push(ds); this.classList.add('blocked'); }
+          else { tempBlockedDays.splice(idx, 1); this.classList.remove('blocked'); }
+          updateBlockedSummary();
+        };
+        container.appendChild(btn);
+      }
+    }
+
+    function blockAllWeek() {
+      var monday = getCurrentWeekMonday();
+      for (var i = 0; i < 7; i++) {
+        var d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        var dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        if (tempBlockedDays.indexOf(dateStr) === -1) tempBlockedDays.push(dateStr);
+      }
+      renderBlockDayGrid();
+      updateBlockedSummary();
+    }
+
+    function blockDateRange() {
+      var from = document.getElementById('blockFrom').value;
+      var to = document.getElementById('blockTo').value;
+      if (!from || !to) { alert('Veuillez remplir les deux dates.'); return; }
+      var start = new Date(from + 'T00:00:00');
+      var end = new Date(to + 'T00:00:00');
+      if (end < start) { alert('La date de fin doit être après la date de début.'); return; }
+      var d = new Date(start);
+      while (d <= end) {
+        var dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        if (tempBlockedDays.indexOf(dateStr) === -1) tempBlockedDays.push(dateStr);
+        d.setDate(d.getDate() + 1);
+      }
+      renderBlockDayGrid();
+      updateBlockedSummary();
+    }
+
+    function updateBlockedSummary() {
+      var el = document.getElementById('blockedDaysSummary');
+      if (tempBlockedDays.length === 0) {
+        el.textContent = 'Aucun jour bloqué.';
+      } else {
+        el.textContent = tempBlockedDays.length + ' jour(s) bloqué(s) au total.';
+      }
+    }
+
+    function saveBlockedDays() {
+      blockedDays = tempBlockedDays.slice();
+      localStorage.setItem('artisano-blocked-days', JSON.stringify(blockedDays));
+      applyBlockedDaysToGrid();
+      closeBlockModal();
+      showAgendaFeedback('success', 'Jours bloqués enregistrés.');
+    }
+
+    function applyBlockedDaysToGrid() {
+      var monday = getCurrentWeekMonday();
+      var grid = document.getElementById('agendaGrid');
+      if (!grid) return;
+
+      // Reset all blocked state
+      grid.querySelectorAll('.agenda-cell.blocked').forEach(function(c) { c.classList.remove('blocked'); });
+      document.querySelectorAll('.agenda-day-header.blocked-day').forEach(function(h) { h.classList.remove('blocked-day'); });
+
+      for (var i = 0; i < 7; i++) {
+        var d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        var dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        if (blockedDays.indexOf(dateStr) !== -1) {
+          // Block all cells in this column
+          var cells = grid.querySelectorAll('.agenda-cell[data-col="' + i + '"]');
+          cells.forEach(function(c) {
+            c.classList.add('blocked');
+            c.classList.remove('available', 'unavailable');
+          });
+          // Mark header
+          var header = document.getElementById('dayHeader' + i);
+          if (header) header.classList.add('blocked-day');
+        }
+      }
+    }
+
+    /* ========== INTERVENTION TYPES ========== */
+    var interventionTypes = [];
+
+    function openInterventionTypesPanel() {
+      interventionTypes = JSON.parse(localStorage.getItem('artisano-intervention-types') || '[]');
+      renderInterventionList();
+      document.getElementById('interventionModal').classList.add('active');
+    }
+
+    function closeInterventionModal() {
+      document.getElementById('interventionModal').classList.remove('active');
+    }
+
+    function renderInterventionList() {
+      var container = document.getElementById('interventionList');
+      if (interventionTypes.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:var(--gray-500);font-size:13px;padding:20px 0;">Aucun type d\'intervention défini.</div>';
+        return;
+      }
+      container.innerHTML = '';
+      interventionTypes.forEach(function(t, idx) {
+        var item = document.createElement('div');
+        item.className = 'intervention-item';
+        var durLabel = t.duration >= 60 ? Math.floor(t.duration/60) + 'h' + (t.duration%60 > 0 ? t.duration%60 : '') : t.duration + 'min';
+        item.innerHTML =
+          '<div class="intervention-color-dot" style="background:' + t.color + ';"></div>' +
+          '<span class="intervention-name">' + t.name + '</span>' +
+          '<span class="intervention-duration">' + durLabel + '</span>' +
+          '<button class="intervention-delete" onclick="removeInterventionType(' + idx + ')">×</button>';
+        container.appendChild(item);
+      });
+    }
+
+    function addInterventionType() {
+      var name = document.getElementById('intName').value.trim();
+      var duration = parseInt(document.getElementById('intDuration').value);
+      var color = document.getElementById('intColor').value;
+      if (!name) { alert('Veuillez entrer un nom.'); return; }
+      interventionTypes.push({
+        id: 'int_' + Date.now(),
+        name: name,
+        duration: duration,
+        color: color
+      });
+      document.getElementById('intName').value = '';
+      renderInterventionList();
+    }
+
+    function removeInterventionType(idx) {
+      interventionTypes.splice(idx, 1);
+      renderInterventionList();
+    }
+
+    function saveInterventionTypes() {
+      localStorage.setItem('artisano-intervention-types', JSON.stringify(interventionTypes));
+      updatePopupInterventionDropdown();
+      closeInterventionModal();
+      showAgendaFeedback('success', 'Types d\'interventions enregistrés.');
+    }
+
+    function updatePopupInterventionDropdown() {
+      var types = JSON.parse(localStorage.getItem('artisano-intervention-types') || '[]');
+      var select = document.getElementById('popupInterventionSelect');
+      var section = document.getElementById('popupInterventionSection');
+      if (!select) return;
+      select.innerHTML = '<option value="">— Aucun —</option>';
+      types.forEach(function(t) {
+        select.innerHTML += '<option value="' + t.id + '" data-color="' + t.color + '">' + t.name + ' (' + t.duration + 'min)</option>';
+      });
+      if (section) section.style.display = types.length > 0 ? 'block' : 'none';
+    }
+
+    /* ========== NOTES ON SLOTS ========== */
+    var agendaNotes = {};
+    var noteTargetCell = null;
+
+    function getNotesStorageKey() {
+      var monday = getCurrentWeekMonday();
+      return 'artisano-notes-' + formatWeekStart(monday);
+    }
+
+    function loadNotesForWeek() {
+      var key = getNotesStorageKey();
+      try { agendaNotes = JSON.parse(localStorage.getItem(key) || '{}'); } catch(e) { agendaNotes = {}; }
+      renderNoteIcons();
+    }
+
+    function saveNotesForWeek() {
+      localStorage.setItem(getNotesStorageKey(), JSON.stringify(agendaNotes));
+    }
+
+    function renderNoteIcons() {
+      // Clear existing icons
+      document.querySelectorAll('.agenda-cell .note-icon').forEach(function(el) { el.remove(); });
+      var grid = document.getElementById('agendaGrid');
+      if (!grid) return;
+      for (var key in agendaNotes) {
+        if (!agendaNotes.hasOwnProperty(key) || !agendaNotes[key]) continue;
+        var parts = key.split('-');
+        var col = parts[0], row = parts[1];
+        var cell = grid.querySelector('.agenda-cell[data-col="' + col + '"][data-row="' + row + '"]');
+        if (cell) {
+          var icon = document.createElement('div');
+          icon.className = 'note-icon';
+          icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+          cell.appendChild(icon);
+        }
+      }
+    }
+
+    function openNoteInput(cell) {
+      noteTargetCell = cell;
+      var col = cell.dataset.col;
+      var row = cell.dataset.row;
+      var key = col + '-' + row;
+      var popup = document.getElementById('noteInputPopup');
+      var textarea = document.getElementById('noteText');
+      textarea.value = agendaNotes[key] || '';
+
+      // Position near cell
+      var rect = cell.getBoundingClientRect();
+      popup.style.left = Math.min(rect.right + 8, window.innerWidth - 240) + 'px';
+      popup.style.top = Math.max(rect.top - 20, 10) + 'px';
+      popup.classList.add('active');
+      textarea.focus();
+    }
+
+    function closeNoteInput() {
+      document.getElementById('noteInputPopup').classList.remove('active');
+      noteTargetCell = null;
+    }
+
+    function saveNote() {
+      if (!noteTargetCell) return;
+      var col = noteTargetCell.dataset.col;
+      var row = noteTargetCell.dataset.row;
+      var key = col + '-' + row;
+      var text = document.getElementById('noteText').value.trim();
+      if (text) { agendaNotes[key] = text; }
+      else { delete agendaNotes[key]; }
+      saveNotesForWeek();
+      renderNoteIcons();
+      closeNoteInput();
+    }
+
+    function deleteNote() {
+      if (!noteTargetCell) return;
+      var col = noteTargetCell.dataset.col;
+      var row = noteTargetCell.dataset.row;
+      delete agendaNotes[col + '-' + row];
+      saveNotesForWeek();
+      renderNoteIcons();
+      closeNoteInput();
+    }
+
+    // Note tooltip on hover
+    function showNoteTooltip(e, cell) {
+      var col = cell.dataset.col;
+      var row = cell.dataset.row;
+      var key = col + '-' + row;
+      if (!agendaNotes[key]) return;
+      var tip = document.getElementById('noteTooltip');
+      tip.textContent = agendaNotes[key];
+      tip.style.left = (e.clientX + 12) + 'px';
+      tip.style.top = (e.clientY + 12) + 'px';
+      tip.classList.add('active');
+    }
+
+    function hideNoteTooltip() {
+      document.getElementById('noteTooltip').classList.remove('active');
+    }
+
+    // Right-click (desktop) and long-press (mobile) for notes
+    (function() {
+      var grid = document.getElementById('agendaGrid');
+      if (!grid) return;
+      var longPressTimer = null;
+
+      // Right-click → open note
+      grid.addEventListener('contextmenu', function(e) {
+        var cell = e.target.closest('.agenda-cell');
+        if (!cell) return;
+        e.preventDefault();
+        openNoteInput(cell);
+      });
+
+      // Long-press (mobile) → open note
+      grid.addEventListener('touchstart', function(e) {
+        var cell = e.target.closest('.agenda-cell');
+        if (!cell) return;
+        longPressTimer = setTimeout(function() {
+          e.preventDefault();
+          openNoteInput(cell);
+        }, 600);
+      }, { passive: false });
+
+      grid.addEventListener('touchend', function() {
+        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      });
+      grid.addEventListener('touchmove', function() {
+        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      });
+
+      // Hover for note tooltip
+      grid.addEventListener('mouseover', function(e) {
+        var cell = e.target.closest('.agenda-cell');
+        if (cell) showNoteTooltip(e, cell);
+      });
+      grid.addEventListener('mouseout', function(e) {
+        var cell = e.target.closest('.agenda-cell');
+        if (cell) hideNoteTooltip();
+      });
+
+      // Close note input on outside click
+      document.addEventListener('mousedown', function(e) {
+        var popup = document.getElementById('noteInputPopup');
+        if (popup.classList.contains('active') && !popup.contains(e.target) && !e.target.closest('.agenda-cell .note-icon')) {
+          closeNoteInput();
+        }
+      });
+    })();
+
+    // Close modals on backdrop click
+    ['recurrenceModal','blockModal','interventionModal'].forEach(function(id) {
+      var modal = document.getElementById(id);
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === this) {
+            this.classList.remove('active');
+          }
+        });
+      }
+    });
+
+    // Init intervention dropdown
+    updatePopupInterventionDropdown();
+
     /* ========== DEMANDES: ACCEPT ========== */
     function acceptDemande(btn) {
       var item = btn.closest('.demande-item');
@@ -1352,21 +2158,40 @@
       // 3. Load agenda / disponibilites
       var dispoData = (dbProfile && dbProfile.disponibilites) ? dbProfile.disponibilites : null;
       if (dispoData) {
+        // v2 format: restore extra data (recurrence, blocked, interventions, notes)
+        if (dispoData.version === 2) {
+          if (dispoData.recurrence) localStorage.setItem('artisano-recurrence', JSON.stringify(dispoData.recurrence));
+          if (dispoData.blocked_days) localStorage.setItem('artisano-blocked-days', JSON.stringify(dispoData.blocked_days));
+          if (dispoData.intervention_types) localStorage.setItem('artisano-intervention-types', JSON.stringify(dispoData.intervention_types));
+          if (dispoData.notes) {
+            var notesKey = 'artisano-notes-' + (dispoData.week_start || formatWeekStart(getCurrentWeekMonday()));
+            localStorage.setItem(notesKey, JSON.stringify(dispoData.notes));
+          }
+        }
+
         // Check if the Supabase data matches the current week
         var currentWeekStart = formatWeekStart(getCurrentWeekMonday());
         if (dispoData.week_start === currentWeekStart) {
           restoreAgendaState(dispoData);
-          // Also cache locally
           localStorage.setItem(getWeekStorageKey(), JSON.stringify(dispoData));
         } else {
-          // Supabase data is for a different week, store it by its week key
           localStorage.setItem('artisano-agenda-' + dispoData.week_start, JSON.stringify(dispoData));
-          // Try to load current week from localStorage
           loadAgendaForCurrentWeek();
         }
       } else {
-        // No Supabase data, try localStorage
         loadAgendaForCurrentWeek();
+      }
+
+      // 4. Initialize new features (blocked days, notes, recurrence, interventions)
+      blockedDays = JSON.parse(localStorage.getItem('artisano-blocked-days') || '[]');
+      applyBlockedDaysToGrid();
+      loadNotesForWeek();
+      updatePopupInterventionDropdown();
+
+      // Apply recurrence to empty cells on first load
+      var rec = JSON.parse(localStorage.getItem('artisano-recurrence') || '{}');
+      if (Object.keys(rec).length > 0) {
+        applyRecurrenceToGrid(rec);
       }
 
       if (!p) return;

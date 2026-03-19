@@ -1607,16 +1607,25 @@
       var dispo = p.disponibilites;
       var hasAgendaData = false;
       var mondayStr = monday.getFullYear() + '-' + String(monday.getMonth() + 1).padStart(2, '0') + '-' + String(monday.getDate()).padStart(2, '0');
+      var isV2 = dispo && dispo.version === 2;
+      var blockedDaysList = (isV2 && dispo.blocked_days) ? dispo.blocked_days : [];
+      var interventionTypesList = (isV2 && dispo.intervention_types) ? dispo.intervention_types : [];
+
       if (dispo && dispo.slots && Object.keys(dispo.slots).length > 0) {
         if (dispo.week_start === mondayStr) {
           hasAgendaData = true;
         }
       }
 
+      // Also check recurrence for weeks without specific data
+      var recurrence = (isV2 && dispo.recurrence) ? dispo.recurrence : {};
+      var hasRecurrence = Object.keys(recurrence).some(function(k) { return recurrence[k] && recurrence[k].enabled; });
+
       joursFr.forEach(function(jourNom, idx) {
         var currentDate = new Date(monday);
         currentDate.setDate(monday.getDate() + idx);
         var dateStr = currentDate.getDate() + ' ' + moisCourt[currentDate.getMonth()];
+        var fullDateStr = currentDate.getFullYear() + '-' + String(currentDate.getMonth()+1).padStart(2,'0') + '-' + String(currentDate.getDate()).padStart(2,'0');
 
         var dayDiv = document.createElement('div');
         dayDiv.className = 'avail-day';
@@ -1631,19 +1640,46 @@
         dateSpan.textContent = dateStr;
         dayDiv.appendChild(dateSpan);
 
+        // Check if this day is blocked
+        if (blockedDaysList.indexOf(fullDateStr) !== -1) {
+          var blockedSpan = document.createElement('span');
+          blockedSpan.className = 'avail-closed';
+          blockedSpan.style.cssText = 'color:var(--red);font-weight:700;';
+          blockedSpan.textContent = 'Bloqué';
+          dayDiv.appendChild(blockedSpan);
+          daysContainer.appendChild(dayDiv);
+          return;
+        }
+
         if (hasAgendaData) {
           // Use real published agenda data
           var colSlots = dispo.slots[String(idx)];
           var availableSlots = [];
           if (colSlots) {
             var rows = Object.keys(colSlots).map(Number).sort(function(a, b) { return a - b; });
+            // Group consecutive available slots into ranges
+            var ranges = [];
+            var rangeStart = null;
             rows.forEach(function(row) {
               if (colSlots[String(row)] === 'available') {
                 var totalMinutes = 8 * 60 + row * 30;
-                var h = Math.floor(totalMinutes / 60);
-                var m = totalMinutes % 60;
-                availableSlots.push(h + 'h' + (m === 0 ? '00' : m < 10 ? '0' + m : m));
+                if (rangeStart === null) {
+                  rangeStart = { start: totalMinutes, end: totalMinutes + 30 };
+                } else if (totalMinutes === rangeStart.end) {
+                  rangeStart.end = totalMinutes + 30;
+                } else {
+                  ranges.push(rangeStart);
+                  rangeStart = { start: totalMinutes, end: totalMinutes + 30 };
+                }
               }
+            });
+            if (rangeStart) ranges.push(rangeStart);
+
+            ranges.forEach(function(r) {
+              var hS = Math.floor(r.start / 60), mS = r.start % 60;
+              var hE = Math.floor(r.end / 60), mE = r.end % 60;
+              var label = hS + 'h' + (mS === 0 ? '00' : mS < 10 ? '0' + mS : mS) + ' - ' + hE + 'h' + (mE === 0 ? '00' : mE < 10 ? '0' + mE : mE);
+              availableSlots.push(label);
             });
           }
 
@@ -1663,6 +1699,16 @@
             closedSpan.textContent = 'Indisponible';
             dayDiv.appendChild(closedSpan);
           }
+        } else if (hasRecurrence && recurrence[idx] && recurrence[idx].enabled) {
+          // Use recurrence data for weeks without specific data
+          var recDay = recurrence[idx];
+          var slotsDiv = document.createElement('div');
+          slotsDiv.className = 'avail-slots';
+          var slot = document.createElement('span');
+          slot.className = 'avail-slot';
+          slot.textContent = recDay.start + ' - ' + recDay.end;
+          slotsDiv.appendChild(slot);
+          dayDiv.appendChild(slotsDiv);
         } else {
           // No published agenda data for this week
           var closedSpan = document.createElement('span');
