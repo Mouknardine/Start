@@ -104,6 +104,20 @@
   .btn-upload { padding:10px 20px; border-radius:50px; border:2px solid var(--gray-200); background:white; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; color:var(--dark); cursor:pointer; transition:all 0.2s; }
   .btn-upload:hover { border-color:var(--orange); color:var(--orange); }
 
+  /* GALLERY EDIT */
+  .gallery-edit-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:12px; margin-top:16px; }
+  .gallery-edit-item { position:relative; border-radius:var(--radius-sm); overflow:hidden; aspect-ratio:1; background:var(--gray-100); }
+  .gallery-edit-item img { width:100%; height:100%; object-fit:cover; display:block; }
+  .gallery-delete { position:absolute; top:6px; right:6px; width:28px; height:28px; background:rgba(211,47,47,0.9); color:white; border:none; border-radius:50%; cursor:pointer; font-size:16px; line-height:28px; text-align:center; opacity:0; transition:opacity 0.2s; display:flex; align-items:center; justify-content:center; }
+  .gallery-edit-item:hover .gallery-delete { opacity:1; }
+  .gallery-add-btn { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; border:2px dashed var(--gray-300); border-radius:var(--radius-sm); aspect-ratio:1; cursor:pointer; color:var(--gray-500); transition:all 0.2s; background:transparent; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; }
+  .gallery-add-btn:hover { border-color:var(--orange); color:var(--orange); background:rgba(232,112,10,0.03); }
+  .gallery-add-btn svg { width:24px; height:24px; }
+  .gallery-count { font-size:13px; color:var(--gray-500); margin-top:4px; }
+  .avatar-upload-loading { position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; border-radius:50%; }
+  .avatar-upload-loading::after { content:''; width:24px; height:24px; border:3px solid white; border-top-color:transparent; border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
   /* CONTACT PREFS */
   .contact-option { display:flex; align-items:center; gap:12px; padding:12px 16px; border:2px solid var(--gray-200); border-radius:var(--radius-sm); margin-bottom:8px; cursor:pointer; transition:all 0.2s; }
   .contact-option:hover { border-color:var(--gray-300); }
@@ -187,6 +201,24 @@
           <span class="form-hint">JPG ou PNG, max 2 Mo</span>
         </div>
       </div>
+    </div>
+
+    <!-- GALERIE DE RÉALISATIONS -->
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Galerie de réalisations
+      </div>
+      <p class="form-hint" style="margin-bottom:8px">Montrez vos réalisations aux clients potentiels. Max 10 photos, 5 Mo chacune.</p>
+      <div class="gallery-count" id="gallery-count">0 / 10 photos</div>
+      <div class="gallery-edit-grid" id="gallery-grid">
+        <!-- Photos ajoutées dynamiquement -->
+        <button class="gallery-add-btn" id="gallery-add-btn" onclick="document.getElementById('gallery-input').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Ajouter
+        </button>
+      </div>
+      <input type="file" id="gallery-input" accept="image/*" multiple style="display:none" onchange="handleGalleryUpload(this)">
     </div>
 
     <!-- INFORMATIONS ENTREPRISE -->
@@ -522,16 +554,110 @@
   }
 
   // ====== AVATAR ======
-  function handleAvatarUpload(input) {
-    if (input.files && input.files[0]) {
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        var preview = document.getElementById('avatar-preview');
-        preview.innerHTML = '<img src="' + e.target.result + '" alt="Photo de profil">';
-        localStorage.setItem('artisano-avatar', e.target.result);
-      };
-      reader.readAsDataURL(input.files[0]);
+  var galleryUrls = [];
+
+  async function handleAvatarUpload(input) {
+    if (!input.files || !input.files[0]) return;
+    var file = input.files[0];
+    // Validation
+    if (file.size > 2 * 1024 * 1024) { alert('Image trop lourde (max 2 Mo)'); return; }
+    if (!file.type.startsWith('image/')) { alert('Fichier non valide. Choisissez une image.'); return; }
+    if (!currentUserId) { alert('Vous devez être connecté.'); return; }
+
+    var preview = document.getElementById('avatar-preview');
+    // Afficher un loading
+    preview.innerHTML = '<div class="avatar-upload-loading"></div>';
+
+    try {
+      var ext = file.name.split('.').pop().toLowerCase();
+      var url = await uploadToStorage(currentUserId, 'avatar.' + ext, file);
+      // Cache-buster
+      var finalUrl = url + '?t=' + Date.now();
+      // Mettre à jour la DB
+      await updateAvatarUrl(currentUserId, url);
+      // Afficher dans le preview
+      preview.innerHTML = '<img src="' + finalUrl + '" alt="Photo de profil">';
+      // Mettre à jour la nav
+      var navAvatar = document.getElementById('nav-avatar');
+      if (navAvatar) navAvatar.innerHTML = '<img src="' + finalUrl + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      // Stocker l'URL pour saveProfile
+      localStorage.setItem('artisano-avatar-url', url);
+    } catch(err) {
+      console.error('Erreur upload avatar:', err);
+      alert('Erreur lors de l\'upload. Réessayez.');
+      preview.textContent = preview.getAttribute('data-initials') || 'A';
     }
+    input.value = '';
+  }
+
+  // ====== GALERIE ======
+  function renderGalleryGrid() {
+    var grid = document.getElementById('gallery-grid');
+    var addBtn = document.getElementById('gallery-add-btn');
+    // Supprimer les items existants (pas le bouton ajouter)
+    grid.querySelectorAll('.gallery-edit-item').forEach(function(el) { el.remove(); });
+    // Ajouter les photos
+    galleryUrls.forEach(function(url, idx) {
+      var item = document.createElement('div');
+      item.className = 'gallery-edit-item';
+      item.innerHTML = '<img src="' + url + '?t=' + Date.now() + '" alt="Réalisation ' + (idx+1) + '">' +
+        '<button class="gallery-delete" onclick="removeGalleryPhoto(' + idx + ')" title="Supprimer">×</button>';
+      grid.insertBefore(item, addBtn);
+    });
+    // Mettre à jour le compteur
+    document.getElementById('gallery-count').textContent = galleryUrls.length + ' / 10 photos';
+    // Masquer le bouton si max atteint
+    addBtn.style.display = galleryUrls.length >= 10 ? 'none' : '';
+  }
+
+  async function handleGalleryUpload(input) {
+    if (!input.files || input.files.length === 0) return;
+    if (!currentUserId) { alert('Vous devez être connecté.'); return; }
+
+    var files = Array.from(input.files);
+    var remaining = 10 - galleryUrls.length;
+    if (files.length > remaining) {
+      alert('Vous pouvez encore ajouter ' + remaining + ' photo(s) maximum.');
+      files = files.slice(0, remaining);
+    }
+
+    for (var i = 0; i < files.length; i++) {
+      var file = files[i];
+      if (file.size > 5 * 1024 * 1024) { alert(file.name + ' est trop lourd (max 5 Mo). Ignoré.'); continue; }
+      if (!file.type.startsWith('image/')) { alert(file.name + ' n\'est pas une image. Ignoré.'); continue; }
+      try {
+        var ext = file.name.split('.').pop().toLowerCase();
+        var fileName = 'gallery/photo-' + Date.now() + '-' + i + '.' + ext;
+        var url = await uploadToStorage(currentUserId, fileName, file);
+        galleryUrls.push(url);
+      } catch(err) {
+        console.error('Erreur upload galerie:', err);
+        alert('Erreur upload de ' + file.name);
+      }
+    }
+    // Sauver en DB
+    try { await updateGalleryUrls(currentUserId, galleryUrls); } catch(e) { console.error(e); }
+    renderGalleryGrid();
+    input.value = '';
+  }
+
+  async function removeGalleryPhoto(idx) {
+    if (!confirm('Supprimer cette photo ?')) return;
+    var url = galleryUrls[idx];
+    // Extraire le path du fichier depuis l'URL
+    try {
+      var parts = url.split('/artisan-media/');
+      if (parts[1]) {
+        var fullPath = decodeURIComponent(parts[1]);
+        // fullPath = userId/gallery/photo-xxx.jpg — on enlève le userId/ car deleteFromStorage le rajoute
+        var userPrefix = currentUserId + '/';
+        var filePath = fullPath.startsWith(userPrefix) ? fullPath.substring(userPrefix.length) : fullPath;
+        await deleteFromStorage(currentUserId, filePath);
+      }
+    } catch(e) { console.error('Erreur suppression fichier:', e); }
+    galleryUrls.splice(idx, 1);
+    try { await updateGalleryUrls(currentUserId, galleryUrls); } catch(e) { console.error(e); }
+    renderGalleryGrid();
   }
 
   // ====== SAVE PROFILE ======
@@ -580,7 +706,9 @@
       urgenceHeureDebut: document.getElementById('urgence-heure-debut').value,
       urgenceHeureFin: document.getElementById('urgence-heure-fin').value,
       urgenceJours: urgDays,
-      contactPrefs: contactPrefs
+      contactPrefs: contactPrefs,
+      avatarUrl: localStorage.getItem('artisano-avatar-url') || '',
+      galleryUrls: galleryUrls
     };
 
     localStorage.setItem('artisano-profil', JSON.stringify(profile));
@@ -688,11 +816,17 @@
       });
     }
 
-    // Avatar
-    var avatar = localStorage.getItem('artisano-avatar');
-    if (avatar) {
-      document.getElementById('avatar-preview').innerHTML = '<img src="' + avatar + '" alt="Photo de profil">';
+    // Avatar — priorité URL Supabase
+    var avatarUrl = p.avatarUrl || localStorage.getItem('artisano-avatar-url') || '';
+    if (avatarUrl) {
+      var avatarSrc = avatarUrl + '?t=' + Date.now();
+      document.getElementById('avatar-preview').innerHTML = '<img src="' + avatarSrc + '" alt="Photo de profil">';
+      localStorage.setItem('artisano-avatar-url', avatarUrl);
     }
+
+    // Galerie
+    galleryUrls = p.galleryUrls || [];
+    renderGalleryGrid();
 
     // Update nav name
     updateNavName(p);
@@ -730,12 +864,18 @@
       initials = initials.toUpperCase();
     }
     var navAvatar = document.getElementById('nav-avatar');
-    if (navAvatar && !localStorage.getItem('artisano-avatar')) {
-      navAvatar.textContent = initials || 'A';
+    var savedAvatarUrl = localStorage.getItem('artisano-avatar-url');
+    if (navAvatar) {
+      if (savedAvatarUrl) {
+        navAvatar.innerHTML = '<img src="' + savedAvatarUrl + '?t=' + Date.now() + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      } else {
+        navAvatar.textContent = initials || 'A';
+      }
     }
     var avatarPreview = document.getElementById('avatar-preview');
-    if (avatarPreview && !localStorage.getItem('artisano-avatar')) {
+    if (avatarPreview && !savedAvatarUrl) {
       avatarPreview.textContent = initials || 'A';
+      avatarPreview.setAttribute('data-initials', initials || 'A');
     }
   }
 

@@ -80,7 +80,9 @@ async function saveArtisanProfile(userId, profileData) {
     urgence_heure_debut: profileData.urgenceHeureDebut || '',
     urgence_heure_fin: profileData.urgenceHeureFin || '',
     urgence_jours: profileData.urgenceJours || [],
-    contact_prefs: profileData.contactPrefs || { complete: true, message: true, appel: true }
+    contact_prefs: profileData.contactPrefs || { complete: true, message: true, appel: true },
+    avatar_url: profileData.avatarUrl || '',
+    gallery_urls: profileData.galleryUrls || []
   };
 
   var { data, error } = await _sb.from('artisans').upsert(row);
@@ -118,8 +120,48 @@ function dbProfileToLocal(dbRow) {
     urgenceHeureFin: dbRow.urgence_heure_fin,
     urgenceJours: dbRow.urgence_jours || [],
     contactPrefs: dbRow.contact_prefs || { complete: true, message: true, appel: true },
-    disponibilites: dbRow.disponibilites || null
+    disponibilites: dbRow.disponibilites || null,
+    avatarUrl: dbRow.avatar_url || '',
+    galleryUrls: dbRow.gallery_urls || []
   };
+}
+
+// ===== STORAGE HELPERS =====
+
+// Upload un fichier vers Supabase Storage (bucket artisan-media)
+async function uploadToStorage(userId, filePath, file) {
+  var { data, error } = await _sb.storage
+    .from('artisan-media')
+    .upload(userId + '/' + filePath, file, {
+      cacheControl: '3600',
+      upsert: true
+    });
+  if (error) throw error;
+  // Retourner l'URL publique
+  var { data: urlData } = _sb.storage
+    .from('artisan-media')
+    .getPublicUrl(userId + '/' + filePath);
+  return urlData.publicUrl;
+}
+
+// Supprimer un fichier de Supabase Storage
+async function deleteFromStorage(userId, filePath) {
+  var { error } = await _sb.storage
+    .from('artisan-media')
+    .remove([userId + '/' + filePath]);
+  if (error) throw error;
+}
+
+// Mettre à jour uniquement avatar_url dans la table artisans
+async function updateAvatarUrl(userId, url) {
+  var { error } = await _sb.from('artisans').update({ avatar_url: url }).eq('id', userId);
+  if (error) throw error;
+}
+
+// Mettre à jour uniquement gallery_urls dans la table artisans
+async function updateGalleryUrls(userId, urls) {
+  var { error } = await _sb.from('artisans').update({ gallery_urls: urls }).eq('id', userId);
+  if (error) throw error;
 }
 
 // ===== PROTECTION DES PAGES =====

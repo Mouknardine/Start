@@ -19,7 +19,7 @@
   .logo-dot { width:8px; height:8px; background:var(--orange); border-radius:50%; }
   .nav-user { display:flex; align-items:center; gap:16px; }
   .nav-user-name { font-weight:600; font-size:14px; }
-  .nav-user-avatar { width:36px; height:36px; background:var(--dark); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-family:'Sora',sans-serif; font-weight:800; font-size:13px; }
+  .nav-user-avatar { width:36px; height:36px; background:var(--dark); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-family:'Sora',sans-serif; font-weight:800; font-size:13px; overflow:hidden; }
   .btn-logout { background:none; border:none; cursor:pointer; color:var(--gray-500); padding:8px; border-radius:8px; transition:all 0.2s; display:flex; align-items:center; }
   .btn-logout:hover { color:var(--red); background:rgba(211,47,47,0.08); }
   .nav-links { display:flex; gap:24px; list-style:none; }
@@ -1367,6 +1367,12 @@
       if (navAvatar && displayName) {
         var words = displayName.split(/[\s&]+/).filter(function(w) { return w.length > 0; });
         navAvatar.textContent = words.slice(0, 2).map(function(w) { return w[0].toUpperCase(); }).join('');
+      }
+
+      // Nav avatar image from Supabase profile
+      if (dbProfile && dbProfile.avatar_url) {
+        var navAv = document.querySelector('.nav-user-avatar');
+        if (navAv) navAv.innerHTML = '<img src="' + dbProfile.avatar_url + '?t=' + Date.now() + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
       }
 
       // Dynamic date
