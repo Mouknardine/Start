@@ -1026,6 +1026,10 @@
         document.getElementById('tab-agenda').classList.add('active');
         document.getElementById('tab-agenda').style.display = 'block';
         document.getElementById('tab-demandes').style.display = 'none';
+        // Re-render title blocks after the grid becomes visible (needs layout recalc)
+        requestAnimationFrame(function() {
+          if (typeof renderCellTitles === 'function') renderCellTitles();
+        });
       }
     }
 
@@ -2005,10 +2009,13 @@
           var lastCell = grid.querySelector('.agenda-cell[data-col="' + span.col + '"][data-row="' + span.endRow + '"]');
           if (!firstCell || !lastCell) return;
 
-          // Calculate height using getBoundingClientRect for precision
-          var firstRect = firstCell.getBoundingClientRect();
-          var lastRect = lastCell.getBoundingClientRect();
-          var totalHeight = lastRect.bottom - firstRect.top;
+          // Calculate height by summing cell heights (works even without layout)
+          var totalHeight = 0;
+          for (var r = span.startRow; r <= span.endRow; r++) {
+            var c = grid.querySelector('.agenda-cell[data-col="' + span.col + '"][data-row="' + r + '"]');
+            if (c) totalHeight += c.offsetHeight;
+          }
+          if (totalHeight <= 0) return; // Grid not visible yet, skip
 
           // Determine color variant
           var variant = '';
