@@ -129,3 +129,97 @@ CREATE TRIGGER artisans_updated_at
   BEFORE UPDATE ON artisans
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at();
+
+-- =============================================
+-- MODULE FACTURATION
+-- =============================================
+
+-- ===== TABLE DOCUMENTS (Devis + Factures) =====
+CREATE TABLE documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  artisan_id UUID REFERENCES artisans(id) ON DELETE CASCADE NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('devis', 'facture')),
+  numero TEXT NOT NULL,
+  statut TEXT NOT NULL DEFAULT 'brouillon',
+  client_nom TEXT,
+  client_email TEXT,
+  client_telephone TEXT,
+  client_adresse TEXT,
+  lignes JSONB DEFAULT '[]',
+  sous_total NUMERIC(10,2) DEFAULT 0,
+  taux_tva NUMERIC(4,2) DEFAULT 8.1,
+  montant_tva NUMERIC(10,2) DEFAULT 0,
+  remise_type TEXT DEFAULT 'aucune',
+  remise_valeur NUMERIC(10,2) DEFAULT 0,
+  montant_remise NUMERIC(10,2) DEFAULT 0,
+  total_ttc NUMERIC(10,2) DEFAULT 0,
+  notes TEXT,
+  conditions TEXT,
+  date_emission DATE DEFAULT CURRENT_DATE,
+  date_echeance DATE,
+  date_acceptation DATE,
+  date_paiement DATE,
+  devis_source_id UUID REFERENCES documents(id),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ===== TABLE PRESTATIONS (Catalogue) =====
+CREATE TABLE prestations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  artisan_id UUID REFERENCES artisans(id) ON DELETE CASCADE NOT NULL,
+  nom TEXT NOT NULL,
+  description TEXT,
+  unite TEXT DEFAULT 'heure',
+  prix NUMERIC(10,2) NOT NULL,
+  categorie TEXT,
+  ordre INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Auto-update triggers
+CREATE TRIGGER documents_updated_at
+  BEFORE UPDATE ON documents
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+
+-- RLS
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE prestations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Artisan voit ses documents"
+  ON documents FOR SELECT USING (auth.uid() = artisan_id);
+CREATE POLICY "Artisan peut creer des documents"
+  ON documents FOR INSERT WITH CHECK (auth.uid() = artisan_id);
+CREATE POLICY "Artisan peut modifier ses documents"
+  ON documents FOR UPDATE USING (auth.uid() = artisan_id);
+CREATE POLICY "Artisan peut supprimer ses documents"
+  ON documents FOR DELETE USING (auth.uid() = artisan_id);
+
+CREATE POLICY "Artisan voit ses prestations"
+  ON prestations FOR SELECT USING (auth.uid() = artisan_id);
+CREATE POLICY "Artisan peut creer des prestations"
+  ON prestations FOR INSERT WITH CHECK (auth.uid() = artisan_id);
+CREATE POLICY "Artisan peut modifier ses prestations"
+  ON prestations FOR UPDATE USING (auth.uid() = artisan_id);
+CREATE POLICY "Artisan peut supprimer ses prestations"
+  ON prestations FOR DELETE USING (auth.uid() = artisan_id);
+
+-- Fonction auto-numérotation
+CREATE OR REPLACE FUNCTION next_document_number(p_artisan_id UUID, p_type TEXT)
+RETURNS TEXT AS $$
+DECLARE
+  prefix TEXT;
+  year_str TEXT;
+  next_num INTEGER;
+BEGIN
+  prefix := CASE p_type WHEN 'devis' THEN 'DEV' ELSE 'FAC' END;
+  year_str := TO_CHAR(NOW(), 'YYYY');
+  SELECT COALESCE(MAX(CAST(SPLIT_PART(numero, '-', 3) AS INTEGER)), 0) + 1
+  INTO next_num
+  FROM documents
+  WHERE artisan_id = p_artisan_id AND type = p_type
+    AND numero LIKE prefix || '-' || year_str || '-%';
+  RETURN prefix || '-' || year_str || '-' || LPAD(next_num::TEXT, 3, '0');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

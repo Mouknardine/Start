@@ -164,6 +164,48 @@ async function updateGalleryUrls(userId, urls) {
   if (error) throw error;
 }
 
+// ===== FACTURATION HELPERS =====
+
+async function loadDocuments(userId) {
+  var { data, error } = await _sb.from('documents').select('*').eq('artisan_id', userId).order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+async function saveDocumentToDB(doc) {
+  var { data, error } = await _sb.from('documents').upsert(doc).select().single();
+  if (error) throw error;
+  return data;
+}
+
+async function deleteDocumentFromDB(id) {
+  var { error } = await _sb.from('documents').delete().eq('id', id);
+  if (error) throw error;
+}
+
+async function loadPrestations(userId) {
+  var { data, error } = await _sb.from('prestations').select('*').eq('artisan_id', userId).order('ordre');
+  if (error) throw error;
+  return data || [];
+}
+
+async function savePrestationToDB(prest) {
+  var { data, error } = await _sb.from('prestations').upsert(prest).select().single();
+  if (error) throw error;
+  return data;
+}
+
+async function deletePrestationFromDB(id) {
+  var { error } = await _sb.from('prestations').delete().eq('id', id);
+  if (error) throw error;
+}
+
+async function getNextDocNumber(userId, type) {
+  var { data, error } = await _sb.rpc('next_document_number', { p_artisan_id: userId, p_type: type });
+  if (error) throw error;
+  return data;
+}
+
 // ===== PROTECTION DES PAGES =====
 
 // Appeler sur les pages qui nécessitent une connexion (dashboard, mon-profil)

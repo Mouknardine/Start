@@ -447,6 +447,226 @@
     .agenda-cell { min-height:36px; }
     .btn-sm-delete { min-height:44px; padding:10px; }
   }
+
+  /* ===== MODULE FACTURATION ===== */
+  .facturation-section { display:none; }
+  .facturation-section.active { display:block; }
+  .fact-stats { margin-bottom:24px; }
+  .fact-view { display:none; }
+  .fact-view.active { display:block; }
+
+  /* Header actions */
+  .fact-header-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .fact-btn-new { background:var(--orange); color:white; padding:8px 20px; border-radius:50px; font-family:'Sora',sans-serif; font-weight:700; font-size:13px; border:none; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px; }
+  .fact-btn-new:hover { background:var(--orange-dark); transform:translateY(-1px); box-shadow:0 4px 12px rgba(232,112,10,0.3); }
+  .fact-btn-new svg { width:14px; height:14px; }
+  .fact-btn-facture { background:var(--blue); }
+  .fact-btn-facture:hover { background:#0D47A1; box-shadow:0 4px 12px rgba(21,101,192,0.3); }
+
+  /* Filters */
+  .fact-filters { display:flex; gap:12px; align-items:center; padding:0 24px 20px; flex-wrap:wrap; }
+  .fact-filter-tabs { display:flex; gap:4px; background:var(--gray-200); padding:3px; border-radius:8px; }
+  .fact-filter-tab { padding:6px 14px; border-radius:6px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:var(--gray-500); transition:all 0.2s; font-family:'Sora',sans-serif; }
+  .fact-filter-tab.active { background:white; color:var(--dark); box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+  .fact-filter-select { padding:7px 12px; border:1px solid var(--gray-200); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; background:white; color:var(--dark); cursor:pointer; }
+  .fact-filter-select:focus { outline:none; border-color:var(--orange); }
+  .fact-search-wrap { position:relative; flex:1; min-width:180px; }
+  .fact-search-wrap svg { position:absolute; left:10px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:var(--gray-500); pointer-events:none; }
+  .fact-search { width:100%; padding:8px 10px 8px 32px; border:1px solid var(--gray-200); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; background:white; }
+  .fact-search:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.1); }
+
+  /* Document list */
+  .fact-list { padding:0 24px; }
+  .fact-doc-item { display:flex; align-items:center; gap:14px; padding:14px 0; border-top:1px solid var(--gray-100); cursor:pointer; transition:background 0.15s; }
+  .fact-doc-item:first-child { border-top:none; }
+  .fact-doc-item:hover { background:rgba(232,112,10,0.02); margin:0 -12px; padding-left:12px; padding-right:12px; border-radius:var(--radius-sm); }
+  .fact-doc-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .fact-doc-icon.devis { background:rgba(232,112,10,0.08); color:var(--orange); }
+  .fact-doc-icon.facture { background:var(--blue-light); color:var(--blue); }
+  .fact-doc-icon svg { width:18px; height:18px; }
+  .fact-doc-body { flex:1; min-width:0; }
+  .fact-doc-title { font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; }
+  .fact-doc-client { font-size:12px; color:var(--gray-500); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fact-doc-meta { display:flex; align-items:center; gap:16px; flex-shrink:0; }
+  .fact-doc-amount { font-family:'Sora',sans-serif; font-weight:700; font-size:15px; white-space:nowrap; }
+  .fact-doc-date { font-size:11px; color:var(--gray-500); white-space:nowrap; }
+  .fact-doc-actions { display:flex; gap:4px; flex-shrink:0; }
+
+  /* Status badges */
+  .fact-status { padding:3px 8px; border-radius:50px; font-size:10px; font-weight:700; letter-spacing:0.2px; }
+  .fact-status-brouillon { background:var(--gray-200); color:var(--gray-700); }
+  .fact-status-envoye, .fact-status-envoyee { background:rgba(21,101,192,0.1); color:var(--blue); }
+  .fact-status-accepte { background:var(--green-light); color:var(--green); }
+  .fact-status-payee { background:var(--green-light); color:var(--green); }
+  .fact-status-refuse { background:var(--red-light); color:var(--red); }
+  .fact-status-en_retard { background:var(--red-light); color:var(--red); }
+  .fact-status-converti { background:rgba(232,112,10,0.1); color:var(--orange); }
+
+  /* Empty state */
+  .fact-empty { text-align:center; padding:60px 20px; }
+  .fact-empty-icon { width:72px; height:72px; background:var(--gray-100); border-radius:50%; margin:0 auto 16px; display:flex; align-items:center; justify-content:center; }
+  .fact-empty-icon svg { width:32px; height:32px; color:var(--gray-400); }
+  .fact-empty h3 { font-family:'Sora',sans-serif; font-size:16px; font-weight:700; margin-bottom:6px; }
+  .fact-empty p { font-size:13px; color:var(--gray-500); margin-bottom:20px; max-width:340px; margin-left:auto; margin-right:auto; }
+
+  /* Editor header */
+  .fact-editor-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
+  .fact-back-btn { display:flex; align-items:center; gap:6px; background:none; border:none; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; color:var(--gray-700); cursor:pointer; padding:8px 0; transition:color 0.15s; }
+  .fact-back-btn:hover { color:var(--dark); }
+  .fact-back-btn svg { width:18px; height:18px; }
+  .fact-editor-title-wrap { display:flex; align-items:center; gap:10px; flex:1; justify-content:center; }
+  .fact-doc-type-badge { padding:4px 12px; border-radius:50px; font-family:'Sora',sans-serif; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.3px; background:rgba(232,112,10,0.1); color:var(--orange); }
+  .fact-doc-type-badge.facture { background:var(--blue-light); color:var(--blue); }
+  .fact-doc-numero { font-family:'Sora',sans-serif; font-size:16px; font-weight:700; }
+  .fact-editor-actions { display:flex; gap:8px; }
+
+  /* Editor grid */
+  .fact-editor-grid { display:grid; grid-template-columns:1fr 320px; gap:20px; }
+  .fact-editor-main { display:flex; flex-direction:column; gap:16px; }
+  .fact-editor-sidebar { display:flex; flex-direction:column; gap:16px; }
+  .fact-section-title { font-family:'Sora',sans-serif; font-size:14px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .fact-section-title svg { width:16px; height:16px; color:var(--gray-500); }
+  .fact-section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+
+  /* Form fields */
+  .fact-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .fact-field { display:flex; flex-direction:column; gap:4px; }
+  .fact-field-full { grid-column:1/-1; }
+  .fact-field label { font-size:11px; font-weight:700; color:var(--gray-500); text-transform:uppercase; letter-spacing:0.4px; }
+  .fact-field input, .fact-field textarea, .fact-field select { padding:9px 12px; border:1px solid var(--gray-200); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; background:white; color:var(--dark); transition:all 0.15s; }
+  .fact-field input:focus, .fact-field textarea:focus, .fact-field select:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.1); }
+
+  /* Line items */
+  .fact-lines-wrap { margin-bottom:12px; overflow-x:auto; }
+  .fact-lines-header { display:grid; grid-template-columns:28px 1fr 65px 80px 85px 85px 32px; gap:6px; padding:8px 0; font-size:10px; font-weight:700; color:var(--gray-500); text-transform:uppercase; letter-spacing:0.3px; border-bottom:2px solid var(--gray-200); }
+  .fact-line-row { display:grid; grid-template-columns:28px 1fr 65px 80px 85px 85px 32px; gap:6px; padding:8px 0; border-bottom:1px solid var(--gray-100); align-items:center; }
+  .fact-line-row:hover { background:rgba(0,0,0,0.01); }
+  .fact-line-row.dragging { opacity:0.4; background:var(--gray-100); }
+  .fact-line-row.drag-over { border-top:2px solid var(--orange); }
+  .fact-line-drag { cursor:grab; color:var(--gray-300); display:flex; align-items:center; justify-content:center; }
+  .fact-line-drag:active { cursor:grabbing; }
+  .fact-line-input { padding:6px 8px; border:1px solid transparent; border-radius:6px; font-family:'DM Sans',sans-serif; font-size:13px; width:100%; background:transparent; transition:all 0.15s; color:var(--dark); }
+  .fact-line-input:hover { border-color:var(--gray-200); background:white; }
+  .fact-line-input:focus { outline:none; border-color:var(--orange); background:white; box-shadow:0 0 0 2px rgba(232,112,10,0.08); }
+  .fact-line-input.desc { min-width:160px; }
+  .fact-line-total { font-weight:700; font-size:13px; text-align:right; padding-right:4px; }
+  .fact-line-delete { width:28px; height:28px; border:none; background:transparent; color:var(--gray-300); cursor:pointer; border-radius:6px; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+  .fact-line-delete:hover { color:var(--red); background:var(--red-light); }
+  .fact-line-delete svg { width:14px; height:14px; }
+  .fact-add-line-btn { display:flex; align-items:center; gap:6px; padding:10px 14px; border:2px dashed var(--gray-200); border-radius:8px; background:transparent; color:var(--gray-500); font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; width:100%; justify-content:center; margin-top:8px; }
+  .fact-add-line-btn:hover { border-color:var(--orange); color:var(--orange); background:rgba(232,112,10,0.02); }
+  .fact-add-line-btn svg { width:14px; height:14px; }
+  .fact-add-from-cat { border-style:solid; border-color:var(--gray-200); background:var(--gray-100); margin-top:6px; }
+  .fact-add-from-cat:hover { border-color:var(--orange); background:rgba(232,112,10,0.04); color:var(--orange); }
+
+  /* Totals card */
+  .fact-totals-card { background:var(--dark); color:white; border:none; padding:20px; }
+  .fact-total-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; font-size:13px; }
+  .fact-total-row .fact-total-label { color:rgba(255,255,255,0.6); }
+  .fact-total-row .fact-total-value { color:white; font-weight:600; }
+  .fact-total-final { border-top:1px solid rgba(255,255,255,0.15); margin-top:6px; padding-top:10px; }
+  .fact-total-final .fact-total-label, .fact-total-final .fact-total-value { font-family:'Sora',sans-serif; font-size:18px; font-weight:800; color:white; }
+  .fact-discount-row { gap:8px; }
+  .fact-discount-row select, .fact-discount-row input { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:6px; padding:4px 8px; font-size:12px; font-family:'DM Sans',sans-serif; }
+  .fact-discount-row select:focus, .fact-discount-row input:focus { outline:none; border-color:var(--orange); }
+  .fact-discount-row select option { background:var(--dark); color:white; }
+
+  /* Status actions */
+  .fact-action-btn { width:100%; padding:10px; border-radius:var(--radius-sm); font-family:'Sora',sans-serif; font-weight:700; font-size:13px; border:none; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px; }
+  .fact-action-btn:hover { transform:translateY(-1px); }
+  .fact-action-btn.primary { background:var(--orange); color:white; }
+  .fact-action-btn.primary:hover { box-shadow:0 4px 12px rgba(232,112,10,0.3); }
+  .fact-action-btn.success { background:var(--green); color:white; }
+  .fact-action-btn.success:hover { box-shadow:0 4px 12px rgba(46,125,50,0.3); }
+  .fact-action-btn.danger { background:var(--red-light); color:var(--red); }
+  .fact-action-btn.blue { background:var(--blue); color:white; }
+  .fact-action-btn.blue:hover { box-shadow:0 4px 12px rgba(21,101,192,0.3); }
+  .fact-convert-btn { width:100%; padding:12px; background:linear-gradient(135deg,var(--orange),var(--orange-dark)); color:white; border:none; border-radius:var(--radius-sm); font-family:'Sora',sans-serif; font-weight:700; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s; }
+  .fact-convert-btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(232,112,10,0.3); }
+  .fact-convert-btn svg { width:16px; height:16px; }
+
+  /* Catalogue */
+  .fact-cat-item { display:flex; align-items:center; gap:14px; padding:14px 0; border-top:1px solid var(--gray-100); }
+  .fact-cat-item:first-child { border-top:none; }
+  .fact-cat-icon { width:36px; height:36px; border-radius:8px; background:rgba(232,112,10,0.08); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--orange); }
+  .fact-cat-icon svg { width:16px; height:16px; }
+  .fact-cat-body { flex:1; min-width:0; }
+  .fact-cat-name { font-weight:700; font-size:14px; }
+  .fact-cat-desc { font-size:12px; color:var(--gray-500); }
+  .fact-cat-price { font-family:'Sora',sans-serif; font-weight:700; font-size:14px; margin-right:8px; white-space:nowrap; }
+  .fact-cat-unit { font-size:11px; color:var(--gray-500); margin-right:12px; }
+  .fact-cat-actions { display:flex; gap:4px; }
+  .fact-cat-form { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:16px; background:var(--gray-100); border-radius:var(--radius-sm); margin-bottom:16px; }
+  .fact-cat-form .fact-field-actions { grid-column:1/-1; display:flex; gap:8px; justify-content:flex-end; }
+
+  /* Picker modal */
+  .fact-picker-list { max-height:320px; overflow-y:auto; }
+  .fact-picker-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--gray-200); margin-bottom:8px; cursor:pointer; transition:all 0.15s; }
+  .fact-picker-item:hover { border-color:var(--gray-300); background:var(--gray-100); }
+  .fact-picker-item.selected { border-color:var(--orange); background:rgba(232,112,10,0.04); }
+  .fact-picker-item input[type="checkbox"] { accent-color:var(--orange); width:16px; height:16px; flex-shrink:0; }
+  .fact-picker-name { font-weight:700; font-size:13px; flex:1; }
+  .fact-picker-price { font-family:'Sora',sans-serif; font-weight:700; font-size:13px; color:var(--orange); }
+
+  /* Preview modal */
+  .fact-preview { background:white; padding:40px; max-width:700px; margin:0 auto; font-family:'DM Sans',sans-serif; }
+  .fact-preview-header { display:flex; justify-content:space-between; margin-bottom:30px; }
+  .fact-preview-company { font-size:13px; line-height:1.6; }
+  .fact-preview-company strong { font-family:'Sora',sans-serif; font-size:18px; display:block; margin-bottom:4px; }
+  .fact-preview-type { text-align:right; }
+  .fact-preview-type h2 { font-family:'Sora',sans-serif; font-size:24px; color:var(--orange); margin:0; }
+  .fact-preview-type .numero { font-size:13px; color:var(--gray-500); }
+  .fact-preview-type .dates { font-size:12px; color:var(--gray-500); margin-top:4px; }
+  .fact-preview-client { background:var(--gray-100); padding:16px; border-radius:var(--radius-sm); margin-bottom:24px; }
+  .fact-preview-client strong { font-size:11px; text-transform:uppercase; color:var(--gray-500); letter-spacing:0.5px; display:block; margin-bottom:4px; }
+  .fact-preview-table { width:100%; border-collapse:collapse; margin-bottom:20px; }
+  .fact-preview-table th { background:var(--dark); color:white; padding:8px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.3px; text-align:left; }
+  .fact-preview-table th:last-child { text-align:right; }
+  .fact-preview-table td { padding:8px 10px; font-size:13px; border-bottom:1px solid var(--gray-100); }
+  .fact-preview-table td:last-child { text-align:right; font-weight:600; }
+  .fact-preview-table tr:nth-child(even) td { background:rgba(0,0,0,0.01); }
+  .fact-preview-totals { display:flex; justify-content:flex-end; margin-bottom:24px; }
+  .fact-preview-totals-inner { width:240px; }
+  .fact-preview-totals-row { display:flex; justify-content:space-between; padding:4px 0; font-size:13px; }
+  .fact-preview-totals-row.final { border-top:2px solid var(--dark); padding-top:8px; margin-top:4px; font-family:'Sora',sans-serif; font-weight:800; font-size:16px; }
+  .fact-preview-notes { font-size:12px; color:var(--gray-500); border-top:1px solid var(--gray-200); padding-top:16px; line-height:1.6; }
+  .fact-preview-footer { text-align:center; font-size:10px; color:var(--gray-400); margin-top:24px; }
+
+  /* Toast */
+  .fact-toast { position:fixed; bottom:24px; right:24px; z-index:300; background:var(--dark); color:white; padding:14px 20px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; display:flex; align-items:center; gap:10px; box-shadow:0 8px 30px rgba(0,0,0,0.2); transform:translateY(100px); opacity:0; transition:all 0.3s ease; pointer-events:none; }
+  .fact-toast.visible { transform:translateY(0); opacity:1; pointer-events:auto; }
+  .fact-toast.success { border-left:3px solid var(--green); }
+  .fact-toast.error { border-left:3px solid var(--red); }
+  .fact-toast svg { width:16px; height:16px; flex-shrink:0; }
+
+  /* Responsive facturation */
+  @media (max-width:1024px) {
+    .fact-editor-grid { grid-template-columns:1fr; }
+    .fact-header-actions { width:100%; }
+    .fact-filters { flex-direction:column; align-items:stretch; }
+    .fact-search-wrap { min-width:0; width:100%; }
+    .fact-editor-header { flex-direction:column; align-items:flex-start; gap:10px; }
+    .fact-editor-title-wrap { justify-content:flex-start; }
+    .fact-lines-header { display:none; }
+    .fact-line-row { grid-template-columns:1fr 1fr; gap:8px; padding:12px; background:var(--gray-100); border-radius:var(--radius-sm); margin-bottom:8px; border:none; }
+    .fact-line-row .fact-line-drag { display:none; }
+    .fact-line-input.desc { grid-column:1/-1; }
+    .fact-line-delete { position:absolute; top:4px; right:4px; }
+    .fact-line-row { position:relative; }
+    .fact-doc-item { gap:10px; }
+    .fact-doc-meta { flex-direction:column; align-items:flex-end; gap:4px; }
+    .fact-cat-form { grid-template-columns:1fr; }
+  }
+  @media (max-width:500px) {
+    .fact-doc-item { flex-direction:column; align-items:flex-start; }
+    .fact-doc-meta { width:100%; flex-direction:row; justify-content:space-between; }
+    .fact-editor-actions { width:100%; flex-wrap:wrap; }
+    .fact-editor-actions .fact-btn-new, .fact-editor-actions .btn-sm { flex:1; justify-content:center; text-align:center; }
+    .fact-form-grid { grid-template-columns:1fr; }
+    .fact-preview { padding:20px; }
+    .fact-preview-header { flex-direction:column; gap:12px; }
+    .fact-preview-type { text-align:left; }
+  }
 </style>
 </head>
 <body>
@@ -503,7 +723,8 @@
     <!-- TABS -->
     <div class="dash-tabs">
       <div class="dash-tab active" onclick="switchDashTab('demandes')">Demandes</div>
-      <div class="dash-tab" onclick="switchDashTab('agenda')">Agenda et disponibilités</div>
+      <div class="dash-tab" onclick="switchDashTab('agenda')">Agenda</div>
+      <div class="dash-tab" onclick="switchDashTab('facturation')">Facturation</div>
     </div>
 
     <!-- ===== TAB: DEMANDES ===== -->
@@ -1007,28 +1228,241 @@
     </div>
   </div>
 
+  <!-- ===== FACTURATION TAB ===== -->
+  <div class="facturation-section" id="tab-facturation" style="display:none;">
+
+    <!-- Stats -->
+    <div class="stats-grid fact-stats">
+      <div class="stat-card"><div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Devis en cours</div><div class="stat-value" id="statDevisEnCours">0</div><div class="stat-sub" id="statDevisMontant">0 CHF en attente</div></div>
+      <div class="stat-card"><div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Factures impayées</div><div class="stat-value" id="statFacturesImpayees">0</div><div class="stat-sub" style="color:var(--red);" id="statRetardMontant">0 CHF</div></div>
+      <div class="stat-card"><div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg> CA ce mois</div><div class="stat-value" id="statCaMois">0 CHF</div><div class="stat-sub" id="statCaEvolution">--</div></div>
+      <div class="stat-card"><div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Taux conversion</div><div class="stat-value" id="statTauxConversion">--</div><div class="stat-sub" id="statConversionDetail">Devis → Factures</div></div>
+    </div>
+
+    <!-- VIEW: LIST -->
+    <div class="fact-view active" id="factViewList">
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div style="padding:20px 24px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--gray-200); flex-wrap:wrap; gap:10px;">
+          <h2 class="card-title" style="margin:0;">Documents</h2>
+          <div class="fact-header-actions">
+            <button class="btn-sm btn-sm-view" onclick="factShowCatalogue()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+              Catalogue
+            </button>
+            <button class="fact-btn-new" onclick="factCreateNew('devis')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nouveau devis
+            </button>
+            <button class="fact-btn-new fact-btn-facture" onclick="factCreateNew('facture')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nouvelle facture
+            </button>
+          </div>
+        </div>
+        <div class="fact-filters">
+          <div class="fact-filter-tabs">
+            <button class="fact-filter-tab active" onclick="factFilterType('all',this)">Tous</button>
+            <button class="fact-filter-tab" onclick="factFilterType('devis',this)">Devis</button>
+            <button class="fact-filter-tab" onclick="factFilterType('facture',this)">Factures</button>
+          </div>
+          <select class="fact-filter-select" id="factStatusFilter" onchange="factFilterStatus(this.value)">
+            <option value="all">Tous les statuts</option>
+            <option value="brouillon">Brouillon</option>
+            <option value="envoye">Envoyé</option>
+            <option value="accepte">Accepté</option>
+            <option value="payee">Payée</option>
+            <option value="en_retard">En retard</option>
+            <option value="refuse">Refusé</option>
+            <option value="converti">Converti</option>
+          </select>
+          <div class="fact-search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="fact-search" id="factSearchInput" placeholder="Rechercher par client ou numéro..." oninput="factSearch(this.value)">
+          </div>
+        </div>
+        <div class="fact-list" id="factDocumentList"></div>
+        <div class="fact-empty" id="factEmptyState">
+          <div class="fact-empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <h3>Aucun document</h3>
+          <p>Créez votre premier devis ou facture pour commencer à facturer vos clients.</p>
+          <button class="fact-btn-new" onclick="factCreateNew('devis')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Créer un devis</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: EDITOR -->
+    <div class="fact-view" id="factViewEditor">
+      <div class="fact-editor-header">
+        <button class="fact-back-btn" onclick="factCloseEditor()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> Retour
+        </button>
+        <div class="fact-editor-title-wrap">
+          <span class="fact-doc-type-badge" id="editorTypeBadge">DEVIS</span>
+          <span class="fact-doc-numero" id="editorNumero"></span>
+          <span class="fact-status" id="editorStatusBadge"></span>
+        </div>
+        <div class="fact-editor-actions">
+          <button class="btn-sm btn-sm-view" onclick="factPreview()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Aperçu</button>
+          <button class="btn-sm btn-sm-view" onclick="factExportPDF()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> PDF</button>
+          <button class="fact-btn-new" onclick="factSaveDocument()">Enregistrer</button>
+        </div>
+      </div>
+      <div class="fact-editor-grid">
+        <div class="fact-editor-main">
+          <!-- Client -->
+          <div class="card">
+            <h3 class="fact-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Client</h3>
+            <div class="fact-form-grid">
+              <div class="fact-field"><label>Nom / Entreprise</label><input type="text" id="docClientNom" placeholder="Ex: Sophie Martin" oninput="factAutoSave()"></div>
+              <div class="fact-field"><label>Email</label><input type="email" id="docClientEmail" placeholder="sophie@example.ch" oninput="factAutoSave()"></div>
+              <div class="fact-field"><label>Téléphone</label><input type="tel" id="docClientTelephone" placeholder="+41 79 000 00 00" oninput="factAutoSave()"></div>
+              <div class="fact-field fact-field-full"><label>Adresse</label><textarea id="docClientAdresse" rows="2" placeholder="Rue, NPA Ville" oninput="factAutoSave()"></textarea></div>
+            </div>
+          </div>
+          <!-- Prestations -->
+          <div class="card">
+            <div class="fact-section-header">
+              <h3 class="fact-section-title" style="margin:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Prestations</h3>
+              <button class="btn-sm btn-sm-view" onclick="factOpenPicker()" style="font-size:11px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> Catalogue</button>
+            </div>
+            <div class="fact-lines-wrap">
+              <div class="fact-lines-header">
+                <span></span><span>Description</span><span>Qté</span><span>Unité</span><span>Prix unit.</span><span>Total</span><span></span>
+              </div>
+              <div id="factLinesBody"></div>
+            </div>
+            <button class="fact-add-line-btn" onclick="factAddLine()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter une ligne</button>
+          </div>
+          <!-- Notes -->
+          <div class="card">
+            <h3 class="fact-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Notes et conditions</h3>
+            <div class="fact-field" style="margin-bottom:10px;"><label>Notes (visibles sur le document)</label><textarea id="docNotes" rows="2" placeholder="Ex: Matériel fourni par le client..." oninput="factAutoSave()"></textarea></div>
+            <div class="fact-field"><label>Conditions de paiement</label><textarea id="docConditions" rows="2" placeholder="Ex: Payable à 30 jours..." oninput="factAutoSave()"></textarea></div>
+          </div>
+        </div>
+        <div class="fact-editor-sidebar">
+          <!-- Dates -->
+          <div class="card">
+            <h3 class="fact-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Dates</h3>
+            <div class="fact-field" style="margin-bottom:10px;"><label>Date d'émission</label><input type="date" id="docDateEmission" onchange="factAutoSave()"></div>
+            <div class="fact-field" id="docEcheanceWrap"><label>Date d'échéance</label><input type="date" id="docDateEcheance" onchange="factAutoSave()"></div>
+          </div>
+          <!-- Totals -->
+          <div class="card fact-totals-card">
+            <div class="fact-total-row"><span class="fact-total-label">Sous-total</span><span class="fact-total-value" id="factSousTotal">0.00 CHF</span></div>
+            <div class="fact-total-row fact-discount-row">
+              <div style="display:flex;gap:6px;align-items:center;">
+                <select id="factRemiseType" onchange="factToggleRemise();factRecalc()"><option value="aucune">Pas de remise</option><option value="pourcentage">Remise %</option><option value="montant">Remise CHF</option></select>
+                <input type="number" id="factRemiseValeur" value="0" min="0" step="0.5" style="display:none;width:60px;" oninput="factRecalc()">
+              </div>
+              <span class="fact-total-value" id="factMontantRemise" style="display:none;">-0.00 CHF</span>
+            </div>
+            <div class="fact-total-row"><span class="fact-total-label">TVA <span id="factTvaRate">8.1</span>%</span><span class="fact-total-value" id="factMontantTva">0.00 CHF</span></div>
+            <div class="fact-total-row fact-total-final"><span class="fact-total-label">Total TTC</span><span class="fact-total-value" id="factTotalTTC">0.00 CHF</span></div>
+          </div>
+          <!-- Actions -->
+          <div class="card" id="factStatusActions"></div>
+          <!-- Convert -->
+          <div class="card" id="factConvertSection" style="display:none;">
+            <button class="fact-convert-btn" onclick="factConvertToFacture()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+              Convertir en facture
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: CATALOGUE -->
+    <div class="fact-view" id="factViewCatalogue">
+      <div class="fact-editor-header">
+        <button class="fact-back-btn" onclick="factCloseCatalogue()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> Retour</button>
+        <h2 class="card-title" style="flex:1;">Catalogue de prestations</h2>
+        <button class="fact-btn-new" onclick="factAddPrestation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter</button>
+      </div>
+      <div class="card">
+        <div id="factCatForm" style="display:none;"></div>
+        <div id="factCatalogueList"></div>
+        <div class="fact-empty" id="factCatalogueEmpty">
+          <div class="fact-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div>
+          <h3>Catalogue vide</h3>
+          <p>Ajoutez vos prestations courantes pour les réutiliser facilement dans vos devis et factures.</p>
+          <button class="fact-btn-new" onclick="factAddPrestation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter une prestation</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRESTATION PICKER MODAL -->
+    <div class="modal-overlay" id="factPickerModal">
+      <div class="modal-card" style="max-width:520px;">
+        <div class="modal-title">Ajouter depuis le catalogue</div>
+        <div class="modal-subtitle">Sélectionnez les prestations à ajouter.</div>
+        <div class="fact-picker-list" id="factPickerList"></div>
+        <div class="modal-actions" style="margin-top:16px;">
+          <button class="modal-btn modal-btn-cancel" onclick="factClosePicker()">Annuler</button>
+          <button class="modal-btn" style="background:var(--orange);color:white;" onclick="factConfirmPicker()">Ajouter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PREVIEW MODAL -->
+    <div class="modal-overlay" id="factPreviewModal">
+      <div class="modal-card" style="max-width:740px;max-height:90vh;overflow-y:auto;padding:0;">
+        <div id="factPreviewContent"></div>
+        <div style="padding:16px 24px;display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--gray-200);">
+          <button class="modal-btn modal-btn-cancel" onclick="factClosePreview()">Fermer</button>
+          <button class="modal-btn" style="background:var(--orange);color:white;" onclick="factExportPDF()">Télécharger PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE CONFIRM MODAL -->
+    <div class="modal-overlay" id="factDeleteModal">
+      <div class="modal-card">
+        <div class="modal-title">Supprimer ce document ?</div>
+        <div class="modal-subtitle">Cette action est irréversible.</div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-cancel" onclick="factCloseDeleteModal()">Annuler</button>
+          <button class="modal-btn modal-btn-confirm" onclick="factConfirmDelete()">Supprimer</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toast -->
+  <div class="fact-toast" id="factToast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="factToastMsg"></span></div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
     /* ========== TAB SWITCHING ========== */
     function switchDashTab(tab) {
-      document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
-      document.getElementById('tab-demandes').classList.remove('active');
-      document.getElementById('tab-agenda').classList.remove('active');
-
-      if (tab === 'demandes') {
-        document.querySelectorAll('.dash-tab')[0].classList.add('active');
-        document.getElementById('tab-demandes').classList.add('active');
-        document.getElementById('tab-demandes').style.display = 'block';
-        document.getElementById('tab-agenda').style.display = 'none';
-      } else {
-        document.querySelectorAll('.dash-tab')[1].classList.add('active');
-        document.getElementById('tab-agenda').classList.add('active');
-        document.getElementById('tab-agenda').style.display = 'block';
-        document.getElementById('tab-demandes').style.display = 'none';
-        // Re-render title blocks after the grid becomes visible (needs layout recalc)
+      document.querySelectorAll('.dash-tab').forEach(function(t) { t.classList.remove('active'); });
+      var sections = ['tab-demandes','tab-agenda','tab-facturation'];
+      sections.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+      });
+      var tabIndex = { demandes:0, agenda:1, facturation:2 };
+      var idx = tabIndex[tab];
+      if (idx !== undefined) {
+        var tabs = document.querySelectorAll('.dash-tab');
+        if (tabs[idx]) tabs[idx].classList.add('active');
+      }
+      var target = document.getElementById('tab-' + tab);
+      if (target) { target.classList.add('active'); target.style.display = 'block'; }
+      if (tab === 'agenda') {
         requestAnimationFrame(function() {
           if (typeof renderCellTitles === 'function') renderCellTitles();
+        });
+      }
+      if (tab === 'facturation') {
+        requestAnimationFrame(function() {
+          if (typeof factLoadData === 'function' && !factDataLoaded) factLoadData();
         });
       }
     }
@@ -2414,6 +2848,776 @@
         dateEl.textContent = jours[now.getDay()] + ' ' + now.getDate() + ' ' + mois[now.getMonth()] + ' ' + now.getFullYear();
       }
     })();
+
+    /* ================================================================
+       MODULE FACTURATION — Devis & Factures
+       ================================================================ */
+    var factDocuments = [];
+    var factPrestations = [];
+    var factCurrentDoc = null;
+    var factCurrentFilter = 'all';
+    var factCurrentStatus = 'all';
+    var factSearchTerm = '';
+    var factAutoSaveTimer = null;
+    var factDataLoaded = false;
+    var factDeleteTarget = null;
+    var factArtisanProfile = null;
+
+    // ===== FORMATTING HELPERS =====
+    function factFormatCHF(n) {
+      if (n === null || n === undefined || isNaN(n)) return '0.00 CHF';
+      var num = parseFloat(n);
+      var parts = num.toFixed(2).split('.');
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+      return parts.join('.') + ' CHF';
+    }
+    function factFormatDate(d) {
+      if (!d) return '';
+      var dt = new Date(d + 'T00:00:00');
+      var m = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+      return dt.getDate() + ' ' + m[dt.getMonth()] + ' ' + dt.getFullYear();
+    }
+    function factStatusLabel(s) {
+      var map = { brouillon:'Brouillon', envoye:'Envoyé', envoyee:'Envoyée', accepte:'Accepté', refuse:'Refusé', payee:'Payée', en_retard:'En retard', converti:'Converti' };
+      return map[s] || s;
+    }
+
+    // ===== TOAST =====
+    function factToast(type, msg) {
+      var t = document.getElementById('factToast');
+      var m = document.getElementById('factToastMsg');
+      if (!t || !m) return;
+      t.className = 'fact-toast ' + type;
+      m.textContent = msg;
+      t.classList.add('visible');
+      setTimeout(function() { t.classList.remove('visible'); }, 3000);
+    }
+
+    // ===== DATA LOADING =====
+    async function factLoadData() {
+      try {
+        var user = await getUser();
+        if (!user) return;
+        var profile = await loadArtisanProfile(user.id);
+        if (profile) factArtisanProfile = dbProfileToLocal(profile);
+        factDocuments = await loadDocuments(user.id);
+        factPrestations = await loadPrestations(user.id);
+        factDataLoaded = true;
+        factRenderList();
+        factUpdateStats();
+      } catch(e) {
+        console.warn('Facturation load error:', e);
+      }
+    }
+
+    // ===== LIST VIEW =====
+    function factGetFiltered() {
+      var docs = factDocuments;
+      if (factCurrentFilter !== 'all') docs = docs.filter(function(d) { return d.type === factCurrentFilter; });
+      if (factCurrentStatus !== 'all') docs = docs.filter(function(d) { return d.statut === factCurrentStatus; });
+      if (factSearchTerm) {
+        var s = factSearchTerm.toLowerCase();
+        docs = docs.filter(function(d) {
+          return (d.client_nom || '').toLowerCase().indexOf(s) !== -1 || (d.numero || '').toLowerCase().indexOf(s) !== -1;
+        });
+      }
+      return docs;
+    }
+
+    function factRenderList() {
+      var list = document.getElementById('factDocumentList');
+      var empty = document.getElementById('factEmptyState');
+      if (!list || !empty) return;
+      var docs = factGetFiltered();
+      if (docs.length === 0) {
+        list.style.display = 'none';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      list.style.display = 'block';
+      list.innerHTML = docs.map(function(d) {
+        var icon = d.type === 'devis'
+          ? '<div class="fact-doc-icon devis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>'
+          : '<div class="fact-doc-icon facture"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>';
+        return '<div class="fact-doc-item" onclick="factOpenEditor(\'' + d.id + '\')">'
+          + icon
+          + '<div class="fact-doc-body">'
+          + '<div class="fact-doc-title">' + d.numero + ' <span class="fact-status fact-status-' + d.statut + '">' + factStatusLabel(d.statut) + '</span></div>'
+          + '<div class="fact-doc-client">' + (d.client_nom || 'Sans client') + '</div>'
+          + '</div>'
+          + '<div class="fact-doc-meta">'
+          + '<span class="fact-doc-amount">' + factFormatCHF(d.total_ttc) + '</span>'
+          + '<span class="fact-doc-date">' + factFormatDate(d.date_emission) + '</span>'
+          + '</div>'
+          + '<div class="fact-doc-actions">'
+          + '<button class="btn-sm btn-sm-delete" onclick="event.stopPropagation();factAskDelete(\'' + d.id + '\')" title="Supprimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    function factFilterType(type, btn) {
+      factCurrentFilter = type;
+      document.querySelectorAll('.fact-filter-tab').forEach(function(b) { b.classList.remove('active'); });
+      if (btn) btn.classList.add('active');
+      factRenderList();
+    }
+    function factFilterStatus(val) { factCurrentStatus = val; factRenderList(); }
+    function factSearch(val) { factSearchTerm = val; factRenderList(); }
+
+    // ===== STATS =====
+    function factUpdateStats() {
+      var now = new Date();
+      var thisMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+      var devisEnCours = 0, devisMontant = 0, impayees = 0, retardMontant = 0, caMois = 0;
+      var totalDevis = 0, devisAcceptes = 0;
+      factDocuments.forEach(function(d) {
+        if (d.type === 'devis') {
+          totalDevis++;
+          if (d.statut === 'envoye') { devisEnCours++; devisMontant += parseFloat(d.total_ttc || 0); }
+          if (d.statut === 'accepte' || d.statut === 'converti') devisAcceptes++;
+        }
+        if (d.type === 'facture') {
+          if (d.statut === 'envoyee' || d.statut === 'en_retard') { impayees++; retardMontant += parseFloat(d.total_ttc || 0); }
+          if (d.statut === 'payee' && d.date_paiement && d.date_paiement.substring(0,7) === thisMonth) {
+            caMois += parseFloat(d.total_ttc || 0);
+          }
+        }
+      });
+      var taux = totalDevis > 0 ? Math.round((devisAcceptes / totalDevis) * 100) : 0;
+      var el = function(id) { return document.getElementById(id); };
+      if (el('statDevisEnCours')) el('statDevisEnCours').textContent = devisEnCours;
+      if (el('statDevisMontant')) el('statDevisMontant').textContent = factFormatCHF(devisMontant) + ' en attente';
+      if (el('statFacturesImpayees')) el('statFacturesImpayees').textContent = impayees;
+      if (el('statRetardMontant')) el('statRetardMontant').textContent = factFormatCHF(retardMontant);
+      if (el('statCaMois')) el('statCaMois').textContent = factFormatCHF(caMois);
+      if (el('statTauxConversion')) el('statTauxConversion').textContent = taux + '%';
+      if (el('statConversionDetail')) el('statConversionDetail').textContent = devisAcceptes + '/' + totalDevis + ' devis acceptés';
+    }
+
+    // ===== VIEW SWITCHING =====
+    function factShowView(viewId) {
+      document.querySelectorAll('#tab-facturation .fact-view').forEach(function(v) { v.classList.remove('active'); });
+      var v = document.getElementById(viewId);
+      if (v) v.classList.add('active');
+    }
+
+    // ===== EDITOR =====
+    async function factCreateNew(type) {
+      try {
+        var user = await getUser();
+        if (!user) return;
+        var numero = await getNextDocNumber(user.id, type);
+        factCurrentDoc = {
+          artisan_id: user.id,
+          type: type,
+          numero: numero,
+          statut: 'brouillon',
+          client_nom: '', client_email: '', client_telephone: '', client_adresse: '',
+          lignes: [],
+          sous_total: 0, taux_tva: 8.1, montant_tva: 0,
+          remise_type: 'aucune', remise_valeur: 0, montant_remise: 0, total_ttc: 0,
+          notes: '', conditions: '',
+          date_emission: new Date().toISOString().split('T')[0],
+          date_echeance: null, devis_source_id: null
+        };
+        factPopulateEditor();
+        factShowView('factViewEditor');
+      } catch(e) {
+        factToast('error', 'Erreur: ' + e.message);
+      }
+    }
+
+    function factOpenEditor(id) {
+      var doc = factDocuments.find(function(d) { return d.id === id; });
+      if (!doc) return;
+      factCurrentDoc = JSON.parse(JSON.stringify(doc));
+      if (typeof factCurrentDoc.lignes === 'string') factCurrentDoc.lignes = JSON.parse(factCurrentDoc.lignes);
+      if (!Array.isArray(factCurrentDoc.lignes)) factCurrentDoc.lignes = [];
+      factPopulateEditor();
+      factShowView('factViewEditor');
+    }
+
+    function factCloseEditor() {
+      factCurrentDoc = null;
+      factShowView('factViewList');
+      factRenderList();
+      factUpdateStats();
+    }
+
+    function factPopulateEditor() {
+      var d = factCurrentDoc;
+      if (!d) return;
+      document.getElementById('editorTypeBadge').textContent = d.type === 'devis' ? 'DEVIS' : 'FACTURE';
+      document.getElementById('editorTypeBadge').className = 'fact-doc-type-badge' + (d.type === 'facture' ? ' facture' : '');
+      document.getElementById('editorNumero').textContent = d.numero;
+      document.getElementById('editorStatusBadge').textContent = factStatusLabel(d.statut);
+      document.getElementById('editorStatusBadge').className = 'fact-status fact-status-' + d.statut;
+      document.getElementById('docClientNom').value = d.client_nom || '';
+      document.getElementById('docClientEmail').value = d.client_email || '';
+      document.getElementById('docClientTelephone').value = d.client_telephone || '';
+      document.getElementById('docClientAdresse').value = d.client_adresse || '';
+      document.getElementById('docNotes').value = d.notes || '';
+      document.getElementById('docConditions').value = d.conditions || '';
+      document.getElementById('docDateEmission').value = d.date_emission || '';
+      document.getElementById('docDateEcheance').value = d.date_echeance || '';
+      document.getElementById('factRemiseType').value = d.remise_type || 'aucune';
+      document.getElementById('factRemiseValeur').value = d.remise_valeur || 0;
+      factToggleRemise();
+      factRenderLines();
+      factRecalc();
+      factRenderStatusActions();
+      // Show/hide echeance for factures
+      document.getElementById('docEcheanceWrap').style.display = d.type === 'facture' ? '' : 'none';
+    }
+
+    function factCollectData() {
+      var d = factCurrentDoc;
+      if (!d) return null;
+      d.client_nom = document.getElementById('docClientNom').value.trim();
+      d.client_email = document.getElementById('docClientEmail').value.trim();
+      d.client_telephone = document.getElementById('docClientTelephone').value.trim();
+      d.client_adresse = document.getElementById('docClientAdresse').value.trim();
+      d.notes = document.getElementById('docNotes').value.trim();
+      d.conditions = document.getElementById('docConditions').value.trim();
+      d.date_emission = document.getElementById('docDateEmission').value;
+      d.date_echeance = document.getElementById('docDateEcheance').value || null;
+      d.remise_type = document.getElementById('factRemiseType').value;
+      d.remise_valeur = parseFloat(document.getElementById('factRemiseValeur').value) || 0;
+      // Recalc from lines
+      factRecalcFromData();
+      return d;
+    }
+
+    async function factSaveDocument() {
+      var d = factCollectData();
+      if (!d) return;
+      if (!d.client_nom) { factToast('error', 'Veuillez renseigner le nom du client.'); return; }
+      try {
+        var saved = await saveDocumentToDB(d);
+        factCurrentDoc.id = saved.id;
+        // Update in local array
+        var idx = factDocuments.findIndex(function(x) { return x.id === saved.id; });
+        if (idx !== -1) factDocuments[idx] = saved;
+        else factDocuments.unshift(saved);
+        factToast('success', d.type === 'devis' ? 'Devis enregistré' : 'Facture enregistrée');
+        factPopulateEditor();
+      } catch(e) {
+        factToast('error', 'Erreur: ' + e.message);
+      }
+    }
+
+    // ===== AUTO-SAVE =====
+    function factAutoSave() {
+      if (factAutoSaveTimer) clearTimeout(factAutoSaveTimer);
+      factAutoSaveTimer = setTimeout(function() {
+        if (factCurrentDoc && factCurrentDoc.statut === 'brouillon' && factCurrentDoc.id) {
+          factCollectData();
+          saveDocumentToDB(factCurrentDoc).catch(function(e) { console.warn('Auto-save error:', e); });
+        }
+      }, 3000);
+    }
+
+    // ===== LINE ITEMS =====
+    function factAddLine(desc, qty, unite, prix) {
+      if (!factCurrentDoc) return;
+      factCurrentDoc.lignes.push({
+        id: 'l_' + Date.now() + '_' + Math.random().toString(36).substr(2,4),
+        description: desc || '',
+        quantite: qty || 1,
+        unite: unite || 'heure',
+        prix_unitaire: prix || 0,
+        total: (qty || 1) * (prix || 0)
+      });
+      factRenderLines();
+      factRecalc();
+      factAutoSave();
+    }
+
+    function factRemoveLine(lineId) {
+      if (!factCurrentDoc) return;
+      factCurrentDoc.lignes = factCurrentDoc.lignes.filter(function(l) { return l.id !== lineId; });
+      factRenderLines();
+      factRecalc();
+      factAutoSave();
+    }
+
+    function factRenderLines() {
+      var body = document.getElementById('factLinesBody');
+      if (!body || !factCurrentDoc) return;
+      var lines = factCurrentDoc.lignes;
+      if (lines.length === 0) { body.innerHTML = ''; return; }
+      body.innerHTML = lines.map(function(l) {
+        return '<div class="fact-line-row" draggable="true" data-line-id="' + l.id + '">'
+          + '<div class="fact-line-drag" title="Glisser pour réordonner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="8" y1="6" x2="8" y2="6.01"/><line x1="16" y1="6" x2="16" y2="6.01"/><line x1="8" y1="12" x2="8" y2="12.01"/><line x1="16" y1="12" x2="16" y2="12.01"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="16" y1="18" x2="16" y2="18.01"/></svg></div>'
+          + '<input class="fact-line-input desc" value="' + (l.description || '').replace(/"/g,'&quot;') + '" placeholder="Description" oninput="factUpdateLine(\'' + l.id + '\',\'description\',this.value)">'
+          + '<input class="fact-line-input" type="number" value="' + l.quantite + '" min="0" step="0.5" oninput="factUpdateLine(\'' + l.id + '\',\'quantite\',this.value)">'
+          + '<select class="fact-line-input" onchange="factUpdateLine(\'' + l.id + '\',\'unite\',this.value)">'
+          + '<option value="heure"' + (l.unite==='heure'?' selected':'') + '>heure</option>'
+          + '<option value="forfait"' + (l.unite==='forfait'?' selected':'') + '>forfait</option>'
+          + '<option value="m2"' + (l.unite==='m2'?' selected':'') + '>m²</option>'
+          + '<option value="ml"' + (l.unite==='ml'?' selected':'') + '>ml</option>'
+          + '<option value="unite"' + (l.unite==='unite'?' selected':'') + '>unité</option>'
+          + '<option value="lot"' + (l.unite==='lot'?' selected':'') + '>lot</option>'
+          + '</select>'
+          + '<input class="fact-line-input" type="number" value="' + l.prix_unitaire + '" min="0" step="0.5" oninput="factUpdateLine(\'' + l.id + '\',\'prix_unitaire\',this.value)">'
+          + '<div class="fact-line-total">' + parseFloat(l.total || 0).toFixed(2) + '</div>'
+          + '<button class="fact-line-delete" onclick="factRemoveLine(\'' + l.id + '\')" title="Supprimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+          + '</div>';
+      }).join('');
+      factInitDragDrop();
+    }
+
+    function factUpdateLine(lineId, field, value) {
+      if (!factCurrentDoc) return;
+      var line = factCurrentDoc.lignes.find(function(l) { return l.id === lineId; });
+      if (!line) return;
+      if (field === 'quantite' || field === 'prix_unitaire') {
+        line[field] = parseFloat(value) || 0;
+        line.total = line.quantite * line.prix_unitaire;
+        // Update total display
+        var row = document.querySelector('[data-line-id="' + lineId + '"]');
+        if (row) row.querySelector('.fact-line-total').textContent = line.total.toFixed(2);
+      } else {
+        line[field] = value;
+      }
+      factRecalc();
+      factAutoSave();
+    }
+
+    // ===== DRAG AND DROP =====
+    function factInitDragDrop() {
+      var container = document.getElementById('factLinesBody');
+      if (!container) return;
+      var dragSrc = null;
+      container.querySelectorAll('.fact-line-row').forEach(function(row) {
+        row.addEventListener('dragstart', function(e) {
+          dragSrc = this;
+          this.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', this.dataset.lineId);
+        });
+        row.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          if (this !== dragSrc) {
+            container.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+            this.classList.add('drag-over');
+          }
+        });
+        row.addEventListener('drop', function(e) {
+          e.preventDefault();
+          if (!dragSrc || this === dragSrc) return;
+          var fromId = dragSrc.dataset.lineId;
+          var toId = this.dataset.lineId;
+          var lignes = factCurrentDoc.lignes;
+          var fi = lignes.findIndex(function(l) { return l.id === fromId; });
+          var ti = lignes.findIndex(function(l) { return l.id === toId; });
+          if (fi === -1 || ti === -1) return;
+          var item = lignes.splice(fi, 1)[0];
+          lignes.splice(ti, 0, item);
+          factRenderLines();
+          factAutoSave();
+        });
+        row.addEventListener('dragend', function() {
+          container.querySelectorAll('.dragging,.drag-over').forEach(function(el) { el.classList.remove('dragging','drag-over'); });
+          dragSrc = null;
+        });
+      });
+    }
+
+    // ===== CALCULATIONS =====
+    function factRecalc() {
+      factRecalcFromData();
+      document.getElementById('factSousTotal').textContent = factFormatCHF(factCurrentDoc.sous_total);
+      var remiseEl = document.getElementById('factMontantRemise');
+      if (factCurrentDoc.remise_type !== 'aucune') {
+        remiseEl.style.display = '';
+        remiseEl.textContent = '-' + factFormatCHF(factCurrentDoc.montant_remise);
+      } else {
+        remiseEl.style.display = 'none';
+      }
+      document.getElementById('factMontantTva').textContent = factFormatCHF(factCurrentDoc.montant_tva);
+      document.getElementById('factTotalTTC').textContent = factFormatCHF(factCurrentDoc.total_ttc);
+    }
+
+    function factRecalcFromData() {
+      var d = factCurrentDoc;
+      if (!d) return;
+      var sousTotal = 0;
+      (d.lignes || []).forEach(function(l) { sousTotal += parseFloat(l.total || 0); });
+      d.sous_total = Math.round(sousTotal * 100) / 100;
+      // Discount
+      d.montant_remise = 0;
+      if (d.remise_type === 'pourcentage') d.montant_remise = Math.round(d.sous_total * (d.remise_valeur / 100) * 100) / 100;
+      else if (d.remise_type === 'montant') d.montant_remise = Math.round(Math.min(d.remise_valeur, d.sous_total) * 100) / 100;
+      var afterDiscount = d.sous_total - d.montant_remise;
+      d.montant_tva = Math.round(afterDiscount * (d.taux_tva / 100) * 100) / 100;
+      d.total_ttc = Math.round((afterDiscount + d.montant_tva) * 100) / 100;
+    }
+
+    function factToggleRemise() {
+      var type = document.getElementById('factRemiseType').value;
+      var inp = document.getElementById('factRemiseValeur');
+      inp.style.display = type === 'aucune' ? 'none' : '';
+    }
+
+    // ===== STATUS WORKFLOW =====
+    function factRenderStatusActions() {
+      var c = document.getElementById('factStatusActions');
+      var conv = document.getElementById('factConvertSection');
+      if (!c || !factCurrentDoc) return;
+      conv.style.display = 'none';
+      var d = factCurrentDoc;
+      var html = '<h3 class="fact-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Actions</h3>';
+      if (d.type === 'devis') {
+        if (d.statut === 'brouillon') html += '<button class="fact-action-btn blue" onclick="factSetStatus(\'envoye\')">Marquer comme envoyé</button>';
+        if (d.statut === 'envoye') {
+          html += '<button class="fact-action-btn success" onclick="factSetStatus(\'accepte\')">Marquer comme accepté</button>';
+          html += '<button class="fact-action-btn danger" onclick="factSetStatus(\'refuse\')">Marquer comme refusé</button>';
+        }
+        if (d.statut === 'accepte') conv.style.display = '';
+      } else {
+        if (d.statut === 'brouillon') html += '<button class="fact-action-btn blue" onclick="factSetStatus(\'envoyee\')">Marquer comme envoyée</button>';
+        if (d.statut === 'envoyee') {
+          html += '<button class="fact-action-btn success" onclick="factSetStatus(\'payee\')">Marquer comme payée</button>';
+          html += '<button class="fact-action-btn danger" onclick="factSetStatus(\'en_retard\')">Marquer en retard</button>';
+        }
+        if (d.statut === 'en_retard') html += '<button class="fact-action-btn success" onclick="factSetStatus(\'payee\')">Marquer comme payée</button>';
+      }
+      c.innerHTML = html;
+    }
+
+    async function factSetStatus(newStatus) {
+      if (!factCurrentDoc || !factCurrentDoc.id) { factToast('error', 'Enregistrez le document d\'abord.'); return; }
+      try {
+        var updates = { statut: newStatus };
+        if (newStatus === 'payee') updates.date_paiement = new Date().toISOString().split('T')[0];
+        if (newStatus === 'accepte') updates.date_acceptation = new Date().toISOString().split('T')[0];
+        await _sb.from('documents').update(updates).eq('id', factCurrentDoc.id);
+        Object.assign(factCurrentDoc, updates);
+        var idx = factDocuments.findIndex(function(x) { return x.id === factCurrentDoc.id; });
+        if (idx !== -1) Object.assign(factDocuments[idx], updates);
+        factPopulateEditor();
+        factToast('success', 'Statut mis à jour');
+      } catch(e) { factToast('error', 'Erreur: ' + e.message); }
+    }
+
+    async function factConvertToFacture() {
+      if (!factCurrentDoc || factCurrentDoc.type !== 'devis') return;
+      try {
+        var user = await getUser();
+        if (!user) return;
+        var numero = await getNextDocNumber(user.id, 'facture');
+        var nf = JSON.parse(JSON.stringify(factCurrentDoc));
+        delete nf.id;
+        nf.type = 'facture';
+        nf.numero = numero;
+        nf.statut = 'brouillon';
+        nf.date_emission = new Date().toISOString().split('T')[0];
+        nf.date_echeance = null;
+        nf.devis_source_id = factCurrentDoc.id;
+        var saved = await saveDocumentToDB(nf);
+        // Mark devis as converti
+        await _sb.from('documents').update({ statut: 'converti' }).eq('id', factCurrentDoc.id);
+        var idx = factDocuments.findIndex(function(x) { return x.id === factCurrentDoc.id; });
+        if (idx !== -1) factDocuments[idx].statut = 'converti';
+        factDocuments.unshift(saved);
+        factToast('success', 'Facture ' + numero + ' créée !');
+        factOpenEditor(saved.id);
+      } catch(e) { factToast('error', 'Erreur: ' + e.message); }
+    }
+
+    // ===== DELETE =====
+    function factAskDelete(id) {
+      factDeleteTarget = id;
+      document.getElementById('factDeleteModal').classList.add('active');
+    }
+    function factCloseDeleteModal() {
+      document.getElementById('factDeleteModal').classList.remove('active');
+      factDeleteTarget = null;
+    }
+    async function factConfirmDelete() {
+      if (!factDeleteTarget) return;
+      try {
+        await deleteDocumentFromDB(factDeleteTarget);
+        factDocuments = factDocuments.filter(function(d) { return d.id !== factDeleteTarget; });
+        factCloseDeleteModal();
+        factRenderList();
+        factUpdateStats();
+        factToast('success', 'Document supprimé');
+      } catch(e) { factToast('error', 'Erreur: ' + e.message); }
+    }
+
+    // ===== CATALOGUE =====
+    function factShowCatalogue() { factRenderCatalogue(); factShowView('factViewCatalogue'); }
+    function factCloseCatalogue() { factShowView('factViewList'); }
+
+    function factRenderCatalogue() {
+      var list = document.getElementById('factCatalogueList');
+      var empty = document.getElementById('factCatalogueEmpty');
+      if (!list) return;
+      if (factPrestations.length === 0) {
+        list.innerHTML = '';
+        if (empty) empty.style.display = 'block';
+        return;
+      }
+      if (empty) empty.style.display = 'none';
+      list.innerHTML = factPrestations.map(function(p) {
+        return '<div class="fact-cat-item">'
+          + '<div class="fact-cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>'
+          + '<div class="fact-cat-body"><div class="fact-cat-name">' + (p.nom || '') + '</div>'
+          + (p.description ? '<div class="fact-cat-desc">' + p.description + '</div>' : '')
+          + '</div>'
+          + '<span class="fact-cat-unit">/' + (p.unite || 'heure') + '</span>'
+          + '<span class="fact-cat-price">' + factFormatCHF(p.prix) + '</span>'
+          + '<div class="fact-cat-actions">'
+          + '<button class="btn-sm btn-sm-view" onclick="factEditPrestation(\'' + p.id + '\')">Modifier</button>'
+          + '<button class="btn-sm btn-sm-delete" onclick="factDeletePrestation(\'' + p.id + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>'
+          + '</div></div>';
+      }).join('');
+    }
+
+    function factAddPrestation() {
+      factShowCatForm(null);
+    }
+    function factEditPrestation(id) {
+      var p = factPrestations.find(function(x) { return x.id === id; });
+      if (p) factShowCatForm(p);
+    }
+
+    function factShowCatForm(prestation) {
+      var form = document.getElementById('factCatForm');
+      if (!form) return;
+      form.style.display = 'block';
+      form.innerHTML = '<div class="fact-cat-form">'
+        + '<div class="fact-field"><label>Nom</label><input type="text" id="catFormNom" value="' + (prestation ? prestation.nom : '').replace(/"/g,'&quot;') + '" placeholder="Ex: Main d\'oeuvre"></div>'
+        + '<div class="fact-field"><label>Prix</label><input type="number" id="catFormPrix" value="' + (prestation ? prestation.prix : '') + '" placeholder="0.00" min="0" step="0.5"></div>'
+        + '<div class="fact-field"><label>Unité</label><select id="catFormUnite">'
+        + '<option value="heure"' + (prestation && prestation.unite==='heure'?' selected':'') + '>heure</option>'
+        + '<option value="forfait"' + (prestation && prestation.unite==='forfait'?' selected':'') + '>forfait</option>'
+        + '<option value="m2"' + (prestation && prestation.unite==='m2'?' selected':'') + '>m²</option>'
+        + '<option value="ml"' + (prestation && prestation.unite==='ml'?' selected':'') + '>ml</option>'
+        + '<option value="unite"' + (prestation && prestation.unite==='unite'?' selected':'') + '>unité</option>'
+        + '<option value="lot"' + (prestation && prestation.unite==='lot'?' selected':'') + '>lot</option>'
+        + '</select></div>'
+        + '<div class="fact-field"><label>Description (optionnel)</label><input type="text" id="catFormDesc" value="' + (prestation ? (prestation.description || '') : '').replace(/"/g,'&quot;') + '" placeholder="Description courte"></div>'
+        + '<div class="fact-field-actions">'
+        + '<button class="btn-sm btn-sm-view" onclick="factHideCatForm()">Annuler</button>'
+        + '<button class="fact-btn-new" onclick="factSaveCatForm(\'' + (prestation ? prestation.id : '') + '\')">Enregistrer</button>'
+        + '</div></div>';
+    }
+    function factHideCatForm() { var f = document.getElementById('factCatForm'); if (f) { f.style.display = 'none'; f.innerHTML = ''; } }
+
+    async function factSaveCatForm(existingId) {
+      var nom = document.getElementById('catFormNom').value.trim();
+      var prix = parseFloat(document.getElementById('catFormPrix').value);
+      if (!nom || isNaN(prix)) { factToast('error', 'Nom et prix requis.'); return; }
+      try {
+        var user = await getUser();
+        if (!user) return;
+        var data = {
+          artisan_id: user.id,
+          nom: nom,
+          prix: prix,
+          unite: document.getElementById('catFormUnite').value,
+          description: document.getElementById('catFormDesc').value.trim(),
+          ordre: factPrestations.length
+        };
+        if (existingId) data.id = existingId;
+        var saved = await savePrestationToDB(data);
+        if (existingId) {
+          var idx = factPrestations.findIndex(function(x) { return x.id === existingId; });
+          if (idx !== -1) factPrestations[idx] = saved;
+        } else {
+          factPrestations.push(saved);
+        }
+        factHideCatForm();
+        factRenderCatalogue();
+        factToast('success', 'Prestation enregistrée');
+      } catch(e) { factToast('error', 'Erreur: ' + e.message); }
+    }
+
+    async function factDeletePrestation(id) {
+      if (!confirm('Supprimer cette prestation ?')) return;
+      try {
+        await deletePrestationFromDB(id);
+        factPrestations = factPrestations.filter(function(p) { return p.id !== id; });
+        factRenderCatalogue();
+        factToast('success', 'Prestation supprimée');
+      } catch(e) { factToast('error', 'Erreur: ' + e.message); }
+    }
+
+    // ===== PRESTATION PICKER =====
+    function factOpenPicker() {
+      var list = document.getElementById('factPickerList');
+      if (!list) return;
+      if (factPrestations.length === 0) {
+        list.innerHTML = '<p style="text-align:center;color:var(--gray-500);padding:20px;">Aucune prestation dans le catalogue.<br>Ajoutez-en d\'abord depuis la vue Catalogue.</p>';
+      } else {
+        list.innerHTML = factPrestations.map(function(p) {
+          return '<label class="fact-picker-item" onclick="this.classList.toggle(\'selected\')">'
+            + '<input type="checkbox" value="' + p.id + '">'
+            + '<span class="fact-picker-name">' + p.nom + '</span>'
+            + '<span class="fact-picker-price">' + factFormatCHF(p.prix) + '/' + p.unite + '</span>'
+            + '</label>';
+        }).join('');
+      }
+      document.getElementById('factPickerModal').classList.add('active');
+    }
+    function factClosePicker() { document.getElementById('factPickerModal').classList.remove('active'); }
+    function factConfirmPicker() {
+      var checks = document.querySelectorAll('#factPickerList input[type="checkbox"]:checked');
+      checks.forEach(function(cb) {
+        var p = factPrestations.find(function(x) { return x.id === cb.value; });
+        if (p) factAddLine(p.nom, 1, p.unite, p.prix);
+      });
+      factClosePicker();
+    }
+
+    // ===== PREVIEW =====
+    function factPreview() {
+      if (!factCurrentDoc) return;
+      factCollectData();
+      var d = factCurrentDoc;
+      var prof = factArtisanProfile || {};
+      var companyName = prof.entreprise || ((prof.prenom || '') + ' ' + (prof.nom || '')).trim() || 'Mon Entreprise';
+      var html = '<div class="fact-preview">'
+        + '<div class="fact-preview-header">'
+        + '<div class="fact-preview-company"><strong>' + companyName + '</strong>' + (prof.adresse ? '<br>' + prof.adresse : '') + (prof.telephone ? '<br>' + prof.telephone : '') + (prof.email ? '<br>' + prof.email : '') + '</div>'
+        + '<div class="fact-preview-type"><h2>' + (d.type === 'devis' ? 'DEVIS' : 'FACTURE') + '</h2><div class="numero">' + d.numero + '</div><div class="dates">Date : ' + factFormatDate(d.date_emission) + (d.date_echeance ? '<br>Échéance : ' + factFormatDate(d.date_echeance) : '') + '</div></div>'
+        + '</div>'
+        + '<div class="fact-preview-client"><strong>Client</strong>' + (d.client_nom || '-') + (d.client_adresse ? '<br>' + d.client_adresse : '') + (d.client_email ? '<br>' + d.client_email : '') + (d.client_telephone ? '<br>' + d.client_telephone : '') + '</div>'
+        + '<table class="fact-preview-table"><thead><tr><th>Description</th><th>Qté</th><th>Unité</th><th>Prix unit.</th><th>Total</th></tr></thead><tbody>';
+      (d.lignes || []).forEach(function(l) {
+        html += '<tr><td>' + (l.description || '') + '</td><td>' + l.quantite + '</td><td>' + (l.unite || '') + '</td><td>' + parseFloat(l.prix_unitaire).toFixed(2) + '</td><td>' + parseFloat(l.total).toFixed(2) + '</td></tr>';
+      });
+      html += '</tbody></table>'
+        + '<div class="fact-preview-totals"><div class="fact-preview-totals-inner">'
+        + '<div class="fact-preview-totals-row"><span>Sous-total</span><span>' + factFormatCHF(d.sous_total) + '</span></div>';
+      if (d.remise_type !== 'aucune' && d.montant_remise > 0) {
+        html += '<div class="fact-preview-totals-row"><span>Remise</span><span>-' + factFormatCHF(d.montant_remise) + '</span></div>';
+      }
+      html += '<div class="fact-preview-totals-row"><span>TVA ' + d.taux_tva + '%</span><span>' + factFormatCHF(d.montant_tva) + '</span></div>'
+        + '<div class="fact-preview-totals-row final"><span>Total TTC</span><span>' + factFormatCHF(d.total_ttc) + '</span></div>'
+        + '</div></div>';
+      if (d.notes) html += '<div class="fact-preview-notes"><strong>Notes :</strong> ' + d.notes + '</div>';
+      if (d.conditions) html += '<div class="fact-preview-notes"><strong>Conditions :</strong> ' + d.conditions + '</div>';
+      html += '<div class="fact-preview-footer">Document généré via Artisano</div></div>';
+      document.getElementById('factPreviewContent').innerHTML = html;
+      document.getElementById('factPreviewModal').classList.add('active');
+    }
+    function factClosePreview() { document.getElementById('factPreviewModal').classList.remove('active'); }
+
+    // ===== PDF EXPORT =====
+    function factExportPDF() {
+      if (!factCurrentDoc) return;
+      factCollectData();
+      var d = factCurrentDoc;
+      var prof = factArtisanProfile || {};
+      var companyName = prof.entreprise || ((prof.prenom || '') + ' ' + (prof.nom || '')).trim() || 'Mon Entreprise';
+      if (typeof jspdf === 'undefined') { factToast('error', 'Bibliothèque PDF non chargée.'); return; }
+      var pdf = new jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+      var W = 210, M = 20, CW = W - M * 2, y = M;
+
+      // Company
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(18);
+      pdf.text(companyName, M, y); y += 6;
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(100);
+      if (prof.adresse) { pdf.text(prof.adresse, M, y); y += 4; }
+      if (prof.telephone) { pdf.text(prof.telephone, M, y); y += 4; }
+      if (prof.email) { pdf.text(prof.email, M, y); y += 4; }
+
+      // Type + number (right)
+      pdf.setTextColor(232, 112, 10); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(22);
+      pdf.text(d.type === 'devis' ? 'DEVIS' : 'FACTURE', W - M, M, { align: 'right' });
+      pdf.setTextColor(60); pdf.setFontSize(11);
+      pdf.text(d.numero, W - M, M + 7, { align: 'right' });
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(120);
+      pdf.text('Date : ' + factFormatDate(d.date_emission), W - M, M + 12, { align: 'right' });
+      if (d.date_echeance) pdf.text('Échéance : ' + factFormatDate(d.date_echeance), W - M, M + 16, { align: 'right' });
+
+      // Client block
+      y = Math.max(y + 8, 52);
+      pdf.setFillColor(242, 241, 238); pdf.roundedRect(W - M - 80, y - 4, 80, 26, 2, 2, 'F');
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(140);
+      pdf.text('CLIENT', W - M - 76, y + 1);
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10); pdf.setTextColor(40);
+      var cy = y + 6;
+      if (d.client_nom) { pdf.text(d.client_nom, W - M - 76, cy); cy += 4; }
+      if (d.client_adresse) { pdf.text(d.client_adresse, W - M - 76, cy); cy += 4; }
+      if (d.client_email) { pdf.setFontSize(8); pdf.text(d.client_email, W - M - 76, cy); cy += 3.5; }
+      if (d.client_telephone) { pdf.setFontSize(8); pdf.text(d.client_telephone, W - M - 76, cy); }
+
+      // Table
+      y = Math.max(y + 30, 85);
+      pdf.setFillColor(26, 39, 68); pdf.rect(M, y, CW, 8, 'F');
+      pdf.setTextColor(255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8);
+      pdf.text('Description', M + 3, y + 5.5);
+      pdf.text('Qté', M + CW * 0.55, y + 5.5);
+      pdf.text('Unité', M + CW * 0.65, y + 5.5);
+      pdf.text('Prix unit.', M + CW * 0.78, y + 5.5);
+      pdf.text('Total', W - M - 3, y + 5.5, { align: 'right' });
+      y += 8;
+      pdf.setTextColor(40); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9);
+      (d.lignes || []).forEach(function(l, i) {
+        if (i % 2 === 0) { pdf.setFillColor(250, 250, 248); pdf.rect(M, y, CW, 7, 'F'); }
+        pdf.text((l.description || '').substring(0, 50), M + 3, y + 5);
+        pdf.text(String(l.quantite), M + CW * 0.55, y + 5);
+        pdf.text(l.unite || '', M + CW * 0.65, y + 5);
+        pdf.text(parseFloat(l.prix_unitaire).toFixed(2), M + CW * 0.78, y + 5);
+        pdf.text(parseFloat(l.total).toFixed(2), W - M - 3, y + 5, { align: 'right' });
+        y += 7;
+        if (y > 265) { pdf.addPage(); y = M; }
+      });
+
+      // Totals
+      y += 6;
+      var tx = M + CW * 0.6, tw = CW * 0.4;
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9);
+      pdf.text('Sous-total', tx, y + 4); pdf.text(factFormatCHF(d.sous_total), W - M - 3, y + 4, { align: 'right' }); y += 6;
+      if (d.remise_type !== 'aucune' && d.montant_remise > 0) {
+        pdf.text('Remise', tx, y + 4); pdf.text('-' + factFormatCHF(d.montant_remise), W - M - 3, y + 4, { align: 'right' }); y += 6;
+      }
+      pdf.text('TVA ' + d.taux_tva + '%', tx, y + 4); pdf.text(factFormatCHF(d.montant_tva), W - M - 3, y + 4, { align: 'right' }); y += 7;
+      pdf.setDrawColor(26, 39, 68); pdf.line(tx, y, W - M, y); y += 2;
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(12);
+      pdf.text('Total TTC', tx, y + 5); pdf.text(factFormatCHF(d.total_ttc), W - M - 3, y + 5, { align: 'right' }); y += 12;
+
+      // Notes
+      if (d.notes || d.conditions) {
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(120);
+        if (d.notes) { pdf.text('Notes : ' + d.notes, M, y); y += 5; }
+        if (d.conditions) { pdf.text('Conditions : ' + d.conditions, M, y); y += 5; }
+      }
+
+      // Footer
+      pdf.setFontSize(7); pdf.setTextColor(180);
+      pdf.text('Document généré via Artisano', W / 2, 287, { align: 'center' });
+
+      pdf.save(d.numero + '.pdf');
+      factToast('success', 'PDF téléchargé : ' + d.numero + '.pdf');
+    }
+
+    // ===== KEYBOARD SHORTCUTS =====
+    document.addEventListener('keydown', function(e) {
+      var factTab = document.getElementById('tab-facturation');
+      if (!factTab || factTab.style.display === 'none') return;
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); if (factCurrentDoc) factSaveDocument(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); if (factCurrentDoc) factPreview(); }
+      if (e.key === 'Escape') {
+        if (document.getElementById('factPickerModal').classList.contains('active')) factClosePicker();
+        else if (document.getElementById('factPreviewModal').classList.contains('active')) factClosePreview();
+        else if (document.getElementById('factDeleteModal').classList.contains('active')) factCloseDeleteModal();
+      }
+    });
+
+    // Close modals on backdrop click
+    ['factPickerModal','factPreviewModal','factDeleteModal'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
+    });
+
   </script>
   <script src="artisano-common.js"></script>
 </body>
