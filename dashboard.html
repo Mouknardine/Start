@@ -296,6 +296,11 @@
   .agenda-cell .intervention-marker { position:absolute; top:0; left:0; bottom:0; width:3px; border-radius:0 2px 2px 0; z-index:1; }
 
   /* ====== NOTES ====== */
+  /* ====== CELL TITLE LABEL ====== */
+  .agenda-cell .cell-title-label { position:absolute; top:1px; left:3px; right:16px; font-size:8px; font-weight:700; color:var(--dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; z-index:2; line-height:1.2; pointer-events:none; font-family:'Sora',sans-serif; }
+  .agenda-cell.available .cell-title-label { color:#1B5E20; }
+  .agenda-cell.unavailable .cell-title-label { color:#B71C1C; }
+
   .agenda-cell .note-icon { position:absolute; bottom:1px; left:1px; width:12px; height:12px; z-index:2; }
   .agenda-cell .note-icon svg { width:10px; height:10px; color:var(--orange); }
   .note-tooltip { display:none; position:fixed; z-index:200; background:var(--dark); color:white; padding:8px 12px; border-radius:var(--radius-sm); font-size:12px; max-width:200px; box-shadow:0 4px 12px rgba(0,0,0,0.2); pointer-events:none; }
@@ -841,6 +846,9 @@
       <!-- CELL POPUP (positioned absolutely, hidden by default) -->
       <div class="cell-popup" id="cellPopup">
         <div class="cell-popup-title">Définir le statut</div>
+        <div style="margin-bottom:8px;">
+          <input type="text" id="popupTitleInput" placeholder="Titre (ex: RDV M. Dupont)" style="width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;box-sizing:border-box;" />
+        </div>
         <button class="cell-popup-btn popup-available" onclick="applyPopupState('available')">
           <span class="popup-dot"></span> Disponible
         </button>
@@ -1056,14 +1064,16 @@
       // Save current state before navigating
       saveAgendaToLocalForWeek();
       saveNotesForWeek();
+      saveTitlesForWeek();
       currentWeekOffset += direction;
       updateAgendaHeaders();
       // Clear the grid
       clearAgendaGrid();
       // Load state for new week
       loadAgendaForCurrentWeek();
-      // Load notes and blocked days for new week
+      // Load notes, titles and blocked days for new week
       loadNotesForWeek();
+      loadTitlesForWeek();
       blockedDays = JSON.parse(localStorage.getItem('artisano-blocked-days') || '[]');
       applyBlockedDaysToGrid();
     }
@@ -1076,6 +1086,8 @@
         if (noteIcon) noteIcon.remove();
         var marker = cell.querySelector('.intervention-marker');
         if (marker) marker.remove();
+        var titleLabel = cell.querySelector('.cell-title-label');
+        if (titleLabel) titleLabel.remove();
       });
       document.querySelectorAll('.agenda-day-header.blocked-day').forEach(function(h) { h.classList.remove('blocked-day'); });
     }
@@ -1169,6 +1181,7 @@
 
       // Save current notes
       saveNotesForWeek();
+      saveTitlesForWeek();
 
       var state = collectAgendaState();
 
@@ -1180,7 +1193,8 @@
         recurrence: JSON.parse(localStorage.getItem('artisano-recurrence') || '{}'),
         blocked_days: JSON.parse(localStorage.getItem('artisano-blocked-days') || '[]'),
         intervention_types: JSON.parse(localStorage.getItem('artisano-intervention-types') || '[]'),
-        notes: agendaNotes
+        notes: agendaNotes,
+        titles: agendaTitles
       };
 
       // Always save to localStorage
@@ -1257,12 +1271,27 @@
     }
 
     function applyPopupState(state) {
+      var title = document.getElementById('popupTitleInput').value.trim();
       selectedCells.forEach(function(cell) {
         cell.classList.remove('available', 'unavailable');
         if (state === 'available') cell.classList.add('available');
         else if (state === 'unavailable') cell.classList.add('unavailable');
-        // 'clear' leaves no class
+
+        var col = cell.dataset.col;
+        var row = cell.dataset.row;
+        var key = col + '-' + row;
+
+        if (state === 'clear') {
+          // Remove title
+          delete agendaTitles[key];
+        } else if (title) {
+          // Set title on all selected cells
+          agendaTitles[key] = title;
+        }
       });
+      saveTitlesForWeek();
+      renderCellTitles();
+      document.getElementById('popupTitleInput').value = '';
       hidePopup();
       clearSelection();
     }
@@ -1873,6 +1902,57 @@
       if (section) section.style.display = types.length > 0 ? 'block' : 'none';
     }
 
+    /* ========== CELL TITLES (ex: "RDV M. Dupont") ========== */
+    var agendaTitles = {};
+
+    function getTitlesStorageKey() {
+      var monday = getCurrentWeekMonday();
+      return 'artisano-titles-' + formatWeekStart(monday);
+    }
+
+    function loadTitlesForWeek() {
+      var key = getTitlesStorageKey();
+      try { agendaTitles = JSON.parse(localStorage.getItem(key) || '{}'); } catch(e) { agendaTitles = {}; }
+      renderCellTitles();
+    }
+
+    function saveTitlesForWeek() {
+      localStorage.setItem(getTitlesStorageKey(), JSON.stringify(agendaTitles));
+    }
+
+    function renderCellTitles() {
+      // Clear existing title labels
+      document.querySelectorAll('.agenda-cell .cell-title-label').forEach(function(el) { el.remove(); });
+      var grid = document.getElementById('agendaGrid');
+      if (!grid) return;
+      for (var key in agendaTitles) {
+        if (!agendaTitles.hasOwnProperty(key) || !agendaTitles[key]) continue;
+        var parts = key.split('-');
+        var col = parts[0], row = parts[1];
+        var cell = grid.querySelector('.agenda-cell[data-col="' + col + '"][data-row="' + row + '"]');
+        if (cell) {
+          var label = document.createElement('div');
+          label.className = 'cell-title-label';
+          label.textContent = agendaTitles[key];
+          label.title = agendaTitles[key]; // full text on hover
+          cell.appendChild(label);
+        }
+      }
+    }
+
+    // When popup opens, pre-fill title if the first selected cell has one
+    var _origShowPopup = showPopup;
+    showPopup = function(anchorCell, e) {
+      _origShowPopup(anchorCell, e);
+      var titleInput = document.getElementById('popupTitleInput');
+      if (titleInput && selectedCells.length > 0) {
+        var firstCell = selectedCells[0];
+        var key = firstCell.dataset.col + '-' + firstCell.dataset.row;
+        titleInput.value = agendaTitles[key] || '';
+        titleInput.focus();
+      }
+    };
+
     /* ========== NOTES ON SLOTS ========== */
     var agendaNotes = {};
     var noteTargetCell = null;
@@ -1956,14 +2036,21 @@
       closeNoteInput();
     }
 
-    // Note tooltip on hover
+    // Tooltip on hover (shows title + note)
     function showNoteTooltip(e, cell) {
       var col = cell.dataset.col;
       var row = cell.dataset.row;
       var key = col + '-' + row;
-      if (!agendaNotes[key]) return;
+      var title = agendaTitles[key] || '';
+      var note = agendaNotes[key] || '';
+      if (!title && !note) return;
       var tip = document.getElementById('noteTooltip');
-      tip.textContent = agendaNotes[key];
+      var text = '';
+      if (title) text += title;
+      if (title && note) text += '\n';
+      if (note) text += (title ? '📝 ' : '') + note;
+      tip.textContent = text;
+      tip.style.whiteSpace = 'pre-line';
       tip.style.left = (e.clientX + 12) + 'px';
       tip.style.top = (e.clientY + 12) + 'px';
       tip.classList.add('active');
@@ -2167,6 +2254,10 @@
             var notesKey = 'artisano-notes-' + (dispoData.week_start || formatWeekStart(getCurrentWeekMonday()));
             localStorage.setItem(notesKey, JSON.stringify(dispoData.notes));
           }
+          if (dispoData.titles) {
+            var titlesKey = 'artisano-titles-' + (dispoData.week_start || formatWeekStart(getCurrentWeekMonday()));
+            localStorage.setItem(titlesKey, JSON.stringify(dispoData.titles));
+          }
         }
 
         // Check if the Supabase data matches the current week
@@ -2182,10 +2273,11 @@
         loadAgendaForCurrentWeek();
       }
 
-      // 4. Initialize new features (blocked days, notes, recurrence, interventions)
+      // 4. Initialize new features (blocked days, notes, titles, recurrence, interventions)
       blockedDays = JSON.parse(localStorage.getItem('artisano-blocked-days') || '[]');
       applyBlockedDaysToGrid();
       loadNotesForWeek();
+      loadTitlesForWeek();
       updatePopupInterventionDropdown();
 
       // Apply recurrence to empty cells on first load

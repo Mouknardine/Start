@@ -1610,6 +1610,7 @@
       var isV2 = dispo && dispo.version === 2;
       var blockedDaysList = (isV2 && dispo.blocked_days) ? dispo.blocked_days : [];
       var interventionTypesList = (isV2 && dispo.intervention_types) ? dispo.intervention_types : [];
+      var titlesList = (isV2 && dispo.titles) ? dispo.titles : {};
 
       if (dispo && dispo.slots && Object.keys(dispo.slots).length > 0) {
         if (dispo.week_start === mondayStr) {
@@ -1657,19 +1658,21 @@
           var availableSlots = [];
           if (colSlots) {
             var rows = Object.keys(colSlots).map(Number).sort(function(a, b) { return a - b; });
-            // Group consecutive available slots into ranges
+            // Group consecutive available slots into ranges, collecting titles
             var ranges = [];
             var rangeStart = null;
             rows.forEach(function(row) {
               if (colSlots[String(row)] === 'available') {
                 var totalMinutes = 8 * 60 + row * 30;
+                var titleKey = String(idx) + '-' + String(row);
+                var cellTitle = titlesList[titleKey] || '';
                 if (rangeStart === null) {
-                  rangeStart = { start: totalMinutes, end: totalMinutes + 30 };
-                } else if (totalMinutes === rangeStart.end) {
+                  rangeStart = { start: totalMinutes, end: totalMinutes + 30, title: cellTitle };
+                } else if (totalMinutes === rangeStart.end && (!cellTitle || cellTitle === rangeStart.title)) {
                   rangeStart.end = totalMinutes + 30;
                 } else {
                   ranges.push(rangeStart);
-                  rangeStart = { start: totalMinutes, end: totalMinutes + 30 };
+                  rangeStart = { start: totalMinutes, end: totalMinutes + 30, title: cellTitle };
                 }
               }
             });
@@ -1678,18 +1681,20 @@
             ranges.forEach(function(r) {
               var hS = Math.floor(r.start / 60), mS = r.start % 60;
               var hE = Math.floor(r.end / 60), mE = r.end % 60;
-              var label = hS + 'h' + (mS === 0 ? '00' : mS < 10 ? '0' + mS : mS) + ' - ' + hE + 'h' + (mE === 0 ? '00' : mE < 10 ? '0' + mE : mE);
-              availableSlots.push(label);
+              var timeLabel = hS + 'h' + (mS === 0 ? '00' : mS < 10 ? '0' + mS : mS) + ' - ' + hE + 'h' + (mE === 0 ? '00' : mE < 10 ? '0' + mE : mE);
+              var label = r.title ? timeLabel + ' · ' + r.title : timeLabel;
+              availableSlots.push({ label: label, hasTitle: !!r.title });
             });
           }
 
           if (availableSlots.length > 0) {
             var slotsDiv = document.createElement('div');
             slotsDiv.className = 'avail-slots';
-            availableSlots.forEach(function(label) {
+            availableSlots.forEach(function(item) {
               var slot = document.createElement('span');
               slot.className = 'avail-slot';
-              slot.textContent = label;
+              if (item.hasTitle) slot.style.cssText = 'font-weight:700;';
+              slot.textContent = item.label;
               slotsDiv.appendChild(slot);
             });
             dayDiv.appendChild(slotsDiv);
