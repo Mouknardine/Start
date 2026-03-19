@@ -484,10 +484,7 @@
   .fact-doc-icon svg { width:18px; height:18px; }
   .fact-doc-body { flex:1; min-width:0; }
   .fact-doc-title { font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; }
-  .fact-doc-label { font-size:12px; color:var(--gray-500); margin-top:2px; display:flex; align-items:center; gap:4px; }
-  .fact-doc-label-text { cursor:text; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
-  .fact-doc-label-text:hover { color:var(--orange); }
-  .fact-doc-label-input { border:1px solid var(--orange); border-radius:4px; padding:1px 6px; font-size:12px; font-family:'DM Sans',sans-serif; outline:none; width:180px; color:var(--dark); }
+  .fact-doc-label-input { border:1px solid var(--orange); border-radius:4px; padding:2px 8px; font-size:14px; font-weight:700; font-family:'DM Sans',sans-serif; outline:none; width:200px; color:var(--dark); }
   .fact-doc-label-edit { width:14px; height:14px; color:var(--gray-300); cursor:pointer; flex-shrink:0; transition:color 0.15s; }
   .fact-doc-label-edit:hover { color:var(--orange); }
   .fact-doc-client { font-size:11px; color:var(--gray-400); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -2968,7 +2965,7 @@
         return '<div class="fact-doc-item" onclick="factOpenEditor(\'' + d.id + '\')">'
           + icon
           + '<div class="fact-doc-body">'
-          + '<div class="fact-doc-title"><span class="fact-doc-label-text" id="label-' + d.id + '" onclick="event.stopPropagation();factEditLabel(\'' + d.id + '\')" title="Cliquer pour renommer">' + displayName + '</span><svg class="fact-doc-label-edit" onclick="event.stopPropagation();factEditLabel(\'' + d.id + '\')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> <span class="fact-status fact-status-' + d.statut + '">' + factStatusLabel(d.statut) + '</span></div>'
+          + '<div class="fact-doc-title"><span id="label-' + d.id + '">' + displayName + '</span> <svg class="fact-doc-label-edit" onclick="event.stopPropagation();factEditLabel(\'' + d.id + '\')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" title="Renommer"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> <span class="fact-status fact-status-' + d.statut + '">' + factStatusLabel(d.statut) + '</span></div>'
           + '<div class="fact-doc-client">' + (d.client_nom || 'Sans client') + '</div>'
           + '</div>'
           + '<div class="fact-doc-right">'
