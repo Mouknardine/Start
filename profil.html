@@ -503,12 +503,12 @@
   .gallery-show-all:hover { border-color: var(--orange); color: var(--orange); }
   .gallery-show-all svg { width: 16px; height: 16px; }
 
-  /* LIGHTBOX PRO */
+  /* LIGHTBOX PRO - style Booking */
   .lb-overlay {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.95);
+    background: rgba(0,0,0,0.97);
     z-index: 9999;
     flex-direction: column;
   }
@@ -517,30 +517,37 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 24px;
+    padding: 12px 20px;
     color: white;
     flex-shrink: 0;
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
   }
   .lb-counter {
     font-family: 'Sora', sans-serif;
     font-weight: 600;
-    font-size: 15px;
+    font-size: 16px;
+    background: rgba(0,0,0,0.5);
+    padding: 6px 16px;
+    border-radius: 50px;
   }
   .lb-close {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.15);
     border: none;
     color: white;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 22px;
+    font-size: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background 0.2s;
   }
-  .lb-close:hover { background: rgba(255,255,255,0.25); }
+  .lb-close:hover { background: rgba(255,255,255,0.3); }
   .lb-main {
     flex: 1;
     display: flex;
@@ -549,12 +556,15 @@
     position: relative;
     overflow: hidden;
     min-height: 0;
+    padding: 60px 80px 0;
   }
   .lb-main img {
-    max-width: 85%;
+    max-width: 100%;
     max-height: 100%;
+    width: auto;
+    height: auto;
     object-fit: contain;
-    border-radius: 8px;
+    border-radius: 4px;
     transition: opacity 0.25s ease;
     user-select: none;
   }
@@ -563,42 +573,45 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(255,255,255,0.12);
+    background: white;
     border: none;
-    color: white;
-    width: 48px;
-    height: 48px;
+    color: #1a1a2e;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 22px;
+    font-size: 26px;
+    font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
-    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    z-index: 10;
   }
-  .lb-nav:hover { background: rgba(255,255,255,0.3); transform: translateY(-50%) scale(1.08); }
-  .lb-prev { left: 20px; }
-  .lb-next { right: 20px; }
+  .lb-nav:hover { background: var(--orange); color: white; transform: translateY(-50%) scale(1.1); }
+  .lb-prev { left: 16px; }
+  .lb-next { right: 16px; }
   .lb-thumbs {
     display: flex;
     gap: 8px;
-    padding: 16px 24px;
+    padding: 14px 24px 18px;
     overflow-x: auto;
     justify-content: center;
     flex-shrink: 0;
     -webkit-overflow-scrolling: touch;
+    background: rgba(0,0,0,0.5);
   }
   .lb-thumbs::-webkit-scrollbar { height: 0; }
   .lb-thumb {
-    width: 64px;
-    height: 48px;
-    border-radius: 8px;
+    width: 72px;
+    height: 52px;
+    border-radius: 6px;
     overflow: hidden;
     cursor: pointer;
     flex-shrink: 0;
-    border: 2px solid transparent;
-    opacity: 0.5;
+    border: 3px solid transparent;
+    opacity: 0.45;
     transition: all 0.2s;
   }
   .lb-thumb.active { border-color: var(--orange); opacity: 1; }
@@ -1110,11 +1123,12 @@
     .gallery-mosaic {
       grid-template-rows: 200px 100px;
     }
-    .lb-nav { width: 40px; height: 40px; font-size: 18px; }
-    .lb-prev { left: 10px; }
-    .lb-next { right: 10px; }
-    .lb-main img { max-width: 95%; }
-    .lb-thumb { width: 50px; height: 38px; }
+    .lb-main { padding: 50px 10px 0; }
+    .lb-nav { width: 42px; height: 42px; font-size: 20px; }
+    .lb-prev { left: 6px; }
+    .lb-next { right: 6px; }
+    .lb-thumb { width: 54px; height: 40px; }
+    .lb-counter { font-size: 14px; padding: 5px 12px; }
 
     /* Reviews */
     .review-item { padding: 16px 0; }
