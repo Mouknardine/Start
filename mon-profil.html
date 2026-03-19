@@ -156,7 +156,26 @@
     .actions-bar { flex-direction:column; }
     .btn-save, .btn-preview { width:100%; justify-content:center; }
     .urgence-days { gap:4px; }
-    .urgence-day { padding:6px 10px; font-size:12px; }
+    .urgence-day { padding:8px 12px; font-size:13px; min-height:44px; display:inline-flex; align-items:center; }
+    /* iOS zoom prevention */
+    input, select, textarea { font-size:16px !important; }
+    /* Touch targets */
+    .btn-upload { padding:12px 20px; min-height:44px; }
+    .btn-add-tag { padding:12px 18px; min-height:44px; }
+    .gallery-delete { width:36px; height:36px; font-size:20px; }
+    .gallery-add-btn { min-height:120px; font-size:13px; }
+    .horaire-toggle { min-width:48px; min-height:28px; }
+    .contact-option { padding:14px 16px; min-height:44px; }
+    .gallery-edit-grid { grid-template-columns:repeat(auto-fill, minmax(120px,1fr)); }
+  }
+  @media (max-width:400px) {
+    .page { padding:66px 12px 90px; }
+    .card { padding:16px; }
+    .page-title { font-size:20px; }
+    .page-subtitle { font-size:13px; }
+    .gallery-edit-grid { grid-template-columns:repeat(2,1fr); gap:8px; }
+    .urgence-day { padding:8px 10px; font-size:12px; }
+    .horaire-times input { width:65px; font-size:14px; }
   }
 </style>
 </head>

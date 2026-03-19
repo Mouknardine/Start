@@ -1025,6 +1025,10 @@
       grid-template-rows: 200px 100px;
     }
     .lb-thumb { width: 52px; height: 38px; }
+    .gallery-mosaic { grid-template-columns: 1fr; grid-template-rows: 220px; }
+    .gallery-mosaic-main { grid-row: auto; }
+    .gallery-mosaic-thumb { display: none; }
+    .gallery-mosaic-thumb:first-of-type { display: block; }
 
     /* Reviews */
     .review-item { padding: 16px 0; }
@@ -1095,7 +1099,8 @@
 
     /* Tabs */
     .profile-tabs { padding: 0 12px; }
-    .profile-tab { padding: 12px 14px; font-size: 13px; }
+    .profile-tab { padding: 14px 16px; font-size: 13px; min-height: 44px; }
+    .btn-nav { padding: 10px 16px; min-height: 44px; font-size: 13px; }
 
     /* Content */
     .profile-content { padding: 16px 12px 130px; gap: 16px; }
@@ -1134,9 +1139,9 @@
     .avail-day-name { min-width: 60px; font-size: 12px; }
     .avail-day-date { font-size: 11px; min-width: 44px; }
     .avail-slots { gap: 4px; }
-    .avail-slot { padding: 4px 8px; font-size: 11px; }
+    .avail-slot { padding: 6px 10px; font-size: 12px; min-height: 32px; }
     .avail-week-label { font-size: 13px; }
-    .avail-week-btn { width: 28px; height: 28px; }
+    .avail-week-btn { width: 44px; height: 44px; font-size: 18px; }
     .avail-legend { gap: 10px; flex-wrap: wrap; }
     .legend-item { font-size: 11px; }
 
