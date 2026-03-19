@@ -1618,10 +1618,6 @@
         }
       }
 
-      // Also check recurrence for weeks without specific data
-      var recurrence = (isV2 && dispo.recurrence) ? dispo.recurrence : {};
-      var hasRecurrence = Object.keys(recurrence).some(function(k) { return recurrence[k] && recurrence[k].enabled; });
-
       joursFr.forEach(function(jourNom, idx) {
         var currentDate = new Date(monday);
         currentDate.setDate(monday.getDate() + idx);
@@ -1704,16 +1700,6 @@
             closedSpan.textContent = 'Indisponible';
             dayDiv.appendChild(closedSpan);
           }
-        } else if (hasRecurrence && recurrence[idx] && recurrence[idx].enabled) {
-          // Use recurrence data for weeks without specific data
-          var recDay = recurrence[idx];
-          var slotsDiv = document.createElement('div');
-          slotsDiv.className = 'avail-slots';
-          var slot = document.createElement('span');
-          slot.className = 'avail-slot';
-          slot.textContent = recDay.start + ' - ' + recDay.end;
-          slotsDiv.appendChild(slot);
-          dayDiv.appendChild(slotsDiv);
         } else {
           // No published agenda data for this week
           var closedSpan = document.createElement('span');

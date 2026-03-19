@@ -1638,10 +1638,10 @@
 
     function openRecurrenceModal() {
       recurrenceData = JSON.parse(localStorage.getItem('artisano-recurrence') || '{}');
-      // Default: Lun-Ven 8h-17h
+      // Default: all days disabled (user must explicitly enable)
       for (var i = 0; i < 7; i++) {
         if (!recurrenceData[i]) {
-          recurrenceData[i] = { enabled: i < 5, start: '08:00', end: '17:00' };
+          recurrenceData[i] = { enabled: false, start: '08:00', end: '17:00' };
         }
       }
       renderRecurrenceDays();
@@ -2280,11 +2280,9 @@
       loadTitlesForWeek();
       updatePopupInterventionDropdown();
 
-      // Apply recurrence to empty cells on first load
-      var rec = JSON.parse(localStorage.getItem('artisano-recurrence') || '{}');
-      if (Object.keys(rec).length > 0) {
-        applyRecurrenceToGrid(rec);
-      }
+      // NOTE: Recurrence is NOT auto-applied on load.
+      // It only applies when the artisan explicitly clicks "Enregistrer" in the recurrence modal.
+      // This prevents unwanted slots from appearing automatically.
 
       if (!p) return;
 
