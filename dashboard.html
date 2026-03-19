@@ -2969,7 +2969,7 @@
           + icon
           + '<div class="fact-doc-body">'
           + '<div class="fact-doc-title"><span class="fact-doc-label-text" id="label-' + d.id + '" onclick="event.stopPropagation();factEditLabel(\'' + d.id + '\')" title="Cliquer pour renommer">' + displayName + '</span><svg class="fact-doc-label-edit" onclick="event.stopPropagation();factEditLabel(\'' + d.id + '\')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> <span class="fact-status fact-status-' + d.statut + '">' + factStatusLabel(d.statut) + '</span></div>'
-          + '<div class="fact-doc-client">' + d.numero + (d.client_nom ? ' · ' + d.client_nom : '') + '</div>'
+          + '<div class="fact-doc-client">' + (d.client_nom || 'Sans client') + '</div>'
           + '</div>'
           + '<div class="fact-doc-right">'
           + '<span class="fact-doc-amount">' + factFormatCHF(d.total_ttc) + '</span>'
