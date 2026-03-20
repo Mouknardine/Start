@@ -455,24 +455,32 @@
   .fact-view.active { display:block; }
 
   /* Header actions */
+  .fact-header-bar { padding:24px 24px 0; }
+  .fact-header-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+  .fact-header-top h2 { font-family:'Sora',sans-serif; font-size:22px; font-weight:800; margin:0; }
   .fact-header-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .fact-btn-new { background:var(--orange); color:white; padding:8px 20px; border-radius:50px; font-family:'Sora',sans-serif; font-weight:700; font-size:13px; border:none; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px; }
-  .fact-btn-new:hover { background:var(--orange-dark); transform:translateY(-1px); box-shadow:0 4px 12px rgba(232,112,10,0.3); }
+  .fact-btn-new { background:var(--orange); color:white; padding:10px 22px; border-radius:12px; font-family:'Sora',sans-serif; font-weight:700; font-size:13px; border:none; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px; }
+  .fact-btn-new:hover { background:var(--orange-dark); transform:translateY(-1px); box-shadow:0 4px 16px rgba(232,112,10,0.25); }
   .fact-btn-new svg { width:14px; height:14px; }
   .fact-btn-facture { background:var(--blue); }
-  .fact-btn-facture:hover { background:#0D47A1; box-shadow:0 4px 12px rgba(21,101,192,0.3); }
+  .fact-btn-facture:hover { background:#0D47A1; box-shadow:0 4px 16px rgba(21,101,192,0.25); }
+  .fact-btn-catalogue { background:white; color:var(--dark); border:1px solid var(--gray-200); }
+  .fact-btn-catalogue:hover { border-color:var(--gray-300); background:var(--gray-100); box-shadow:none; transform:none; }
 
   /* Filters */
-  .fact-filters { display:flex; gap:12px; align-items:center; padding:0 24px 20px; flex-wrap:wrap; }
-  .fact-filter-tabs { display:flex; gap:4px; background:var(--gray-200); padding:3px; border-radius:8px; }
-  .fact-filter-tab { padding:6px 14px; border-radius:6px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:var(--gray-500); transition:all 0.2s; font-family:'Sora',sans-serif; }
+  .fact-filters { display:flex; gap:10px; align-items:center; padding:16px 16px 12px; flex-wrap:wrap; }
+  .fact-filter-tabs { display:flex; gap:0; background:var(--gray-100); padding:3px; border-radius:10px; border:1px solid var(--gray-200); }
+  .fact-filter-tab { padding:7px 16px; border-radius:8px; border:none; font-size:12px; font-weight:700; cursor:pointer; background:transparent; color:var(--gray-500); transition:all 0.2s; font-family:'Sora',sans-serif; }
   .fact-filter-tab.active { background:white; color:var(--dark); box-shadow:0 1px 4px rgba(0,0,0,0.08); }
-  .fact-filter-select { padding:7px 12px; border:1px solid var(--gray-200); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; background:white; color:var(--dark); cursor:pointer; }
-  .fact-filter-select:focus { outline:none; border-color:var(--orange); }
+  .fact-filter-tab:hover:not(.active) { color:var(--dark); }
+  .fact-filter-select { padding:8px 14px; border:1px solid var(--gray-200); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:13px; background:white; color:var(--dark); cursor:pointer; transition:all 0.15s; }
+  .fact-filter-select:hover { border-color:var(--gray-300); }
+  .fact-filter-select:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.08); }
   .fact-search-wrap { position:relative; flex:1; min-width:180px; }
-  .fact-search-wrap svg { position:absolute; left:10px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:var(--gray-500); pointer-events:none; }
-  .fact-search { width:100%; padding:8px 10px 8px 32px; border:1px solid var(--gray-200); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; background:white; }
-  .fact-search:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.1); }
+  .fact-search-wrap svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:var(--gray-400); pointer-events:none; }
+  .fact-search { width:100%; padding:8px 12px 8px 34px; border:1px solid var(--gray-200); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:13px; background:white; transition:all 0.15s; }
+  .fact-search:hover { border-color:var(--gray-300); }
+  .fact-search:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.08); }
 
   /* Document list */
   .fact-list { padding:8px 16px; }
@@ -515,31 +523,37 @@
   .fact-empty p { font-size:13px; color:var(--gray-500); margin-bottom:20px; max-width:340px; margin-left:auto; margin-right:auto; }
 
   /* Editor header */
-  .fact-editor-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
-  .fact-back-btn { display:flex; align-items:center; gap:6px; background:none; border:none; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; color:var(--gray-700); cursor:pointer; padding:8px 0; transition:color 0.15s; }
+  .fact-editor-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:20px; flex-wrap:wrap; padding:16px 20px; background:white; border-radius:14px; border:1px solid var(--gray-200); }
+  .fact-back-btn { display:flex; align-items:center; gap:6px; background:none; border:none; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; color:var(--gray-500); cursor:pointer; padding:6px 12px 6px 0; transition:all 0.15s; border-right:1px solid var(--gray-200); padding-right:16px; margin-right:4px; }
   .fact-back-btn:hover { color:var(--dark); }
   .fact-back-btn svg { width:18px; height:18px; }
-  .fact-editor-title-wrap { display:flex; align-items:center; gap:10px; flex:1; justify-content:center; }
-  .fact-doc-type-badge { padding:4px 12px; border-radius:50px; font-family:'Sora',sans-serif; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.3px; background:rgba(232,112,10,0.1); color:var(--orange); }
+  .fact-editor-title-wrap { display:flex; align-items:center; gap:10px; flex:1; }
+  .fact-doc-type-badge { padding:5px 14px; border-radius:8px; font-family:'Sora',sans-serif; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.3px; background:rgba(232,112,10,0.1); color:var(--orange); }
   .fact-doc-type-badge.facture { background:var(--blue-light); color:var(--blue); }
   .fact-doc-numero { font-family:'Sora',sans-serif; font-size:16px; font-weight:700; }
   .fact-editor-actions { display:flex; gap:8px; }
+  .fact-editor-actions .btn-sm { border-radius:10px; padding:8px 16px; }
+  .fact-editor-actions .fact-btn-new { border-radius:10px; }
 
   /* Editor grid */
-  .fact-editor-grid { display:grid; grid-template-columns:1fr 320px; gap:20px; }
-  .fact-editor-main { display:flex; flex-direction:column; gap:16px; }
-  .fact-editor-sidebar { display:flex; flex-direction:column; gap:16px; }
-  .fact-section-title { font-family:'Sora',sans-serif; font-size:14px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
-  .fact-section-title svg { width:16px; height:16px; color:var(--gray-500); }
+  .fact-editor-grid { display:grid; grid-template-columns:1fr 300px; gap:16px; }
+  .fact-editor-main { display:flex; flex-direction:column; gap:14px; }
+  .fact-editor-main .card { border-radius:14px; padding:20px; }
+  .fact-editor-sidebar { display:flex; flex-direction:column; gap:14px; }
+  .fact-editor-sidebar .card { border-radius:14px; padding:18px; }
+  .fact-section-title { font-family:'Sora',sans-serif; font-size:13px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; color:var(--gray-700); text-transform:uppercase; letter-spacing:0.3px; }
+  .fact-section-title svg { width:15px; height:15px; color:var(--orange); }
   .fact-section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
 
   /* Form fields */
-  .fact-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .fact-field { display:flex; flex-direction:column; gap:4px; }
+  .fact-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .fact-field { display:flex; flex-direction:column; gap:5px; }
   .fact-field-full { grid-column:1/-1; }
   .fact-field label { font-size:11px; font-weight:700; color:var(--gray-500); text-transform:uppercase; letter-spacing:0.4px; }
-  .fact-field input, .fact-field textarea, .fact-field select { padding:9px 12px; border:1px solid var(--gray-200); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; background:white; color:var(--dark); transition:all 0.15s; }
-  .fact-field input:focus, .fact-field textarea:focus, .fact-field select:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.1); }
+  .fact-field input, .fact-field textarea, .fact-field select { padding:10px 14px; border:1px solid var(--gray-200); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:13px; background:var(--gray-100); color:var(--dark); transition:all 0.15s; }
+  .fact-field input:hover, .fact-field textarea:hover, .fact-field select:hover { border-color:var(--gray-300); background:white; }
+  .fact-field input:focus, .fact-field textarea:focus, .fact-field select:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.08); background:white; }
+  .fact-field input::placeholder, .fact-field textarea::placeholder { color:var(--gray-400); }
 
   /* Line items */
   .fact-lines-wrap { margin-bottom:12px; overflow-x:auto; }
@@ -558,14 +572,14 @@
   .fact-line-delete { width:28px; height:28px; border:none; background:transparent; color:var(--gray-300); cursor:pointer; border-radius:6px; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
   .fact-line-delete:hover { color:var(--red); background:var(--red-light); }
   .fact-line-delete svg { width:14px; height:14px; }
-  .fact-add-line-btn { display:flex; align-items:center; gap:6px; padding:10px 14px; border:2px dashed var(--gray-200); border-radius:8px; background:transparent; color:var(--gray-500); font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; width:100%; justify-content:center; margin-top:8px; }
+  .fact-add-line-btn { display:flex; align-items:center; gap:6px; padding:12px 14px; border:2px dashed var(--gray-200); border-radius:10px; background:transparent; color:var(--gray-500); font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; width:100%; justify-content:center; margin-top:10px; }
   .fact-add-line-btn:hover { border-color:var(--orange); color:var(--orange); background:rgba(232,112,10,0.02); }
   .fact-add-line-btn svg { width:14px; height:14px; }
-  .fact-add-from-cat { border-style:solid; border-color:var(--gray-200); background:var(--gray-100); margin-top:6px; }
+  .fact-add-from-cat { border-style:solid; border-color:var(--gray-200); background:var(--gray-100); margin-top:6px; border-radius:10px; }
   .fact-add-from-cat:hover { border-color:var(--orange); background:rgba(232,112,10,0.04); color:var(--orange); }
 
   /* Totals card */
-  .fact-totals-card { background:var(--dark); color:white; border:none; padding:20px; }
+  .fact-totals-card { background:var(--dark); color:white; border:none; padding:20px; border-radius:14px !important; }
   .fact-total-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; font-size:13px; }
   .fact-total-row .fact-total-label { color:rgba(255,255,255,0.6); }
   .fact-total-row .fact-total-value { color:white; font-weight:600; }
@@ -577,31 +591,31 @@
   .fact-discount-row select option { background:var(--dark); color:white; }
 
   /* Status actions */
-  .fact-action-btn { width:100%; padding:10px; border-radius:var(--radius-sm); font-family:'Sora',sans-serif; font-weight:700; font-size:13px; border:none; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px; }
+  .fact-action-btn { width:100%; padding:11px; border-radius:10px; font-family:'Sora',sans-serif; font-weight:700; font-size:13px; border:none; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px; }
   .fact-action-btn:hover { transform:translateY(-1px); }
   .fact-action-btn.primary { background:var(--orange); color:white; }
-  .fact-action-btn.primary:hover { box-shadow:0 4px 12px rgba(232,112,10,0.3); }
+  .fact-action-btn.primary:hover { box-shadow:0 4px 16px rgba(232,112,10,0.25); }
   .fact-action-btn.success { background:var(--green); color:white; }
-  .fact-action-btn.success:hover { box-shadow:0 4px 12px rgba(46,125,50,0.3); }
+  .fact-action-btn.success:hover { box-shadow:0 4px 16px rgba(46,125,50,0.25); }
   .fact-action-btn.danger { background:var(--red-light); color:var(--red); }
   .fact-action-btn.blue { background:var(--blue); color:white; }
-  .fact-action-btn.blue:hover { box-shadow:0 4px 12px rgba(21,101,192,0.3); }
-  .fact-convert-btn { width:100%; padding:12px; background:linear-gradient(135deg,var(--orange),var(--orange-dark)); color:white; border:none; border-radius:var(--radius-sm); font-family:'Sora',sans-serif; font-weight:700; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s; }
-  .fact-convert-btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(232,112,10,0.3); }
+  .fact-action-btn.blue:hover { box-shadow:0 4px 16px rgba(21,101,192,0.25); }
+  .fact-convert-btn { width:100%; padding:13px; background:linear-gradient(135deg,var(--orange),var(--orange-dark)); color:white; border:none; border-radius:12px; font-family:'Sora',sans-serif; font-weight:700; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s; }
+  .fact-convert-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(232,112,10,0.3); }
   .fact-convert-btn svg { width:16px; height:16px; }
 
   /* Catalogue */
-  .fact-cat-item { display:flex; align-items:center; gap:14px; padding:14px 0; border-top:1px solid var(--gray-100); }
-  .fact-cat-item:first-child { border-top:none; }
-  .fact-cat-icon { width:36px; height:36px; border-radius:8px; background:rgba(232,112,10,0.08); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--orange); }
+  .fact-cat-item { display:flex; align-items:center; gap:14px; padding:14px 16px; margin-bottom:6px; border-radius:12px; border:1px solid var(--gray-100); transition:all 0.15s; }
+  .fact-cat-item:hover { border-color:var(--gray-200); background:rgba(0,0,0,0.008); }
+  .fact-cat-icon { width:40px; height:40px; border-radius:10px; background:rgba(232,112,10,0.08); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--orange); }
   .fact-cat-icon svg { width:16px; height:16px; }
   .fact-cat-body { flex:1; min-width:0; }
   .fact-cat-name { font-weight:700; font-size:14px; }
-  .fact-cat-desc { font-size:12px; color:var(--gray-500); }
-  .fact-cat-price { font-family:'Sora',sans-serif; font-weight:700; font-size:14px; margin-right:8px; white-space:nowrap; }
+  .fact-cat-desc { font-size:12px; color:var(--gray-500); margin-top:1px; }
+  .fact-cat-price { font-family:'Sora',sans-serif; font-weight:700; font-size:14px; margin-right:8px; white-space:nowrap; color:var(--orange); }
   .fact-cat-unit { font-size:11px; color:var(--gray-500); margin-right:12px; }
   .fact-cat-actions { display:flex; gap:4px; }
-  .fact-cat-form { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:16px; background:var(--gray-100); border-radius:var(--radius-sm); margin-bottom:16px; }
+  .fact-cat-form { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:20px; background:var(--gray-100); border-radius:12px; margin-bottom:16px; border:1px solid var(--gray-200); }
   .fact-cat-form .fact-field-actions { grid-column:1/-1; display:flex; gap:8px; justify-content:flex-end; }
 
   /* Picker modal */
@@ -664,13 +678,16 @@
   /* Responsive facturation */
   @media (max-width:1024px) {
     .fact-editor-grid { grid-template-columns:1fr; }
-    .fact-header-actions { width:100%; }
+    .fact-header-top { flex-direction:column; align-items:stretch; }
+    .fact-header-actions { width:100%; justify-content:stretch; }
+    .fact-header-actions .fact-btn-new { flex:1; justify-content:center; }
     .fact-filters { flex-direction:column; align-items:stretch; }
     .fact-search-wrap { min-width:0; width:100%; }
     .fact-editor-header { flex-direction:column; align-items:flex-start; gap:10px; }
     .fact-editor-title-wrap { justify-content:flex-start; }
+    .fact-back-btn { border-right:none; padding-right:0; margin-right:0; }
     .fact-lines-header { display:none; }
-    .fact-line-row { grid-template-columns:1fr 1fr; gap:8px; padding:12px; background:var(--gray-100); border-radius:var(--radius-sm); margin-bottom:8px; border:none; }
+    .fact-line-row { grid-template-columns:1fr 1fr; gap:8px; padding:12px; background:var(--gray-100); border-radius:10px; margin-bottom:8px; border:none; }
     .fact-line-row .fact-line-drag { display:none; }
     .fact-line-input.desc { grid-column:1/-1; }
     .fact-line-delete { position:absolute; top:4px; right:4px; }
@@ -1261,24 +1278,26 @@
 
     <!-- VIEW: LIST -->
     <div class="fact-view active" id="factViewList">
-      <div class="card" style="padding:0; overflow:hidden;">
-        <div style="padding:20px 24px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--gray-200); flex-wrap:wrap; gap:10px;">
-          <h2 class="card-title" style="margin:0;">Documents</h2>
+      <div class="fact-header-bar">
+        <div class="fact-header-top">
+          <h2>Facturation</h2>
           <div class="fact-header-actions">
-            <button class="btn-sm btn-sm-view" onclick="factShowCatalogue()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+            <button class="fact-btn-new fact-btn-catalogue" onclick="factShowCatalogue()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
               Catalogue
             </button>
             <button class="fact-btn-new" onclick="factCreateNew('devis')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Nouveau devis
+              Devis
             </button>
             <button class="fact-btn-new fact-btn-facture" onclick="factCreateNew('facture')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Nouvelle facture
+              Facture
             </button>
           </div>
         </div>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden; border-radius:14px;">
         <div class="fact-filters">
           <div class="fact-filter-tabs">
             <button class="fact-filter-tab active" onclick="factFilterType('all',this)">Tous</button>
@@ -1297,7 +1316,7 @@
           </select>
           <div class="fact-search-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" class="fact-search" id="factSearchInput" placeholder="Rechercher par client ou numéro..." oninput="factSearch(this.value)">
+            <input type="text" class="fact-search" id="factSearchInput" placeholder="Rechercher..." oninput="factSearch(this.value)">
           </div>
         </div>
         <div class="fact-list" id="factDocumentList"></div>
@@ -1306,8 +1325,11 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           </div>
           <h3>Aucun document</h3>
-          <p>Créez votre premier devis ou facture pour commencer à facturer vos clients.</p>
-          <button class="fact-btn-new" onclick="factCreateNew('devis')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Créer un devis</button>
+          <p>Créez votre premier devis ou facture pour commencer.</p>
+          <div style="display:flex;gap:8px;justify-content:center;">
+            <button class="fact-btn-new" onclick="factCreateNew('devis')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Devis</button>
+            <button class="fact-btn-new fact-btn-facture" onclick="factCreateNew('facture')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Facture</button>
+          </div>
         </div>
       </div>
     </div>
