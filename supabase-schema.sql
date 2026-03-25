@@ -119,6 +119,11 @@ CREATE POLICY "Client voit ses demandes"
   ON demandes FOR SELECT
   USING (client_email = auth.jwt() ->> 'email');
 
+-- Un client connecté peut supprimer ses propres demandes (via son email)
+CREATE POLICY "Client peut supprimer ses demandes"
+  ON demandes FOR DELETE
+  USING (client_email = auth.jwt() ->> 'email');
+
 -- ===== POLICIES AVIS =====
 
 -- Tout le monde peut voir les avis (page profil public)

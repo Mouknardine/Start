@@ -87,6 +87,37 @@
   .btn-cta { display:inline-flex; align-items:center; gap:8px; padding:12px 24px; background:var(--orange); color:white; border:none; border-radius:50px; font-size:14px; font-weight:700; cursor:pointer; text-decoration:none; transition:all 0.2s; }
   .btn-cta:hover { background:var(--orange-dark); transform:translateY(-1px); }
 
+  /* DEMANDE ACTIONS */
+  .dem-actions { display:flex; gap:6px; margin-top:12px; padding-top:12px; border-top:1px solid var(--gray-100); }
+  .dem-btn { padding:6px 14px; border-radius:50px; font-size:11px; font-weight:700; cursor:pointer; transition:all 0.2s; border:none; }
+  .dem-btn-view { background:var(--gray-100); color:var(--dark); border:1px solid var(--gray-200); }
+  .dem-btn-view:hover { background:var(--gray-200); }
+  .dem-btn-delete { background:var(--gray-100); color:var(--red); border:1px solid rgba(211,47,47,0.2); }
+  .dem-btn-delete:hover { background:var(--red-light); border-color:var(--red); }
+
+  /* MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; z-index:200; background:rgba(26,39,68,0.4); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); align-items:center; justify-content:center; }
+  .modal-overlay.active { display:flex; }
+  .detail-modal-card { background:white; border-radius:var(--radius); width:100%; max-width:520px; padding:0; box-shadow:0 20px 60px rgba(0,0,0,0.15); overflow:hidden; max-height:90vh; overflow-y:auto; }
+  .detail-header { padding:24px 28px 16px; border-bottom:1px solid var(--gray-100); }
+  .detail-header-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .detail-artisan-name { font-family:'Sora',sans-serif; font-size:20px; font-weight:800; color:var(--dark); }
+  .detail-close { background:none; border:none; cursor:pointer; padding:6px; border-radius:8px; color:var(--gray-500); transition:all 0.2s; }
+  .detail-close:hover { background:var(--gray-100); color:var(--dark); }
+  .detail-badges { display:flex; gap:8px; margin-top:8px; }
+  .detail-badge { padding:4px 12px; border-radius:50px; font-size:11px; font-weight:700; }
+  .detail-badge.type { background:var(--blue-light); color:var(--blue); }
+  .detail-body { padding:20px 28px; }
+  .detail-section { margin-bottom:20px; }
+  .detail-section:last-child { margin-bottom:0; }
+  .detail-label { font-size:11px; font-weight:700; color:var(--gray-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
+  .detail-value { font-size:14px; color:var(--dark); line-height:1.5; }
+  .detail-message-box { background:var(--gray-100); border-radius:var(--radius-sm); padding:14px 16px; font-size:14px; color:var(--dark); line-height:1.6; white-space:pre-wrap; }
+  .detail-footer { padding:16px 28px 24px; border-top:1px solid var(--gray-100); display:flex; gap:8px; justify-content:flex-end; }
+  .modal-btn { padding:10px 22px; border-radius:50px; font-family:'Sora',sans-serif; font-weight:700; font-size:13px; border:none; cursor:pointer; transition:all 0.2s; }
+  .modal-btn-close { background:var(--gray-100); color:var(--gray-700); border:1px solid var(--gray-200); }
+  .modal-btn-close:hover { background:var(--gray-200); }
+
   /* LOADING */
   .client-loading { text-align:center; padding:40px 0; color:var(--gray-500); font-size:13px; }
 
@@ -98,6 +129,10 @@
     .dem-header { flex-direction:column; }
     .dem-meta { flex-direction:column; gap:6px; }
     .compte-row { flex-direction:column; align-items:flex-start; gap:4px; }
+    .detail-modal-card { max-width:100%; margin:12px; border-radius:16px; }
+    .detail-header { padding:20px 20px 14px; }
+    .detail-body { padding:16px 20px; }
+    .detail-footer { padding:14px 20px 20px; }
   }
 </style>
 </head>
@@ -171,6 +206,34 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- DEMANDE DETAIL MODAL -->
+  <div class="modal-overlay" id="clientDetailModal">
+    <div class="detail-modal-card">
+      <div class="detail-header">
+        <div class="detail-header-top">
+          <div class="detail-artisan-name" id="cDetailArtisan">Artisan</div>
+          <button class="detail-close" onclick="closeClientDetail()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="detail-badges" id="cDetailBadges"></div>
+      </div>
+      <div class="detail-body">
+        <div class="detail-section" id="cDetailDateSection">
+          <div class="detail-label">Informations</div>
+          <div class="detail-value" id="cDetailDateInfo"></div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">Votre message</div>
+          <div class="detail-message-box" id="cDetailMessage"></div>
+        </div>
+      </div>
+      <div class="detail-footer">
+        <button class="modal-btn modal-btn-close" onclick="closeClientDetail()">Fermer</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -248,17 +311,22 @@
         // Type label
         var typeLabel = d.type === 'devis' ? 'Demande de devis' : d.type === 'message' ? 'Message' : 'Demande';
 
-        html += '<div class="client-card">'
+        html += '<div class="client-card" data-id="' + d.id + '">'
           + '<div class="dem-header">'
           + '<div class="dem-artisan">' + avatarHtml
           + '<div class="dem-info"><h3>' + artisanName + '</h3><span>' + artisanMetier + '</span></div>'
           + '</div>' + badge + '</div>'
-          + '<div class="dem-message">' + (d.message || '(pas de message)') + '</div>'
+          + '<div class="dem-message">' + (d.message || '(pas de message)').substring(0, 120) + ((d.message || '').length > 120 ? '...' : '') + '</div>'
           + '<div class="dem-meta">'
           + '<div class="dem-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' + timeAgo(d.created_at) + '</div>'
           + '<div class="dem-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' + typeLabel + '</div>'
           + (d.date_souhaitee ? '<div class="dem-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' + d.date_souhaitee + '</div>' : '')
-          + '</div></div>';
+          + '</div>'
+          + '<div class="dem-actions">'
+          + '<button class="dem-btn dem-btn-view" onclick="viewClientDemande(\'' + d.id + '\')">Voir le détail</button>'
+          + '<button class="dem-btn dem-btn-delete" onclick="deleteClientDemande(\'' + d.id + '\', this)">Supprimer</button>'
+          + '</div>'
+          + '</div>';
       });
       container.innerHTML = html;
     }
@@ -328,6 +396,96 @@
         window.location.href = 'connexion.html';
       } catch(e) {
         alert('Erreur lors de la suppression : ' + e.message);
+      }
+    }
+
+    // Voir le détail d'une demande (modal)
+    function viewClientDemande(demandeId) {
+      var d = clientDemandes.find(function(x) { return x.id === demandeId; });
+      if (!d) return;
+
+      var artisan = d.artisans || {};
+      var artisanName = artisan.entreprise || ((artisan.prenom || '') + ' ' + (artisan.nom || '')).trim() || 'Artisan';
+
+      // Nom artisan
+      document.getElementById('cDetailArtisan').textContent = artisanName;
+
+      // Badges (statut + type)
+      var badgeClass = d.statut || 'nouvelle';
+      var typeLabel = d.type === 'devis' ? 'Demande de devis' : d.type === 'message' ? 'Message' : 'Demande';
+      document.getElementById('cDetailBadges').innerHTML =
+        '<span class="detail-badge ' + badgeClass + '" style="' + getBadgeStyle(badgeClass) + '">' + statusLabel(d.statut) + '</span>'
+        + '<span class="detail-badge type">' + typeLabel + '</span>';
+
+      // Infos date
+      var dateInfoParts = [];
+      if (d.date_souhaitee) dateInfoParts.push('Date souhaitée : ' + d.date_souhaitee);
+      if (d.moment_journee) dateInfoParts.push('Moment : ' + d.moment_journee);
+      dateInfoParts.push('Envoyée ' + timeAgo(d.created_at));
+
+      var dateSection = document.getElementById('cDetailDateSection');
+      var dateInfo = document.getElementById('cDetailDateInfo');
+      dateInfo.innerHTML = dateInfoParts.join('<br>');
+      dateSection.style.display = dateInfoParts.length ? 'block' : 'none';
+
+      // Message
+      document.getElementById('cDetailMessage').textContent = d.message || '(pas de message)';
+
+      // Ouvrir la modal
+      document.getElementById('clientDetailModal').classList.add('active');
+    }
+
+    // Style badge dynamique
+    function getBadgeStyle(status) {
+      switch(status) {
+        case 'nouvelle': return 'background:rgba(232,112,10,0.1);color:var(--orange);';
+        case 'confirmee': case 'acceptee': return 'background:var(--green-light);color:var(--green);';
+        case 'refusee': return 'background:var(--red-light);color:var(--red);';
+        default: return 'background:var(--gray-100);color:var(--gray-500);';
+      }
+    }
+
+    // Fermer la modal détail
+    function closeClientDetail() {
+      document.getElementById('clientDetailModal').classList.remove('active');
+    }
+
+    // Fermer modal au clic backdrop
+    document.getElementById('clientDetailModal').addEventListener('click', function(e) {
+      if (e.target === this) closeClientDetail();
+    });
+
+    // Supprimer une demande client
+    async function deleteClientDemande(demandeId, btn) {
+      if (!confirm('Voulez-vous vraiment supprimer cette demande ?')) return;
+
+      try {
+        if (btn) btn.disabled = true;
+
+        await deleteClientDemandeFromDB(demandeId, clientEmail);
+
+        // Retirer de la liste locale
+        clientDemandes = clientDemandes.filter(function(d) { return d.id !== demandeId; });
+
+        // Animation de suppression
+        var card = document.querySelector('.client-card[data-id="' + demandeId + '"]');
+        if (card) {
+          card.style.transition = 'all 0.3s ease';
+          card.style.opacity = '0';
+          card.style.transform = 'translateX(-20px)';
+          setTimeout(function() {
+            renderClientDemandes(clientDemandes);
+            // Mettre à jour le compteur dans l'onglet compte
+            var nbDem = document.getElementById('compteNbDemandes');
+            if (nbDem) nbDem.textContent = clientDemandes.length;
+          }, 300);
+        } else {
+          renderClientDemandes(clientDemandes);
+        }
+      } catch(e) {
+        console.error('Erreur suppression demande:', e);
+        alert('Erreur lors de la suppression : ' + e.message);
+        if (btn) btn.disabled = false;
       }
     }
 

@@ -229,6 +229,37 @@
   .modal-btn-confirm { background:var(--red); color:white; }
   .modal-btn-confirm:hover { background:#C62828; }
 
+  /* DEMANDE DETAIL MODAL */
+  .detail-modal-card { background:white; border-radius:var(--radius); width:100%; max-width:520px; padding:0; box-shadow:0 20px 60px rgba(0,0,0,0.15); overflow:hidden; max-height:90vh; overflow-y:auto; }
+  .detail-header { padding:24px 28px 16px; border-bottom:1px solid var(--gray-100); }
+  .detail-header-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .detail-client-name { font-family:'Sora',sans-serif; font-size:20px; font-weight:800; color:var(--dark); }
+  .detail-close { background:none; border:none; cursor:pointer; padding:6px; border-radius:8px; color:var(--gray-500); transition:all 0.2s; }
+  .detail-close:hover { background:var(--gray-100); color:var(--dark); }
+  .detail-badges { display:flex; gap:8px; margin-top:8px; }
+  .detail-badge { padding:4px 12px; border-radius:50px; font-size:11px; font-weight:700; }
+  .detail-badge.type { background:var(--blue-light); color:var(--blue); }
+  .detail-body { padding:20px 28px; }
+  .detail-section { margin-bottom:20px; }
+  .detail-section:last-child { margin-bottom:0; }
+  .detail-label { font-size:11px; font-weight:700; color:var(--gray-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
+  .detail-value { font-size:14px; color:var(--dark); line-height:1.5; }
+  .detail-value a { color:var(--orange); text-decoration:none; font-weight:600; }
+  .detail-value a:hover { text-decoration:underline; }
+  .detail-contact-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .detail-contact-item { display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--gray-100); border-radius:var(--radius-sm); font-size:13px; color:var(--dark); text-decoration:none; transition:all 0.15s; cursor:pointer; }
+  .detail-contact-item:hover { background:var(--gray-200); }
+  .detail-contact-item svg { width:16px; height:16px; color:var(--gray-500); flex-shrink:0; }
+  .detail-message-box { background:var(--gray-100); border-radius:var(--radius-sm); padding:14px 16px; font-size:14px; color:var(--dark); line-height:1.6; white-space:pre-wrap; }
+  .detail-footer { padding:16px 28px 24px; border-top:1px solid var(--gray-100); display:flex; gap:8px; justify-content:flex-end; }
+  @media (max-width:600px) {
+    .detail-modal-card { max-width:100%; margin:12px; border-radius:16px; }
+    .detail-contact-grid { grid-template-columns:1fr; }
+    .detail-header { padding:20px 20px 14px; }
+    .detail-body { padding:16px 20px; }
+    .detail-footer { padding:14px 20px 20px; }
+  }
+
   /* SIDEBAR */
   .sidebar-stack { display:flex; flex-direction:column; gap:20px; }
   .avis-item { padding:12px 0; border-top:1px solid var(--gray-100); }
@@ -1260,6 +1291,36 @@
         <button class="modal-btn modal-btn-cancel" onclick="closeRefuseModal()">Annuler</button>
         <button class="modal-btn modal-btn-confirm" onclick="confirmRefuse()">Confirmer le refus</button>
       </div>
+    </div>
+  </div>
+
+  <!-- DEMANDE DETAIL MODAL -->
+  <div class="modal-overlay" id="demandeDetailModal">
+    <div class="detail-modal-card">
+      <div class="detail-header">
+        <div class="detail-header-top">
+          <div class="detail-client-name" id="detailClientName">Client</div>
+          <button class="detail-close" onclick="closeDemandeDetail()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="detail-badges" id="detailBadges"></div>
+      </div>
+      <div class="detail-body">
+        <div class="detail-section" id="detailContactSection">
+          <div class="detail-label">Contact</div>
+          <div class="detail-contact-grid" id="detailContactGrid"></div>
+        </div>
+        <div class="detail-section" id="detailDateSection" style="display:none;">
+          <div class="detail-label">Informations</div>
+          <div class="detail-value" id="detailDateInfo"></div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">Message</div>
+          <div class="detail-message-box" id="detailMessage"></div>
+        </div>
+      </div>
+      <div class="detail-footer" id="detailFooter"></div>
     </div>
   </div>
 
@@ -2930,19 +2991,69 @@
       }
     }
 
-    // Voir le détail d'une demande (modal)
+    // Voir le détail d'une demande (modal professionnelle)
     function viewDemande(demandeId) {
       var d = dashDemandes.find(function(x) { return x.id === demandeId; });
       if (!d) return;
-      var msg = '📋 Demande de ' + (d.client_nom || 'Client anonyme') + '\n\n';
-      if (d.client_email) msg += '📧 ' + d.client_email + '\n';
-      if (d.client_telephone) msg += '📞 ' + d.client_telephone + '\n';
-      msg += '\n📝 Type : ' + (d.type || 'devis') + '\n';
-      if (d.date_souhaitee) msg += '📅 Date souhaitée : ' + d.date_souhaitee + '\n';
-      if (d.moment_journee) msg += '🕐 Moment : ' + d.moment_journee + '\n';
-      msg += '\n💬 Message :\n' + (d.message || '(pas de message)');
-      alert(msg);
+
+      // Client name
+      document.getElementById('detailClientName').textContent = d.client_nom || 'Client anonyme';
+
+      // Badges (statut + type)
+      var statusMap = { nouvelle:'Nouvelle', confirmee:'Confirmée', acceptee:'Acceptée', refusee:'Refusée' };
+      var statusClass = d.statut === 'nouvelle' ? 'status-new' : (d.statut === 'confirmee' || d.statut === 'acceptee') ? 'status-confirmed' : d.statut === 'refusee' ? 'status-refused' : 'status-new';
+      var typeLabel = d.type === 'devis' ? 'Demande de devis' : d.type === 'message' ? 'Message rapide' : 'Demande';
+      document.getElementById('detailBadges').innerHTML = '<span class="status ' + statusClass + '">' + (statusMap[d.statut] || 'Nouvelle') + '</span>'
+        + '<span class="detail-badge type">' + typeLabel + '</span>';
+
+      // Contact grid
+      var contactHtml = '';
+      if (d.client_email) {
+        contactHtml += '<a href="mailto:' + d.client_email + '" class="detail-contact-item">'
+          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>'
+          + d.client_email + '</a>';
+      }
+      if (d.client_telephone) {
+        contactHtml += '<a href="tel:' + d.client_telephone + '" class="detail-contact-item">'
+          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>'
+          + d.client_telephone + '</a>';
+      }
+      if (!contactHtml) contactHtml = '<div style="color:var(--gray-500);font-size:13px;">Aucune information de contact</div>';
+      document.getElementById('detailContactGrid').innerHTML = contactHtml;
+
+      // Date info
+      var dateHtml = '';
+      if (d.date_souhaitee) dateHtml += 'Date souhaitée : <strong>' + d.date_souhaitee + '</strong>';
+      if (d.moment_journee) dateHtml += (dateHtml ? '<br>' : '') + 'Moment : <strong>' + d.moment_journee + '</strong>';
+      dateHtml += (dateHtml ? '<br>' : '') + 'Reçue : <strong>' + timeAgo(d.created_at) + '</strong>';
+      var dateSection = document.getElementById('detailDateSection');
+      document.getElementById('detailDateInfo').innerHTML = dateHtml;
+      dateSection.style.display = 'block';
+
+      // Message
+      document.getElementById('detailMessage').textContent = d.message || '(pas de message)';
+
+      // Footer actions
+      var footerHtml = '';
+      if (d.statut === 'nouvelle') {
+        footerHtml = '<button class="modal-btn modal-btn-cancel" onclick="openRefuseModal(null, \'' + (d.client_nom || '').replace(/'/g, "\\'") + '\', \'' + d.id + '\');closeDemandeDetail();">Refuser</button>'
+          + '<button class="modal-btn" style="background:var(--green);color:white;" onclick="acceptDemandeDB(\'' + d.id + '\');closeDemandeDetail();">Accepter</button>';
+      }
+      footerHtml += '<button class="modal-btn modal-btn-cancel" onclick="closeDemandeDetail()">Fermer</button>';
+      document.getElementById('detailFooter').innerHTML = footerHtml;
+
+      // Show
+      document.getElementById('demandeDetailModal').classList.add('active');
     }
+
+    function closeDemandeDetail() {
+      document.getElementById('demandeDetailModal').classList.remove('active');
+    }
+
+    // Close on backdrop click
+    document.getElementById('demandeDetailModal').addEventListener('click', function(e) {
+      if (e.target === this) closeDemandeDetail();
+    });
 
     // Supprimer une demande (Supabase)
     async function deleteDemandeDB(demandeId, btn) {

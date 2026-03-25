@@ -299,6 +299,12 @@ async function loadClientDemandes(email) {
   return data || [];
 }
 
+// Supprimer une demande client (par son email)
+async function deleteClientDemandeFromDB(demandeId, email) {
+  var { error } = await _sb.from('demandes').delete().eq('id', demandeId).eq('client_email', email);
+  if (error) throw error;
+}
+
 // Charger les avis d'un client par son email
 async function loadClientAvis(email) {
   var { data, error } = await _sb.from('avis').select('*, artisans(entreprise, prenom, nom)').eq('client_email', email).order('created_at', { ascending: false });
