@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contacter Müller & Fils | Artisano</title>
-<meta name="description" content="Envoyez votre demande de devis ou prenez rendez-vous avec Müller & Fils sur Artisano.">
+<title>Contacter un artisan | Artisano</title>
+<meta name="description" content="Envoyez votre demande de devis ou prenez rendez-vous avec un artisan sur Artisano.">
 <meta name="theme-color" content="#E8700A">
 <link rel="canonical" href="https://artisano.ch/demande">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23E8700A'/></svg>">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Contacter Müller & Fils | Artisano">
-<meta property="og:description" content="Envoyez votre demande de devis ou prenez rendez-vous avec Müller & Fils.">
+<meta property="og:title" content="Contacter un artisan | Artisano">
+<meta property="og:description" content="Envoyez votre demande de devis ou prenez rendez-vous avec un artisan.">
 <meta property="og:url" content="https://artisano.ch/demande">
 <meta property="og:site_name" content="Artisano">
 <meta property="og:locale" content="fr_CH">
@@ -265,16 +265,14 @@
 
   <div class="page-layout">
 
-    <!-- ARTISAN HEADER -->
-    <div class="artisan-header">
-      <div class="artisan-header-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
+    <!-- ARTISAN HEADER (rempli dynamiquement) -->
+    <div class="artisan-header" id="artisanHeader">
+      <div class="artisan-header-avatar" id="demandeAvatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
       <div class="artisan-header-info">
-        <div class="artisan-header-name">Müller & Fils</div>
-        <div class="artisan-header-trade">Plombier · Chauffagiste</div>
-        <div class="artisan-header-meta">
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> Lausanne et environs</span>
-          <span class="artisan-header-rating">★★★★★ 4.9 (47 avis)</span>
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Disponible cette semaine</span>
+        <div class="artisan-header-name" id="demandeName">Chargement...</div>
+        <div class="artisan-header-trade" id="demandeTrade"></div>
+        <div class="artisan-header-meta" id="demandeMeta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> <span id="demandeZone"></span></span>
         </div>
       </div>
     </div>
@@ -306,9 +304,9 @@
     <div class="panel" id="panel-0">
       <div class="panel-card">
         <div class="call-content">
-          <div class="call-number">021 123 45 67</div>
-          <div class="call-hours">Disponible du lundi au vendredi, 7h30 – 18h00 · Samedi 8h00 – 12h00</div>
-          <a href="tel:+41211234567" class="btn-call">
+          <div class="call-number" id="callNumber">—</div>
+          <div class="call-hours" id="callHours">Horaires non disponibles</div>
+          <a href="#" class="btn-call" id="callLink">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 013.12 4.18 2 2 0 015.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
             Appeler maintenant
           </a>
@@ -431,39 +429,90 @@
     .type-pill.selected svg { color:var(--orange); }
   </style>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script>
-    let currentOption = -1;
+    var currentOption = -1;
+    var artisanId = null;
+    var artisanData = null;
 
     function selectOption(index) {
       currentOption = index;
-      document.querySelectorAll('.option-card').forEach((c, i) => {
+      document.querySelectorAll('.option-card').forEach(function(c, i) {
         c.classList.toggle('selected', i === index);
       });
-      document.querySelectorAll('.panel').forEach((p, i) => {
+      document.querySelectorAll('.panel').forEach(function(p, i) {
         p.classList.toggle('active', i === index);
       });
-      // Scroll to panel
-      setTimeout(() => {
-        const panel = document.getElementById('panel-' + index);
+      setTimeout(function() {
+        var panel = document.getElementById('panel-' + index);
         if (panel) panel.scrollIntoView({ behavior:'smooth', block:'start' });
       }, 100);
     }
 
     function selectPill(el) {
-      document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('selected'));
+      document.querySelectorAll('.type-pill').forEach(function(p) { p.classList.remove('selected'); });
       el.classList.add('selected');
     }
 
-    // === APPLY CONTACT PREFERENCES FROM ARTISAN CONFIG ===
-    (function applyContactPrefs() {
-      var raw = localStorage.getItem('artisano-profil');
-      if (!raw) return; // If no prefs stored, show all options (demo mode)
+    // === LOAD ARTISAN FROM SUPABASE ===
+    (async function loadArtisan() {
+      var params = new URLSearchParams(window.location.search);
+      artisanId = params.get('artisan') || params.get('id');
+
+      if (!artisanId) {
+        document.getElementById('demandeName').textContent = 'Artisan non spécifié';
+        return;
+      }
+
       try {
-        var profil = JSON.parse(raw);
-        var prefs = profil.contactPrefs || {};
-        const optionCards = document.querySelectorAll('.option-card');
-        const panels = document.querySelectorAll('.panel');
-        // Option 0 = Appel, Option 1 = Message rapide, Option 2 = Demande complète
+        var { data: artisan, error } = await _sb.from('artisans').select('*').eq('id', artisanId).single();
+        if (error || !artisan) {
+          document.getElementById('demandeName').textContent = 'Artisan introuvable';
+          return;
+        }
+
+        artisanData = artisan;
+        var p = dbProfileToLocal(artisan);
+        var name = p.entreprise || ((p.prenom || '') + ' ' + (p.nom || '')).trim() || 'Artisan';
+
+        // Fill header
+        document.getElementById('demandeName').textContent = name;
+        document.getElementById('demandeTrade').textContent = p.metier || '';
+        document.getElementById('demandeZone').textContent = (p.zones && p.zones.length > 0) ? p.zones[0] + ' et environs' : '';
+
+        // Avatar
+        if (p.avatarUrl) {
+          document.getElementById('demandeAvatar').innerHTML = '<img src="' + p.avatarUrl + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:16px">';
+        }
+
+        // Phone in call panel
+        if (p.telephone) {
+          var tel = p.telephone.replace(/\s/g, '');
+          document.getElementById('callNumber').textContent = p.telephone;
+          document.getElementById('callLink').href = 'tel:+41' + tel;
+        }
+
+        // Horaires in call panel
+        if (p.horaires && p.horaires.length > 0) {
+          var hoursText = '';
+          p.horaires.forEach(function(h) {
+            if (h.ouvert) hoursText += h.jour + ' ' + h.debut + '–' + h.fin + ' · ';
+          });
+          if (hoursText) document.getElementById('callHours').textContent = hoursText.slice(0, -3);
+        }
+
+        // Page title
+        document.title = 'Contacter ' + name + ' | Artisano';
+
+        // Nav back link
+        document.querySelectorAll('a[href="profil.html"]').forEach(function(link) {
+          link.href = 'profil.html?id=' + artisanId;
+        });
+
+        // Apply contact preferences
+        var prefs = p.contactPrefs || {};
+        var optionCards = document.querySelectorAll('.option-card');
         if (!prefs.appel && optionCards[0]) {
           optionCards[0].style.display = 'none';
           optionCards[0].classList.add('disabled-option');
@@ -472,20 +521,18 @@
           optionCards[1].style.display = 'none';
           optionCards[1].classList.add('disabled-option');
         }
-        // Demande complète is always available
-        // Count visible options
-        const visibleOptions = document.querySelectorAll('.option-card:not(.disabled-option)');
-        // If only one option visible, auto-select it
+        var visibleOptions = document.querySelectorAll('.option-card:not(.disabled-option)');
         if (visibleOptions.length === 1) {
-          const idx = Array.from(optionCards).indexOf(visibleOptions[0]);
+          var idx = Array.from(optionCards).indexOf(visibleOptions[0]);
           selectOption(idx);
         }
-        // Update grid columns based on visible options
-        const grid = document.querySelector('.options-grid');
-        if (grid) {
-          grid.style.gridTemplateColumns = 'repeat(' + visibleOptions.length + ', 1fr)';
-        }
-      } catch(e) {}
+        var grid = document.querySelector('.options-grid');
+        if (grid) grid.style.gridTemplateColumns = 'repeat(' + visibleOptions.length + ', 1fr)';
+
+      } catch(e) {
+        console.error('Erreur chargement artisan:', e);
+        document.getElementById('demandeName').textContent = 'Erreur de chargement';
+      }
     })();
 
     // === READ URL PARAMS (slot from profil.html) ===
@@ -496,20 +543,12 @@
       var heure = params.get('heure');
 
       if (jour && date && heure) {
-        // Auto-select "Demande complète" (option 2)
         selectOption(2);
-
-        // Find the date input field and pre-fill it
         var dateInput = document.querySelector('#panel-2 input[placeholder*="lundi"]');
-        if (dateInput) {
-          dateInput.value = jour + ' ' + date;
-        }
-
-        // Select "Rendez-vous" pill
+        if (dateInput) dateInput.value = jour + ' ' + date;
         var rdvPill = document.querySelector('.type-pill');
         if (rdvPill) selectPill(rdvPill);
 
-        // Add a visible banner showing the selected slot
         var panelCard = document.querySelector('#panel-2 .panel-card');
         if (panelCard) {
           var banner = document.createElement('div');
@@ -522,7 +561,7 @@
       }
     })();
 
-    // === FORM VALIDATION ===
+    // === FORM HELPERS ===
     function showError(input, msg) {
       input.style.borderColor = '#D32F2F';
       var existing = input.parentElement.querySelector('.field-error');
@@ -543,14 +582,10 @@
       btn.disabled = true;
       btn.style.background = '#2E7D32';
       btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Envoyé avec succès !';
-      setTimeout(function() {
-        btn.disabled = false;
-        btn.style.background = '';
-        btn.innerHTML = originalText;
-      }, 3000);
     }
 
-    function sendQuickMessage() {
+    // === SEND QUICK MESSAGE → SUPABASE ===
+    async function sendQuickMessage() {
       var panel = document.getElementById('panel-1');
       clearErrors(panel);
       var textarea = panel.querySelector('textarea');
@@ -564,36 +599,81 @@
       if (!tel.value.trim()) { showError(tel, 'Téléphone requis'); valid = false; }
       if (email.value.trim() && !email.value.includes('@')) { showError(email, 'Email invalide'); valid = false; }
 
-      if (valid) {
-        var btn = panel.querySelector('.btn-send');
-        showSuccess(btn, btn.innerHTML);
+      if (!valid) return;
+      if (!artisanId) { alert('Artisan non identifié.'); return; }
+
+      var btn = panel.querySelector('.btn-send');
+      var originalHTML = btn.innerHTML;
+      btn.disabled = true;
+
+      try {
+        var { error } = await _sb.from('demandes').insert({
+          artisan_id: artisanId,
+          client_nom: prenom.value.trim(),
+          client_email: email.value.trim() || null,
+          client_telephone: tel.value.trim(),
+          type: 'message',
+          message: textarea.value.trim(),
+          statut: 'nouvelle'
+        });
+
+        if (error) throw error;
+        showSuccess(btn, originalHTML);
+      } catch(e) {
+        console.error('Erreur envoi demande:', e);
+        btn.disabled = false;
+        alert('Erreur lors de l\'envoi. Veuillez réessayer.');
       }
     }
 
-    function sendFullRequest() {
+    // === SEND FULL REQUEST → SUPABASE ===
+    async function sendFullRequest() {
       var panel = document.getElementById('panel-2');
       clearErrors(panel);
       var inputs = panel.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"]');
       var textarea = panel.querySelector('textarea');
+      var select = panel.querySelector('select');
       var valid = true;
 
-      // Check prénom (first text input)
       if (inputs[0] && !inputs[0].value.trim()) { showError(inputs[0], 'Prénom requis'); valid = false; }
-      // Check nom
       if (inputs[1] && !inputs[1].value.trim()) { showError(inputs[1], 'Nom requis'); valid = false; }
-      // Check email
       var emailInput = panel.querySelector('input[type="email"]');
       if (emailInput && !emailInput.value.trim()) { showError(emailInput, 'Email requis'); valid = false; }
       else if (emailInput && !emailInput.value.includes('@')) { showError(emailInput, 'Email invalide'); valid = false; }
-      // Check tel
       var telInput = panel.querySelector('input[type="tel"]');
       if (telInput && !telInput.value.trim()) { showError(telInput, 'Téléphone requis'); valid = false; }
-      // Check description
       if (textarea && !textarea.value.trim()) { showError(textarea, 'Décrivez votre besoin'); valid = false; }
 
-      if (valid) {
-        var btn = panel.querySelector('.btn-send');
-        showSuccess(btn, btn.innerHTML);
+      if (!valid) return;
+      if (!artisanId) { alert('Artisan non identifié.'); return; }
+
+      var btn = panel.querySelector('.btn-send');
+      var originalHTML = btn.innerHTML;
+      btn.disabled = true;
+
+      // Get date fields
+      var dateSouhaitee = inputs[3] ? inputs[3].value.trim() : '';
+      var momentJournee = select ? select.value : '';
+
+      try {
+        var { error } = await _sb.from('demandes').insert({
+          artisan_id: artisanId,
+          client_nom: (inputs[0].value.trim() + ' ' + inputs[1].value.trim()).trim(),
+          client_email: emailInput.value.trim(),
+          client_telephone: telInput.value.trim(),
+          type: 'devis',
+          message: textarea.value.trim(),
+          date_souhaitee: dateSouhaitee || null,
+          moment_journee: momentJournee || null,
+          statut: 'nouvelle'
+        });
+
+        if (error) throw error;
+        showSuccess(btn, originalHTML);
+      } catch(e) {
+        console.error('Erreur envoi demande:', e);
+        btn.disabled = false;
+        alert('Erreur lors de l\'envoi. Veuillez réessayer.');
       }
     }
 
@@ -605,7 +685,6 @@
         if (err) err.remove();
       });
     });
-
   </script>
   <script src="artisano-common.js"></script>
 </body>
