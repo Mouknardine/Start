@@ -214,6 +214,33 @@ async function getNextDocNumber(userId, type) {
   return data;
 }
 
+// ===== DEMANDES HELPERS =====
+
+async function loadDemandes(userId) {
+  var { data, error } = await _sb.from('demandes').select('*').eq('artisan_id', userId).order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+async function updateDemandeStatus(demandeId, newStatus) {
+  var { data, error } = await _sb.from('demandes').update({ statut: newStatus }).eq('id', demandeId).select().single();
+  if (error) throw error;
+  return data;
+}
+
+async function deleteDemandeFromDB(demandeId) {
+  var { error } = await _sb.from('demandes').delete().eq('id', demandeId);
+  if (error) throw error;
+}
+
+// ===== AVIS HELPERS =====
+
+async function loadAvisForArtisan(userId) {
+  var { data, error } = await _sb.from('avis').select('*').eq('artisan_id', userId).order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
 // ===== PROTECTION DES PAGES =====
 
 // Appeler sur les pages qui nécessitent une connexion (dashboard, mon-profil)
@@ -226,10 +253,35 @@ async function requireAuth() {
   return session.user;
 }
 
-// Rediriger si déjà connecté (pour connexion.html, inscription.html)
+// Rediriger si déjà connecté — détecte artisan vs client
 async function redirectIfLoggedIn(destination) {
   var session = await getSession();
   if (session) {
-    window.location.href = destination || 'dashboard.html';
+    // Vérifier si l'utilisateur a un profil artisan
+    try {
+      var { data } = await _sb.from('artisans').select('id').eq('id', session.user.id).single();
+      if (data) {
+        window.location.href = destination || 'dashboard.html';
+      } else {
+        window.location.href = 'client.html';
+      }
+    } catch(e) {
+      // Pas de profil artisan → c'est un client
+      window.location.href = 'client.html';
+    }
   }
+}
+
+// Charger les demandes d'un client par son email
+async function loadClientDemandes(email) {
+  var { data, error } = await _sb.from('demandes').select('*, artisans(entreprise, prenom, nom, metier, avatar_url)').eq('client_email', email).order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+// Charger les avis d'un client par son email
+async function loadClientAvis(email) {
+  var { data, error } = await _sb.from('avis').select('*, artisans(entreprise, prenom, nom)').eq('client_email', email).order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
 }

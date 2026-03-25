@@ -758,23 +758,23 @@
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Nouvelles demandes</div>
-        <div class="stat-value">3</div>
+        <div class="stat-value" id="statNewDemandes">0</div>
         <div class="stat-sub">En attente de réponse</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Rendez-vous à venir</div>
-        <div class="stat-value">5</div>
-        <div class="stat-sub">Cette semaine et la suivante</div>
+        <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Demandes confirmées</div>
+        <div class="stat-value" id="statConfirmed">0</div>
+        <div class="stat-sub">Ce mois-ci</div>
       </div>
       <div class="stat-card">
         <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Note moyenne</div>
-        <div class="stat-value">4.9</div>
-        <div class="stat-sub">47 avis vérifiés</div>
+        <div class="stat-value" id="statAvgNote">–</div>
+        <div class="stat-sub" id="statAvisCount">0 avis</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Vues du profil</div>
-        <div class="stat-value">128</div>
-        <div class="stat-sub">Ce mois-ci</div>
+        <div class="stat-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Taux de réponse</div>
+        <div class="stat-value" id="statResponseRate">–</div>
+        <div class="stat-sub">Demandes traitées</div>
       </div>
     </div>
 
@@ -793,39 +793,16 @@
             <h2 class="card-title">Dernières demandes</h2>
             <a href="#" class="card-link" onclick="switchDashTab('demandes'); return false;">Voir toutes les demandes</a>
           </div>
-          <div class="demande-item">
-            <div class="demande-icon new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
-            <div class="demande-body">
-              <div class="demande-name">Sophie Martin <span class="status status-new">Nouvelle</span></div>
-              <div class="demande-desc">Fuite sous l'évier de la cuisine, le joint semble abîmé</div>
-              <div class="demande-meta">Lausanne · Rendez-vous · Il y a 2 heures</div>
-            </div>
-            <div class="demande-actions"><button class="btn-sm btn-sm-accept" onclick="acceptDemande(this)">Accepter</button><button class="btn-sm btn-sm-refuse" onclick="openRefuseModal(this, 'Sophie Martin')">Refuser</button><button class="btn-sm btn-sm-view">Voir</button><button class="btn-sm btn-sm-delete" onclick="deleteDemande(this)">Supprimer</button></div>
-          </div>
-          <div class="demande-item">
-            <div class="demande-icon new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-            <div class="demande-body">
-              <div class="demande-name">Marc Favre <span class="status status-new">Nouvelle</span></div>
-              <div class="demande-desc">Remplacement chauffe-eau 200 litres, appartement 3e étage</div>
-              <div class="demande-meta">Pully · Devis · Il y a 5 heures</div>
-            </div>
-            <div class="demande-actions"><button class="btn-sm btn-sm-accept" onclick="acceptDemande(this)">Accepter</button><button class="btn-sm btn-sm-refuse" onclick="openRefuseModal(this, 'Marc Favre')">Refuser</button><button class="btn-sm btn-sm-view">Voir</button><button class="btn-sm btn-sm-delete" onclick="deleteDemande(this)">Supprimer</button></div>
-          </div>
-          <div class="demande-item">
-            <div class="demande-icon confirmed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-            <div class="demande-body">
-              <div class="demande-name">Isabelle Rochat <span class="status status-confirmed">Confirmée</span></div>
-              <div class="demande-desc">Rénovation salle de bain complète</div>
-              <div class="demande-meta">Renens · Rendez-vous · Hier</div>
-            </div>
-            <div class="demande-actions"><button class="btn-sm btn-sm-view">Voir</button><button class="btn-sm btn-sm-delete" onclick="deleteDemande(this)">Supprimer</button></div>
+          <div id="demandesList">
+            <div class="demande-loading" style="text-align:center;padding:30px 0;color:var(--gray-500);font-size:13px;">Chargement des demandes...</div>
           </div>
         </div>
         <div class="sidebar-stack">
           <div class="card">
             <div class="card-header"><h2 class="card-title">Derniers avis</h2></div>
-            <div class="avis-item"><div class="avis-top"><span class="avis-author">Sophie M.</span><span class="avis-stars">★★★★★</span></div><div class="avis-text">Intervention rapide, travail propre. Je recommande sans hésiter.</div></div>
-            <div class="avis-item"><div class="avis-top"><span class="avis-author">Marc D.</span><span class="avis-stars">★★★★★</span></div><div class="avis-text">Rénovation impeccable. L'équipe était ponctuelle et soignée.</div></div>
+            <div id="dashAvisList">
+              <div style="text-align:center;padding:16px 0;color:var(--gray-500);font-size:12px;">Chargement...</div>
+            </div>
           </div>
           <div class="abo-card">
             <div style="font-size:12px; color:rgba(255,255,255,0.5);">Votre abonnement</div>
@@ -2780,24 +2757,218 @@
     // Init intervention dropdown
     updatePopupInterventionDropdown();
 
-    /* ========== DEMANDES: ACCEPT ========== */
-    function acceptDemande(btn) {
-      var item = btn.closest('.demande-item');
-      var actions = item.querySelector('.demande-actions');
-      var status = item.querySelector('.status');
-      status.className = 'status status-confirmed';
-      status.textContent = 'Confirmée';
-      // remove accept & refuse buttons, keep view
-      var viewBtn = actions.querySelector('.btn-sm-view');
-      actions.innerHTML = '';
-      if (viewBtn) actions.appendChild(viewBtn);
+    /* ========== DEMANDES: DATA + RENDERING ========== */
+    var dashDemandes = [];
+    var dashAvis = [];
+    var dashUserId = null;
+
+    // Charger les demandes depuis Supabase
+    async function loadDemandesFromDB() {
+      try {
+        var user = await getUser();
+        if (!user) return;
+        dashUserId = user.id;
+        dashDemandes = await loadDemandes(user.id);
+        renderDemandes();
+        updateDashStats();
+      } catch(e) {
+        console.warn('Erreur chargement demandes:', e);
+        document.getElementById('demandesList').innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--gray-500);font-size:13px;">Erreur de chargement</div>';
+      }
+    }
+
+    // Charger les avis depuis Supabase
+    async function loadDashAvis() {
+      try {
+        var user = await getUser();
+        if (!user) return;
+        dashAvis = await loadAvisForArtisan(user.id);
+        renderDashAvis();
+        updateDashStats();
+      } catch(e) {
+        console.warn('Erreur chargement avis:', e);
+      }
+    }
+
+    // Temps relatif
+    function timeAgo(dateStr) {
+      var now = new Date();
+      var d = new Date(dateStr);
+      var diff = Math.floor((now - d) / 1000);
+      if (diff < 60) return "À l'instant";
+      if (diff < 3600) return 'Il y a ' + Math.floor(diff / 60) + ' min';
+      if (diff < 86400) return 'Il y a ' + Math.floor(diff / 3600) + 'h';
+      if (diff < 172800) return 'Hier';
+      if (diff < 604800) return 'Il y a ' + Math.floor(diff / 86400) + ' jours';
+      return d.toLocaleDateString('fr-CH');
+    }
+
+    // Render la liste de demandes
+    function renderDemandes() {
+      var container = document.getElementById('demandesList');
+      if (!container) return;
+
+      if (dashDemandes.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:40px 0;"><div style="font-size:36px;margin-bottom:8px;">📭</div><div style="color:var(--gray-500);font-size:13px;">Aucune demande pour le moment</div><div style="color:var(--gray-500);font-size:12px;margin-top:4px;">Les demandes de vos clients apparaîtront ici</div></div>';
+        return;
+      }
+
+      var html = '';
+      dashDemandes.forEach(function(d) {
+        var statusClass = 'status-new';
+        var statusLabel = 'Nouvelle';
+        var iconClass = 'new';
+        var iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
+
+        if (d.statut === 'confirmee' || d.statut === 'acceptee') {
+          statusClass = 'status-confirmed'; statusLabel = 'Confirmée'; iconClass = 'confirmed';
+          iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+        } else if (d.statut === 'refusee') {
+          statusClass = 'status-refused'; statusLabel = 'Refusée'; iconClass = '';
+        } else if (d.statut === 'nouvelle') {
+          statusClass = 'status-new'; statusLabel = 'Nouvelle'; iconClass = 'new';
+        }
+
+        if (d.type === 'devis') {
+          iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+        }
+
+        var typeLabel = d.type === 'devis' ? 'Devis' : d.type === 'message' ? 'Message' : 'Rendez-vous';
+        var meta = (d.moment_journee || '') + (d.moment_journee && d.type ? ' · ' : '') + typeLabel + ' · ' + timeAgo(d.created_at);
+
+        var actions = '';
+        if (d.statut === 'nouvelle') {
+          actions = '<button class="btn-sm btn-sm-accept" onclick="acceptDemandeDB(\'' + d.id + '\')">Accepter</button>'
+            + '<button class="btn-sm btn-sm-refuse" onclick="openRefuseModal(this, \'' + (d.client_nom || '').replace(/'/g, "\\'") + '\', \'' + d.id + '\')">Refuser</button>'
+            + '<button class="btn-sm btn-sm-view" onclick="viewDemande(\'' + d.id + '\')">Voir</button>'
+            + '<button class="btn-sm btn-sm-delete" onclick="deleteDemandeDB(\'' + d.id + '\', this)">Supprimer</button>';
+        } else {
+          actions = '<button class="btn-sm btn-sm-view" onclick="viewDemande(\'' + d.id + '\')">Voir</button>'
+            + '<button class="btn-sm btn-sm-delete" onclick="deleteDemandeDB(\'' + d.id + '\', this)">Supprimer</button>';
+        }
+
+        var iconExtraStyle = (d.statut === 'refusee') ? ' style="background:var(--red-light);"' : '';
+
+        html += '<div class="demande-item" data-id="' + d.id + '">'
+          + '<div class="demande-icon ' + iconClass + '"' + iconExtraStyle + '>' + iconSvg + '</div>'
+          + '<div class="demande-body">'
+          + '<div class="demande-name">' + (d.client_nom || 'Client anonyme') + ' <span class="status ' + statusClass + '">' + statusLabel + '</span></div>'
+          + '<div class="demande-desc">' + (d.message || 'Pas de message').substring(0, 100) + '</div>'
+          + '<div class="demande-meta">' + meta + '</div>'
+          + '</div>'
+          + '<div class="demande-actions">' + actions + '</div>'
+          + '</div>';
+      });
+      container.innerHTML = html;
+    }
+
+    // Render les avis dans la sidebar
+    function renderDashAvis() {
+      var container = document.getElementById('dashAvisList');
+      if (!container) return;
+      if (dashAvis.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:16px 0;color:var(--gray-500);font-size:12px;">Aucun avis reçu</div>';
+        return;
+      }
+      var html = '';
+      var toShow = dashAvis.slice(0, 3);
+      toShow.forEach(function(a) {
+        var stars = '';
+        for (var i = 0; i < 5; i++) stars += i < a.note ? '★' : '☆';
+        var nom = a.client_nom || 'Client';
+        var initials = nom.split(' ').map(function(w) { return w[0]; }).join('').substring(0, 2) + '.';
+        html += '<div class="avis-item"><div class="avis-top"><span class="avis-author">' + initials + '</span><span class="avis-stars">' + stars + '</span></div>'
+          + '<div class="avis-text">' + (a.commentaire || '').substring(0, 80) + (a.commentaire && a.commentaire.length > 80 ? '...' : '') + '</div></div>';
+      });
+      container.innerHTML = html;
+    }
+
+    // Mettre à jour les stats
+    function updateDashStats() {
+      var newCount = dashDemandes.filter(function(d) { return d.statut === 'nouvelle'; }).length;
+      var el1 = document.getElementById('statNewDemandes');
+      if (el1) el1.textContent = newCount;
+
+      var thisMonth = new Date();
+      var monthStart = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1);
+      var confirmed = dashDemandes.filter(function(d) {
+        return (d.statut === 'confirmee' || d.statut === 'acceptee') && new Date(d.created_at) >= monthStart;
+      }).length;
+      var el2 = document.getElementById('statConfirmed');
+      if (el2) el2.textContent = confirmed;
+
+      // Note moyenne
+      if (dashAvis.length > 0) {
+        var sum = dashAvis.reduce(function(acc, a) { return acc + (a.note || 0); }, 0);
+        var avg = (sum / dashAvis.length).toFixed(1);
+        var el3 = document.getElementById('statAvgNote');
+        if (el3) el3.textContent = avg;
+        var el3b = document.getElementById('statAvisCount');
+        if (el3b) el3b.textContent = dashAvis.length + ' avis';
+      }
+
+      // Taux de réponse
+      var total = dashDemandes.length;
+      var traites = dashDemandes.filter(function(d) { return d.statut !== 'nouvelle'; }).length;
+      var el4 = document.getElementById('statResponseRate');
+      if (el4) el4.textContent = total > 0 ? Math.round(traites / total * 100) + '%' : '–';
+    }
+
+    // Accepter une demande (Supabase)
+    async function acceptDemandeDB(demandeId) {
+      try {
+        await updateDemandeStatus(demandeId, 'confirmee');
+        var d = dashDemandes.find(function(x) { return x.id === demandeId; });
+        if (d) d.statut = 'confirmee';
+        renderDemandes();
+        updateDashStats();
+      } catch(e) {
+        alert('Erreur: ' + e.message);
+      }
+    }
+
+    // Voir le détail d'une demande (modal)
+    function viewDemande(demandeId) {
+      var d = dashDemandes.find(function(x) { return x.id === demandeId; });
+      if (!d) return;
+      var msg = '📋 Demande de ' + (d.client_nom || 'Client anonyme') + '\n\n';
+      if (d.client_email) msg += '📧 ' + d.client_email + '\n';
+      if (d.client_telephone) msg += '📞 ' + d.client_telephone + '\n';
+      msg += '\n📝 Type : ' + (d.type || 'devis') + '\n';
+      if (d.date_souhaitee) msg += '📅 Date souhaitée : ' + d.date_souhaitee + '\n';
+      if (d.moment_journee) msg += '🕐 Moment : ' + d.moment_journee + '\n';
+      msg += '\n💬 Message :\n' + (d.message || '(pas de message)');
+      alert(msg);
+    }
+
+    // Supprimer une demande (Supabase)
+    async function deleteDemandeDB(demandeId, btn) {
+      if (!confirm('Supprimer cette demande ?')) return;
+      try {
+        await deleteDemandeFromDB(demandeId);
+        dashDemandes = dashDemandes.filter(function(x) { return x.id !== demandeId; });
+        // Animation
+        var item = btn.closest('.demande-item');
+        if (item) {
+          item.style.transition = 'opacity 0.3s, max-height 0.3s';
+          item.style.opacity = '0';
+          setTimeout(function() { item.remove(); updateDashStats(); }, 300);
+        } else {
+          renderDemandes();
+          updateDashStats();
+        }
+      } catch(e) {
+        alert('Erreur: ' + e.message);
+      }
     }
 
     /* ========== DEMANDES: REFUSE MODAL ========== */
     var refuseTargetBtn = null;
+    var refuseTargetId = null;
 
-    function openRefuseModal(btn, clientName) {
+    function openRefuseModal(btn, clientName, demandeId) {
       refuseTargetBtn = btn;
+      refuseTargetId = demandeId;
       document.getElementById('refuseClientName').textContent = clientName;
       // reset state
       document.querySelectorAll('#refuseReasons input[type="radio"]').forEach(function(r) { r.checked = false; });
@@ -2810,6 +2981,7 @@
     function closeRefuseModal() {
       document.getElementById('refuseModal').classList.remove('active');
       refuseTargetBtn = null;
+      refuseTargetId = null;
     }
 
     // Radio button highlight and "Autre raison" textarea toggle
@@ -2832,47 +3004,39 @@
       if (e.target === this) closeRefuseModal();
     });
 
-    function confirmRefuse() {
+    async function confirmRefuse() {
       var checked = document.querySelector('#refuseReasons input[type="radio"]:checked');
       if (!checked) {
         alert('Veuillez sélectionner une raison.');
         return;
       }
-      if (!refuseTargetBtn) return;
-      var item = refuseTargetBtn.closest('.demande-item');
-      var actions = item.querySelector('.demande-actions');
-      var status = item.querySelector('.status');
-      // update status
-      status.className = 'status status-refused';
-      status.textContent = 'Refusée';
-      // update icon
-      var icon = item.querySelector('.demande-icon');
-      if (icon) { icon.className = 'demande-icon'; icon.style.background = 'var(--red-light)'; icon.querySelector('svg').style.color = 'var(--red)'; }
-      // remove accept & refuse, keep view
-      var viewBtn = actions.querySelector('.btn-sm-view');
-      actions.innerHTML = '';
-      if (viewBtn) actions.appendChild(viewBtn);
-      closeRefuseModal();
+      if (!refuseTargetId) return;
+      try {
+        await updateDemandeStatus(refuseTargetId, 'refusee');
+        var d = dashDemandes.find(function(x) { return x.id === refuseTargetId; });
+        if (d) d.statut = 'refusee';
+        renderDemandes();
+        updateDashStats();
+        closeRefuseModal();
+      } catch(e) {
+        alert('Erreur: ' + e.message);
+        closeRefuseModal();
+      }
     }
 
-    /* ========== DEMANDES: DELETE ========== */
+    /* ========== DEMANDES: DELETE (legacy compat) ========== */
     function deleteDemande(btn) {
       var item = btn.closest('.demande-item');
-      if (!item) return;
-      if (!confirm('Supprimer cette demande ?')) return;
-      item.style.transition = 'opacity 0.3s, max-height 0.3s, padding 0.3s, margin 0.3s';
-      item.style.opacity = '0';
-      item.style.maxHeight = item.scrollHeight + 'px';
-      setTimeout(function() {
-        item.style.maxHeight = '0';
-        item.style.overflow = 'hidden';
-        item.style.paddingTop = '0';
-        item.style.paddingBottom = '0';
-        item.style.marginTop = '0';
-        item.style.marginBottom = '0';
-        item.style.borderTopWidth = '0';
+      var id = item ? item.dataset.id : null;
+      if (id) {
+        deleteDemandeDB(id, btn);
+      } else {
+        if (!item) return;
+        if (!confirm('Supprimer cette demande ?')) return;
+        item.style.transition = 'opacity 0.3s, max-height 0.3s';
+        item.style.opacity = '0';
         setTimeout(function() { item.remove(); }, 300);
-      }, 100);
+      }
     }
 
     /* ========== AUTH CHECK + LOAD PROFILE ========== */
@@ -2890,6 +3054,10 @@
           p = dbProfileToLocal(dbProfile);
           // Sync to localStorage
           localStorage.setItem('artisano-profil', JSON.stringify(p));
+        } else {
+          // Pas de profil artisan = c'est un client → rediriger
+          window.location.href = 'client.html';
+          return;
         }
       } catch(e) {
         // Fallback to localStorage
@@ -2938,6 +3106,10 @@
       // NOTE: Recurrence is NOT auto-applied on load.
       // It only applies when the artisan explicitly clicks "Enregistrer" in the recurrence modal.
       // This prevents unwanted slots from appearing automatically.
+
+      // 5. Load demandes + avis from Supabase (non-blocking)
+      loadDemandesFromDB();
+      loadDashAvis();
 
       if (!p) return;
 
