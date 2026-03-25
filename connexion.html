@@ -201,15 +201,21 @@
         <div class="form-group">
           <label>Adresse email</label>
           <input type="email" id="client-email" placeholder="jean.dupont@email.ch">
-          <div style="font-size:12px; color:var(--gray-500); margin-top:6px;">Entrez l'adresse email que vous avez utilisée pour votre demande</div>
+        </div>
+        <div class="form-group">
+          <div class="password-row">
+            <label style="margin-bottom:0;">Mot de passe</label>
+            <a href="#" class="forgot-link" onclick="handleForgotPasswordClient(); return false;">Mot de passe oublié ?</a>
+          </div>
+          <input type="password" id="client-password" placeholder="Votre mot de passe">
         </div>
         <div id="client-error" style="color:#D32F2F; font-size:14px; margin-bottom:12px; display:none;"></div>
         <div id="client-success" style="color:#2E7D32; font-size:14px; margin-bottom:12px; display:none;"></div>
 
-        <button class="btn-login" id="btn-client-login" onclick="handleClientLogin()">Recevoir un lien de connexion</button>
+        <button class="btn-login" id="btn-client-login" onclick="handleClientLogin()">Se connecter</button>
 
-        <div style="background:var(--gray-100); border-radius:var(--radius-sm); padding:16px; margin-top:20px; text-align:center;">
-          <p style="font-size:13px; color:var(--gray-700); line-height:1.6;">Pas besoin de mot de passe. Nous vous envoyons un lien de connexion par email pour accéder à l'historique de vos demandes.</p>
+        <div class="login-footer">
+          Pas encore de compte ? <a href="inscription-client.html">Créer mon compte client</a>
         </div>
       </div>
     </div>
@@ -288,7 +294,7 @@
       }
     }
 
-    // === CLIENT LOGIN (magic link) ===
+    // === CLIENT LOGIN (email + password) ===
     async function handleClientLogin() {
       var errorEl = document.getElementById('client-error');
       var successEl = document.getElementById('client-success');
@@ -297,26 +303,58 @@
       successEl.style.display = 'none';
 
       var email = document.getElementById('client-email').value.trim();
+      var password = document.getElementById('client-password').value;
 
       if (!email) {
         errorEl.textContent = 'Veuillez entrer votre adresse email.';
         errorEl.style.display = 'block';
         return;
       }
+      if (!password) {
+        errorEl.textContent = 'Veuillez entrer votre mot de passe.';
+        errorEl.style.display = 'block';
+        return;
+      }
 
       btn.disabled = true;
-      btn.textContent = 'Envoi...';
+      btn.textContent = 'Connexion...';
 
       try {
-        await signInClient(email);
-        btn.disabled = false;
-        btn.textContent = 'Recevoir un lien de connexion';
-        successEl.textContent = 'Un lien de connexion a été envoyé à ' + email + '. Vérifiez votre boîte de réception.';
-        successEl.style.display = 'block';
+        await signInClient(email, password);
+        window.location.href = 'client.html';
       } catch (err) {
         btn.disabled = false;
-        btn.textContent = 'Recevoir un lien de connexion';
-        errorEl.textContent = err.message || 'Erreur lors de l\'envoi du lien.';
+        btn.textContent = 'Se connecter';
+        var msg = err.message || 'Erreur de connexion.';
+        if (msg.includes('Invalid login credentials')) {
+          msg = 'Email ou mot de passe incorrect.';
+        }
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
+      }
+    }
+
+    // === FORGOT PASSWORD CLIENT ===
+    async function handleForgotPasswordClient() {
+      var email = document.getElementById('client-email').value.trim();
+      var errorEl = document.getElementById('client-error');
+      var successEl = document.getElementById('client-success');
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      if (!email) {
+        errorEl.textContent = 'Entrez votre email ci-dessus, puis cliquez sur "Mot de passe oublié".';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        var { error } = await _sb.auth.resetPasswordForEmail(email);
+        if (error) throw error;
+        successEl.textContent = 'Un email de réinitialisation a été envoyé à ' + email + '.';
+        successEl.style.display = 'block';
+      } catch (err) {
+        errorEl.textContent = err.message || 'Erreur lors de l\'envoi.';
         errorEl.style.display = 'block';
       }
     }
@@ -365,7 +403,7 @@
     document.getElementById('artisan-password').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') handleArtisanLogin();
     });
-    document.getElementById('client-email').addEventListener('keydown', function(e) {
+    document.getElementById('client-password').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') handleClientLogin();
     });
   </script>

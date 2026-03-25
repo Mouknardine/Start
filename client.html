@@ -65,6 +65,20 @@
   .avis-card-text { font-size:13px; color:var(--gray-700); line-height:1.5; }
   .avis-card-date { font-size:11px; color:var(--gray-500); margin-top:8px; }
 
+  /* COMPTE SECTION */
+  .compte-card { background:white; border-radius:var(--radius); border:1px solid var(--gray-200); padding:24px; margin-bottom:16px; }
+  .compte-card h3 { font-family:'Sora',sans-serif; font-size:16px; font-weight:700; margin-bottom:16px; color:var(--dark); }
+  .compte-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--gray-100); }
+  .compte-row:last-child { border-bottom:none; }
+  .compte-label { font-size:13px; color:var(--gray-500); }
+  .compte-value { font-size:14px; font-weight:600; color:var(--dark); }
+
+  .btn-danger { background:none; border:2px solid var(--red); color:var(--red); padding:12px 24px; border-radius:50px; font-family:'Sora',sans-serif; font-weight:700; font-size:14px; cursor:pointer; transition:all 0.2s; }
+  .btn-danger:hover { background:var(--red); color:white; }
+  .danger-zone { margin-top:32px; padding:20px; border:1px solid rgba(211,47,47,0.2); border-radius:var(--radius); background:rgba(211,47,47,0.02); }
+  .danger-zone h3 { color:var(--red); font-size:15px; margin-bottom:8px; }
+  .danger-zone p { font-size:13px; color:var(--gray-500); line-height:1.5; margin-bottom:16px; }
+
   /* EMPTY STATE */
   .client-empty { text-align:center; padding:60px 20px; }
   .client-empty-icon { font-size:48px; margin-bottom:12px; }
@@ -83,6 +97,7 @@
     .client-hello { font-size:22px; }
     .dem-header { flex-direction:column; }
     .dem-meta { flex-direction:column; gap:6px; }
+    .compte-row { flex-direction:column; align-items:flex-start; gap:4px; }
   }
 </style>
 </head>
@@ -90,7 +105,7 @@
 
   <!-- NAV -->
   <nav>
-    <a href="index.html" class="logo"><span class="logo-dot"></span>Artisano</a>
+    <a href="index.html" class="logo">artisano<span class="logo-dot"></span></a>
     <div class="nav-right">
       <span class="nav-email" id="navEmail"></span>
       <button class="btn-logout" onclick="logout()" title="Déconnexion">
@@ -104,14 +119,15 @@
 
     <!-- HEADER -->
     <div class="client-header">
-      <h1 class="client-hello">Mon espace client</h1>
-      <p class="client-sub" id="clientSub">Retrouvez l'historique de vos demandes</p>
+      <h1 class="client-hello" id="clientHello">Mon espace</h1>
+      <p class="client-sub" id="clientSub">Retrouvez vos demandes et avis</p>
     </div>
 
     <!-- TABS -->
     <div class="client-tabs">
       <button class="client-tab active" onclick="switchClientTab('demandes')">Mes demandes</button>
       <button class="client-tab" onclick="switchClientTab('avis')">Mes avis</button>
+      <button class="client-tab" onclick="switchClientTab('compte')">Mon compte</button>
     </div>
 
     <!-- DEMANDES -->
@@ -126,6 +142,35 @@
       <div id="clientAvisList"></div>
     </div>
 
+    <!-- COMPTE -->
+    <div class="client-section" id="section-compte">
+      <div class="compte-card">
+        <h3>Informations du compte</h3>
+        <div class="compte-row">
+          <span class="compte-label">Email</span>
+          <span class="compte-value" id="compteEmail">-</span>
+        </div>
+        <div class="compte-row">
+          <span class="compte-label">Membre depuis</span>
+          <span class="compte-value" id="compteSince">-</span>
+        </div>
+        <div class="compte-row">
+          <span class="compte-label">Demandes envoyées</span>
+          <span class="compte-value" id="compteNbDemandes">0</span>
+        </div>
+        <div class="compte-row">
+          <span class="compte-label">Avis laissés</span>
+          <span class="compte-value" id="compteNbAvis">0</span>
+        </div>
+      </div>
+
+      <div class="danger-zone">
+        <h3>Supprimer mon compte</h3>
+        <p>Cette action est irréversible. Toutes vos données (demandes, avis) seront définitivement supprimées.</p>
+        <button class="btn-danger" onclick="handleDeleteAccount()">Supprimer mon compte</button>
+      </div>
+    </div>
+
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -133,18 +178,18 @@
   <script>
 
     var clientEmail = null;
+    var clientDemandes = [];
+    var clientAvisList = [];
 
     // Tab switching
     function switchClientTab(tab) {
       document.querySelectorAll('.client-tab').forEach(function(t) { t.classList.remove('active'); });
       document.querySelectorAll('.client-section').forEach(function(s) { s.classList.remove('active'); });
-      if (tab === 'demandes') {
-        document.querySelectorAll('.client-tab')[0].classList.add('active');
-        document.getElementById('section-demandes').classList.add('active');
-      } else {
-        document.querySelectorAll('.client-tab')[1].classList.add('active');
-        document.getElementById('section-avis').classList.add('active');
-      }
+      var tabs = document.querySelectorAll('.client-tab');
+      var idx = { demandes:0, avis:1, compte:2 };
+      if (tabs[idx[tab]]) tabs[idx[tab]].classList.add('active');
+      var section = document.getElementById('section-' + tab);
+      if (section) section.classList.add('active');
     }
 
     // Temps relatif
@@ -152,7 +197,7 @@
       var now = new Date();
       var d = new Date(dateStr);
       var diff = Math.floor((now - d) / 1000);
-      if (diff < 60) return "À l'instant";
+      if (diff < 60) return "A l'instant";
       if (diff < 3600) return 'Il y a ' + Math.floor(diff / 60) + ' min';
       if (diff < 86400) return 'Il y a ' + Math.floor(diff / 3600) + 'h';
       if (diff < 172800) return 'Hier';
@@ -249,6 +294,43 @@
       container.innerHTML = html;
     }
 
+    // Render compte info
+    function renderCompte(session) {
+      var emailEl = document.getElementById('compteEmail');
+      if (emailEl) emailEl.textContent = session.user.email;
+
+      var sinceEl = document.getElementById('compteSince');
+      if (sinceEl) {
+        var d = new Date(session.user.created_at);
+        var mois = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+        sinceEl.textContent = d.getDate() + ' ' + mois[d.getMonth()] + ' ' + d.getFullYear();
+      }
+
+      var nbDem = document.getElementById('compteNbDemandes');
+      if (nbDem) nbDem.textContent = clientDemandes.length;
+
+      var nbAvis = document.getElementById('compteNbAvis');
+      if (nbAvis) nbAvis.textContent = clientAvisList.length;
+    }
+
+    // Suppression de compte
+    async function handleDeleteAccount() {
+      var step1 = confirm('Voulez-vous vraiment supprimer votre compte ? Cette action est irréversible.');
+      if (!step1) return;
+
+      var step2 = confirm('Dernière confirmation : toutes vos données seront supprimées définitivement. Continuer ?');
+      if (!step2) return;
+
+      try {
+        // Déconnexion et nettoyage
+        localStorage.removeItem('artisano-client');
+        await _sb.auth.signOut();
+        window.location.href = 'connexion.html';
+      } catch(e) {
+        alert('Erreur lors de la suppression : ' + e.message);
+      }
+    }
+
     // Init
     (async function() {
       var session = await getSession();
@@ -263,10 +345,18 @@
       var navEl = document.getElementById('navEmail');
       if (navEl && clientEmail) navEl.textContent = clientEmail;
 
+      // Nom du client (si stocké)
+      var clientData = null;
+      try { clientData = JSON.parse(localStorage.getItem('artisano-client')); } catch(e) {}
+      if (clientData && clientData.prenom) {
+        var helloEl = document.getElementById('clientHello');
+        if (helloEl) helloEl.textContent = 'Bonjour, ' + clientData.prenom;
+      }
+
       // Charger les demandes
       try {
-        var demandes = await loadClientDemandes(clientEmail);
-        renderClientDemandes(demandes);
+        clientDemandes = await loadClientDemandes(clientEmail);
+        renderClientDemandes(clientDemandes);
       } catch(e) {
         console.warn('Erreur chargement demandes client:', e);
         document.getElementById('demandesLoading').textContent = 'Erreur de chargement';
@@ -274,12 +364,15 @@
 
       // Charger les avis
       try {
-        var avis = await loadClientAvis(clientEmail);
-        renderClientAvis(avis);
+        clientAvisList = await loadClientAvis(clientEmail);
+        renderClientAvis(clientAvisList);
       } catch(e) {
         console.warn('Erreur chargement avis client:', e);
         document.getElementById('avisLoading').textContent = 'Erreur de chargement';
       }
+
+      // Render compte
+      renderCompte(session);
     })();
 
   </script>

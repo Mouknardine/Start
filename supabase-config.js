@@ -40,12 +40,16 @@ async function signInArtisan(email, password) {
   return data;
 }
 
-// Connexion client (magic link par email)
-async function signInClient(email) {
-  var { data, error } = await _sb.auth.signInWithOtp({
-    email: email,
-    options: { shouldCreateUser: true }
-  });
+// Inscription client (email + mot de passe)
+async function signUpClient(email, password) {
+  var { data, error } = await _sb.auth.signUp({ email: email, password: password });
+  if (error) throw error;
+  return data;
+}
+
+// Connexion client (email + mot de passe)
+async function signInClient(email, password) {
+  var { data, error } = await _sb.auth.signInWithPassword({ email: email, password: password });
   if (error) throw error;
   return data;
 }
@@ -54,6 +58,22 @@ async function signInClient(email) {
 async function logout() {
   await _sb.auth.signOut();
   window.location.href = 'connexion.html';
+}
+
+// Suppression de compte (nécessite une Edge Function Supabase)
+// Pour l'instant on supprime les données et on déconnecte
+async function deleteAccountData(userId) {
+  // Supprimer les documents et prestations
+  await _sb.from('documents').delete().eq('artisan_id', userId);
+  await _sb.from('prestations').delete().eq('artisan_id', userId);
+  // Supprimer les demandes liées
+  await _sb.from('demandes').delete().eq('artisan_id', userId);
+  // Supprimer les avis liés
+  await _sb.from('avis').delete().eq('artisan_id', userId);
+  // Supprimer le profil artisan (CASCADE supprime aussi via FK)
+  await _sb.from('artisans').delete().eq('id', userId);
+  // Déconnexion
+  await _sb.auth.signOut();
 }
 
 // ===== PROFIL ARTISAN HELPERS =====
