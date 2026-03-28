@@ -60,19 +60,20 @@ async function logout() {
   window.location.href = 'connexion.html';
 }
 
-// Suppression de compte (nécessite une Edge Function Supabase)
-// Pour l'instant on supprime les données et on déconnecte
+// Suppression de compte artisan (données + déconnexion)
 async function deleteAccountData(userId) {
-  // Supprimer les documents et prestations
   await _sb.from('documents').delete().eq('artisan_id', userId);
   await _sb.from('prestations').delete().eq('artisan_id', userId);
-  // Supprimer les demandes liées
   await _sb.from('demandes').delete().eq('artisan_id', userId);
-  // Supprimer les avis liés
   await _sb.from('avis').delete().eq('artisan_id', userId);
-  // Supprimer le profil artisan (CASCADE supprime aussi via FK)
   await _sb.from('artisans').delete().eq('id', userId);
-  // Déconnexion
+  await _sb.auth.signOut();
+}
+
+// Suppression de compte client (demandes + avis par email, puis déconnexion)
+async function deleteClientAccountData(email) {
+  await _sb.from('demandes').delete().eq('client_email', email);
+  await _sb.from('avis').delete().eq('client_email', email);
   await _sb.auth.signOut();
 }
 

@@ -3023,7 +3023,8 @@
 
       // Date info
       var dateHtml = '';
-      if (d.date_souhaitee) dateHtml += 'Date souhaitée : <strong>' + d.date_souhaitee + '</strong>';
+      if (d.client_adresse) dateHtml += 'Adresse : <strong>' + d.client_adresse + '</strong>';
+      if (d.date_souhaitee) dateHtml += (dateHtml ? '<br>' : '') + 'Date souhaitée : <strong>' + d.date_souhaitee + '</strong>';
       if (d.moment_journee) dateHtml += (dateHtml ? '<br>' : '') + 'Moment : <strong>' + d.moment_journee + '</strong>';
       dateHtml += (dateHtml ? '<br>' : '') + 'Reçue : <strong>' + timeAgo(d.created_at) + '</strong>';
       var dateSection = document.getElementById('detailDateSection');

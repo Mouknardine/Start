@@ -386,13 +386,14 @@
       var step1 = confirm('Voulez-vous vraiment supprimer votre compte ? Cette action est irréversible.');
       if (!step1) return;
 
-      var step2 = confirm('Dernière confirmation : toutes vos données seront supprimées définitivement. Continuer ?');
+      var step2 = confirm('Dernière confirmation : toutes vos demandes et avis seront supprimés définitivement. Continuer ?');
       if (!step2) return;
 
       try {
-        // Déconnexion et nettoyage
+        // Supprimer les données client (demandes + avis) dans Supabase
+        await deleteClientAccountData(clientEmail);
+        // Nettoyage local
         localStorage.removeItem('artisano-client');
-        await _sb.auth.signOut();
         window.location.href = 'connexion.html';
       } catch(e) {
         alert('Erreur lors de la suppression : ' + e.message);

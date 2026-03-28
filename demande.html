@@ -651,7 +651,8 @@
       var originalHTML = btn.innerHTML;
       btn.disabled = true;
 
-      // Get date fields
+      // Get address and date fields
+      var adresse = inputs[2] ? inputs[2].value.trim() : '';
       var dateSouhaitee = inputs[3] ? inputs[3].value.trim() : '';
       var momentJournee = select ? select.value : '';
 
@@ -661,6 +662,7 @@
           client_nom: (inputs[0].value.trim() + ' ' + inputs[1].value.trim()).trim(),
           client_email: emailInput.value.trim(),
           client_telephone: telInput.value.trim(),
+          client_adresse: adresse || null,
           type: 'devis',
           message: textarea.value.trim(),
           date_souhaitee: dateSouhaitee || null,

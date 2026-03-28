@@ -42,6 +42,7 @@ CREATE TABLE demandes (
   client_nom TEXT,
   client_email TEXT,
   client_telephone TEXT,
+  client_adresse TEXT,
   type TEXT DEFAULT 'devis',
   message TEXT,
   date_souhaitee TEXT,
@@ -135,6 +136,11 @@ CREATE POLICY "Avis visibles par tous"
 CREATE POLICY "Tout le monde peut laisser un avis"
   ON avis FOR INSERT
   WITH CHECK (true);
+
+-- Un client connecté peut supprimer ses propres avis (via son email)
+CREATE POLICY "Client peut supprimer ses avis"
+  ON avis FOR DELETE
+  USING (client_email = auth.jwt() ->> 'email');
 
 -- ===== FONCTION AUTO-UPDATE updated_at =====
 CREATE OR REPLACE FUNCTION update_updated_at()

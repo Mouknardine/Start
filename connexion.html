@@ -349,7 +349,8 @@
       }
 
       try {
-        var { error } = await _sb.auth.resetPasswordForEmail(email);
+        var redirectUrl = window.location.origin + '/reset-password.html';
+        var { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
         if (error) throw error;
         successEl.textContent = 'Un email de réinitialisation a été envoyé à ' + email + '.';
         successEl.style.display = 'block';
@@ -374,7 +375,8 @@
       }
 
       try {
-        var { error } = await _sb.auth.resetPasswordForEmail(email);
+        var redirectUrl = window.location.origin + '/reset-password.html';
+        var { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
         if (error) throw error;
         successEl.textContent = 'Un email de réinitialisation a été envoyé à ' + email + '.';
         successEl.style.display = 'block';
