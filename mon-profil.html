@@ -508,6 +508,14 @@
         Enregistrer les modifications
       </button>
     </div>
+
+    <!-- DANGER ZONE -->
+    <div style="margin-top:48px;padding:20px;border:1px solid rgba(211,47,47,0.2);border-radius:var(--radius);background:rgba(211,47,47,0.02);">
+      <div style="font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--red);margin-bottom:8px;">Supprimer mon compte</div>
+      <p style="font-size:13px;color:var(--gray-500);line-height:1.5;margin-bottom:16px;">Cette action est irréversible. Toutes vos données seront définitivement supprimées : profil, demandes, avis, devis, factures et catalogue.</p>
+      <button onclick="handleDeleteArtisanAccount()" style="background:none;border:2px solid var(--red);color:var(--red);padding:12px 24px;border-radius:50px;font-family:'Sora',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='var(--red)';this.style.color='white'" onmouseout="this.style.background='none';this.style.color='var(--red)'">Supprimer mon compte</button>
+    </div>
+
   </div>
 
   <!-- TOAST -->
@@ -526,6 +534,29 @@
     if (!user) return;
     currentUserId = user.id;
   })();
+
+  // ====== DELETE ACCOUNT ======
+  async function handleDeleteArtisanAccount() {
+    var step1 = confirm('Voulez-vous vraiment supprimer votre compte artisan ?\n\nCette action est irréversible. Toutes vos données seront supprimées :\n- Profil artisan\n- Demandes reçues\n- Avis clients\n- Devis et factures\n- Catalogue de prestations');
+    if (!step1) return;
+
+    var step2 = confirm('Dernière confirmation : toutes vos données seront supprimées DÉFINITIVEMENT.\n\nContinuer ?');
+    if (!step2) return;
+
+    try {
+      var user = await getUser();
+      if (user) {
+        await deleteAccountData(user.id);
+      }
+      localStorage.removeItem('artisano-profil');
+      localStorage.removeItem('artisano-recurrence');
+      localStorage.removeItem('artisano-blocked-days');
+      localStorage.removeItem('artisano-intervention-types');
+      window.location.href = 'connexion.html';
+    } catch(e) {
+      alert('Erreur lors de la suppression : ' + e.message);
+    }
+  }
 
   // ====== TAG SYSTEM ======
   var profileTags = { specialites: [], zones: [] };
