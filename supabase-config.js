@@ -110,6 +110,11 @@ async function saveArtisanProfile(userId, profileData) {
     bank_bic: profileData.bankBic || ''
   };
 
+  // Préserver les disponibilites si elles existent dans les données
+  if (profileData.disponibilites !== undefined) {
+    row.disponibilites = profileData.disponibilites;
+  }
+
   var { data, error } = await _sb.from('artisans').upsert(row);
   if (error) throw error;
   return data;

@@ -950,7 +950,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         <input type="text" value="Lausanne">
       </div>
-      <button class="nav-search-btn">
+      <button class="nav-search-btn" onclick="navSearch()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       </button>
     </div>
@@ -1390,6 +1390,20 @@ function applyFilters() {
     });
   }
 })();
+
+// ===== NAV SEARCH =====
+function navSearch() {
+  var inputs = document.querySelectorAll('.nav-search-field input');
+  var metier = inputs[0] ? inputs[0].value.trim() : '';
+  var ville = inputs[1] ? inputs[1].value.trim() : '';
+  var params = [];
+  if (metier) params.push('metier=' + encodeURIComponent(metier));
+  if (ville) params.push('ville=' + encodeURIComponent(ville));
+  window.location.href = 'recherche.html' + (params.length ? '?' + params.join('&') : '');
+}
+document.querySelectorAll('.nav-search-field input').forEach(function(input) {
+  input.addEventListener('keydown', function(e) { if (e.key === 'Enter') navSearch(); });
+});
 </script>
 <script src="artisano-common.js"></script>
 </body>

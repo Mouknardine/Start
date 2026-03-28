@@ -3151,29 +3151,6 @@
       }
     }
 
-    /* ========== DELETE ARTISAN ACCOUNT ========== */
-    async function handleDeleteArtisanAccount() {
-      var step1 = confirm('Voulez-vous vraiment supprimer votre compte artisan ?\n\nCette action est irréversible. Toutes vos données seront supprimées :\n- Profil artisan\n- Demandes reçues\n- Avis clients\n- Devis et factures\n- Catalogue de prestations');
-      if (!step1) return;
-
-      var step2 = confirm('Dernière confirmation : toutes vos données seront supprimées DÉFINITIVEMENT.\n\nContinuer ?');
-      if (!step2) return;
-
-      try {
-        var user = await getUser();
-        if (user) {
-          await deleteAccountData(user.id);
-        }
-        localStorage.removeItem('artisano-profil');
-        localStorage.removeItem('artisano-recurrence');
-        localStorage.removeItem('artisano-blocked-days');
-        localStorage.removeItem('artisano-intervention-types');
-        window.location.href = 'connexion.html';
-      } catch(e) {
-        alert('Erreur lors de la suppression : ' + e.message);
-      }
-    }
-
     /* ========== AUTH CHECK + LOAD PROFILE ========== */
     (async function() {
       // 1. Check auth — redirect if not logged in

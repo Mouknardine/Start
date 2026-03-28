@@ -1764,14 +1764,30 @@
         }
       }
 
-      // Fallback to localStorage if no Supabase data
+      // Fallback to localStorage if no Supabase data (for artisan self-preview)
       if (!p) {
         var data = localStorage.getItem('artisano-profil');
         try { p = data ? JSON.parse(data) : null; } catch(e) { p = null; }
       }
 
+      // If no profile found and no artisan ID, show error
+      if (!p && !artisanId) {
+        document.querySelector('.client-container, .profile-hero, [class*="profile"]') || null;
+        var mainContent = document.querySelector('body');
+        if (mainContent) {
+          var overlay = document.createElement('div');
+          overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:var(--gray-50,#f9fafb);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;';
+          overlay.innerHTML = '<div style="font-size:48px;">🔍</div>'
+            + '<div style="font-family:Sora,sans-serif;font-size:22px;font-weight:800;color:var(--dark);">Artisan introuvable</div>'
+            + '<div style="font-size:14px;color:var(--gray-500);max-width:360px;text-align:center;line-height:1.5;">Ce profil n\'existe pas ou l\'URL est incorrecte. Recherchez un artisan pour accéder à son profil.</div>'
+            + '<a href="recherche.html" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--orange);color:white;border:none;border-radius:50px;font-size:14px;font-weight:700;text-decoration:none;margin-top:8px;">Trouver un artisan</a>';
+          document.body.appendChild(overlay);
+        }
+        return;
+      }
+
       // Urgence badge
-      var artisanUrgence = p ? p.urgence : true; // default demo = true
+      var artisanUrgence = p ? p.urgence : false;
       var badge = document.getElementById('urgence-badge');
       if (artisanUrgence && badge) {
         badge.style.display = 'inline-flex';
@@ -1779,7 +1795,7 @@
         badge.style.display = 'none';
       }
 
-      if (!p) return; // No saved profile, keep demo defaults
+      if (!p) return;
 
       // Name & trade
       var profileName = document.querySelector('.profile-name');
