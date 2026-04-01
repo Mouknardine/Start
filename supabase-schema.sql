@@ -47,6 +47,8 @@ CREATE TABLE demandes (
   message TEXT,
   date_souhaitee TEXT,
   moment_journee TEXT,
+  creneau_date TEXT,
+  creneau_heure TEXT,
   statut TEXT DEFAULT 'nouvelle',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -59,6 +61,8 @@ CREATE TABLE avis (
   client_email TEXT,
   note INTEGER CHECK (note >= 1 AND note <= 5),
   commentaire TEXT,
+  reponse_artisan TEXT,
+  reponse_date TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -136,6 +140,11 @@ CREATE POLICY "Avis visibles par tous"
 CREATE POLICY "Tout le monde peut laisser un avis"
   ON avis FOR INSERT
   WITH CHECK (true);
+
+-- Un artisan peut répondre à ses propres avis
+CREATE POLICY "Artisan peut modifier ses avis"
+  ON avis FOR UPDATE
+  USING (auth.uid() = artisan_id);
 
 -- Un client connecté peut supprimer ses propres avis (via son email)
 CREATE POLICY "Client peut supprimer ses avis"
@@ -248,5 +257,32 @@ BEGIN
   WHERE artisan_id = p_artisan_id AND type = p_type
     AND numero LIKE prefix || '-' || year_str || '-%';
   RETURN prefix || '-' || year_str || '-' || LPAD(next_num::TEXT, 3, '0');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Vérifier si un client a une demande terminée chez un artisan (pour avis vérifiés)
+CREATE OR REPLACE FUNCTION check_completed_demande(p_artisan_id UUID, p_client_email TEXT)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM demandes
+    WHERE artisan_id = p_artisan_id
+      AND client_email = p_client_email
+      AND statut = 'terminee'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Récupérer les créneaux déjà réservés pour un artisan (anti-double booking)
+CREATE OR REPLACE FUNCTION get_booked_slots(p_artisan_id UUID)
+RETURNS TABLE(creneau_date TEXT, creneau_heure TEXT) AS $$
+BEGIN
+  RETURN QUERY
+    SELECT d.creneau_date, d.creneau_heure
+    FROM demandes d
+    WHERE d.artisan_id = p_artisan_id
+      AND d.creneau_date IS NOT NULL
+      AND d.creneau_heure IS NOT NULL
+      AND d.statut NOT IN ('refusee');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

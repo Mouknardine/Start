@@ -619,6 +619,29 @@
     width: 12px; height: 12px;
   }
 
+  .review-reply {
+    background: var(--gray-100);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 12px;
+    border-left: 3px solid var(--orange);
+  }
+  .review-reply-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--orange);
+  }
+  .review-reply-header svg { width: 14px; height: 14px; }
+  .review-reply-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--gray-700);
+  }
+
   .reviews-more {
     display: block;
     text-align: center;
@@ -773,6 +796,21 @@
     background: var(--green);
     color: white;
     border-color: var(--green);
+  }
+
+  .avail-slot.booked {
+    background: var(--gray-100);
+    color: var(--gray-500);
+    cursor: not-allowed;
+    border-color: var(--gray-200);
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+  .avail-slot.booked:hover {
+    background: var(--gray-100);
+    color: var(--gray-500);
+    transform: none;
+    box-shadow: none;
   }
 
   .avail-closed {
@@ -1568,6 +1606,7 @@
     var profileWeekOffset = 0;
     var profileData = null;
     var profileArtisanId = null;
+    var _bookedSlots = [];
 
     function getProfileMonday(d) {
       var day = d.getDay();
@@ -1632,6 +1671,7 @@
 
         var dayDiv = document.createElement('div');
         dayDiv.className = 'avail-day';
+        dayDiv.setAttribute('data-fulldate', fullDateStr);
 
         var nameSpan = document.createElement('span');
         nameSpan.className = 'avail-day-name';
@@ -1690,8 +1730,12 @@
             slotsDiv.className = 'avail-slots';
             availableSlots.forEach(function(label) {
               var slot = document.createElement('span');
-              slot.className = 'avail-slot';
-              slot.textContent = label;
+              var isBooked = _bookedSlots.some(function(b) {
+                return b.creneau_date === fullDateStr && b.creneau_heure === label;
+              });
+              slot.className = 'avail-slot' + (isBooked ? ' booked' : '');
+              slot.textContent = isBooked ? label + ' (réservé)' : label;
+              if (isBooked) slot.title = 'Ce créneau est déjà réservé';
               slotsDiv.appendChild(slot);
             });
             dayDiv.appendChild(slotsDiv);
@@ -1722,14 +1766,16 @@
 
       // Re-bind slot click events
       var artisanId = profileArtisanId;
-      document.querySelectorAll('.avail-slot').forEach(function(slot) {
+      document.querySelectorAll('.avail-slot:not(.booked)').forEach(function(slot) {
         slot.addEventListener('click', function() {
           document.querySelectorAll('.avail-slot').forEach(function(s) { s.classList.remove('selected'); });
           this.classList.add('selected');
-          var day = this.closest('.avail-day').querySelector('.avail-day-name').textContent.trim();
-          var date = this.closest('.avail-day').querySelector('.avail-day-date').textContent.trim();
+          var dayEl = this.closest('.avail-day');
+          var day = dayEl.querySelector('.avail-day-name').textContent.trim();
+          var date = dayEl.querySelector('.avail-day-date').textContent.trim();
+          var fulldate = dayEl.getAttribute('data-fulldate') || '';
           var time = this.textContent.trim();
-          var slotParams = 'jour=' + encodeURIComponent(day) + '&date=' + encodeURIComponent(date) + '&heure=' + encodeURIComponent(time);
+          var slotParams = 'jour=' + encodeURIComponent(day) + '&date=' + encodeURIComponent(date) + '&heure=' + encodeURIComponent(time) + '&fulldate=' + encodeURIComponent(fulldate);
           if (artisanId) slotParams += '&artisan=' + encodeURIComponent(artisanId);
           window.location.href = 'demande.html?' + slotParams;
         });
@@ -1886,6 +1932,12 @@
       profileData = p;
       profileArtisanId = artisanId;
 
+      // Load booked slots for anti-double booking
+      try {
+        var { data: booked } = await _sb.rpc('get_booked_slots', { p_artisan_id: artisanId });
+        _bookedSlots = booked || [];
+      } catch(e) { _bookedSlots = []; }
+
       // Render availability for current week
       renderAvailabilityForWeek(p, 0);
 
@@ -2019,6 +2071,14 @@
         // Author name
         var authorName = r.nom_client || 'Client';
 
+        var replyHtml = '';
+        if (r.reponse_artisan) {
+          replyHtml = '<div class="review-reply">' +
+            '<div class="review-reply-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg> Réponse de l\'artisan</div>' +
+            '<div class="review-reply-text">' + r.reponse_artisan + '</div>' +
+          '</div>';
+        }
+
         item.innerHTML =
           '<div class="review-top">' +
             '<div class="review-author">' + authorName + '</div>' +
@@ -2029,7 +2089,8 @@
           '<div class="review-badge">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
             ' Avis vérifié' +
-          '</div>';
+          '</div>' +
+          replyHtml;
 
         avisCard.appendChild(item);
       });

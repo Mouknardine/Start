@@ -142,7 +142,7 @@
             <input type="text" id="clientNom" placeholder="Jean Dupont">
           </div>
           <div>
-            <label>Votre email <span class="label-optional">(facultatif)</span></label>
+            <label>Votre email <span class="label-optional">(utilisé lors de la demande)</span></label>
             <input type="email" id="clientEmail" placeholder="jean@email.ch">
           </div>
         </div>
@@ -175,7 +175,7 @@
 
       <div class="verified-badge">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Cet avis sera vérifié et publié sur le profil de l'artisan
+        Seuls les clients ayant une intervention terminée peuvent laisser un avis
       </div>
     </div>
   </div>
@@ -250,9 +250,16 @@
 
       // Validation
       var clientNom = document.getElementById('clientNom').value.trim();
+      var clientEmail = document.getElementById('clientEmail').value.trim();
       if (!clientNom) {
         feedback.className = 'feedback-msg error';
         feedback.textContent = 'Veuillez entrer votre nom.';
+        feedback.style.display = 'block';
+        return;
+      }
+      if (!clientEmail) {
+        feedback.className = 'feedback-msg error';
+        feedback.textContent = 'Veuillez entrer votre email pour vérifier votre demande.';
         feedback.style.display = 'block';
         return;
       }
@@ -270,13 +277,32 @@
       }
 
       btn.disabled = true;
-      btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10"/></svg> Publication...';
+      btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10"/></svg> Vérification...';
 
       try {
+        // Vérifier qu'il existe une demande terminée pour ce client chez cet artisan
+        var { data: hasCompleted, error: checkErr } = await _sb.rpc('check_completed_demande', {
+          p_artisan_id: artisanId,
+          p_client_email: clientEmail
+        });
+
+        if (checkErr) throw checkErr;
+
+        if (!hasCompleted) {
+          feedback.className = 'feedback-msg error';
+          feedback.textContent = 'Aucune intervention terminée trouvée avec cet email. Vous ne pouvez laisser un avis que si votre demande a été marquée comme terminée par l\'artisan.';
+          feedback.style.display = 'block';
+          btn.disabled = false;
+          btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Publier mon avis';
+          return;
+        }
+
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10"/></svg> Publication...';
+
         var { error } = await _sb.from('avis').insert({
           artisan_id: artisanId,
           client_nom: clientNom,
-          client_email: document.getElementById('clientEmail').value.trim() || null,
+          client_email: clientEmail,
           note: currentRating,
           commentaire: document.getElementById('comment-box').value.trim() || null
         });

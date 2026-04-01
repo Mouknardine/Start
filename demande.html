@@ -536,13 +536,19 @@
     })();
 
     // === READ URL PARAMS (slot from profil.html) ===
+    var _creneauDate = null;
+    var _creneauHeure = null;
     (function prefillFromURL() {
       var params = new URLSearchParams(window.location.search);
       var jour = params.get('jour');
       var date = params.get('date');
       var heure = params.get('heure');
+      var fulldate = params.get('fulldate');
 
       if (jour && date && heure) {
+        _creneauDate = fulldate || null;
+        _creneauHeure = heure || null;
+
         selectOption(2);
         var dateInput = document.querySelector('#panel-2 input[placeholder*="lundi"]');
         if (dateInput) dateInput.value = jour + ' ' + date;
@@ -667,6 +673,8 @@
           message: textarea.value.trim(),
           date_souhaitee: dateSouhaitee || null,
           moment_journee: momentJournee || null,
+          creneau_date: _creneauDate || null,
+          creneau_heure: _creneauHeure || null,
           statut: 'nouvelle'
         });
 

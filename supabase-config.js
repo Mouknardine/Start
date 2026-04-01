@@ -267,6 +267,11 @@ async function loadAvisForArtisan(userId) {
   return data || [];
 }
 
+async function replyToAvis(avisId, reponse) {
+  var { error } = await _sb.from('avis').update({ reponse_artisan: reponse, reponse_date: new Date().toISOString() }).eq('id', avisId);
+  if (error) throw error;
+}
+
 // ===== PROTECTION DES PAGES =====
 
 // Appeler sur les pages qui nécessitent une connexion (dashboard, mon-profil)

@@ -53,6 +53,7 @@
   .dem-badge.nouvelle { background:rgba(232,112,10,0.1); color:var(--orange); }
   .dem-badge.confirmee, .dem-badge.acceptee { background:var(--green-light); color:var(--green); }
   .dem-badge.refusee { background:var(--red-light); color:var(--red); }
+  .dem-badge.terminee { background:rgba(46,125,50,0.1); color:#2E7D32; }
   .dem-message { font-size:13px; color:var(--gray-700); line-height:1.5; margin-bottom:10px; }
   .dem-meta { display:flex; gap:16px; flex-wrap:wrap; }
   .dem-meta-item { font-size:11px; color:var(--gray-500); display:flex; align-items:center; gap:4px; }
@@ -270,7 +271,7 @@
 
     // Status label
     function statusLabel(s) {
-      var map = { nouvelle:'En attente', confirmee:'Confirmée', acceptee:'Acceptée', refusee:'Refusée' };
+      var map = { nouvelle:'En attente', confirmee:'Confirmée', acceptee:'Acceptée', refusee:'Refusée', terminee:'Terminée' };
       return map[s] || s || 'En attente';
     }
 
@@ -324,6 +325,7 @@
           + '</div>'
           + '<div class="dem-actions">'
           + '<button class="dem-btn dem-btn-view" onclick="viewClientDemande(\'' + d.id + '\')">Voir le détail</button>'
+          + (d.statut === 'terminee' ? '<a class="dem-btn dem-btn-view" style="background:rgba(232,112,10,0.1);color:var(--orange);text-decoration:none;text-align:center;" href="avis.html?artisan=' + d.artisan_id + '">Laisser un avis</a>' : '')
           + '<button class="dem-btn dem-btn-delete" onclick="deleteClientDemande(\'' + d.id + '\', this)">Supprimer</button>'
           + '</div>'
           + '</div>';
@@ -442,6 +444,7 @@
         case 'nouvelle': return 'background:rgba(232,112,10,0.1);color:var(--orange);';
         case 'confirmee': case 'acceptee': return 'background:var(--green-light);color:var(--green);';
         case 'refusee': return 'background:var(--red-light);color:var(--red);';
+        case 'terminee': return 'background:rgba(46,125,50,0.1);color:#2E7D32;';
         default: return 'background:var(--gray-100);color:var(--gray-500);';
       }
     }

@@ -206,6 +206,11 @@
   .btn-sm-delete { background:var(--gray-100); color:var(--red); border:1px solid rgba(211,47,47,0.2); }
   .btn-sm-delete:hover { background:var(--red-light); border-color:var(--red); }
   .status-refused { background:var(--red-light); color:var(--red); }
+  .status-completed { background:rgba(46,125,50,0.1); color:#2E7D32; }
+  .btn-sm-complete { background:rgba(46,125,50,0.1); color:#2E7D32; border:1px solid rgba(46,125,50,0.2); }
+  .btn-sm-complete:hover { background:rgba(46,125,50,0.15); border-color:#2E7D32; }
+  .demande-icon.completed { background:rgba(46,125,50,0.1); }
+  .demande-icon.completed svg { color:#2E7D32; }
   .demande-actions { display:flex; gap:6px; flex-shrink:0; }
 
   /* REFUSE MODAL */
@@ -268,6 +273,17 @@
   .avis-author { font-weight:700; font-size:13px; }
   .avis-stars { color:var(--yellow); font-size:12px; }
   .avis-text { font-size:12px; color:var(--gray-500); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .avis-reply-existing { background:var(--gray-100); border-radius:8px; padding:8px 10px; margin-top:6px; font-size:11px; color:var(--dark); line-height:1.4; }
+  .avis-reply-existing strong { color:var(--orange); font-size:10px; display:block; margin-bottom:2px; }
+  .avis-reply-btn { background:none; border:1px solid var(--gray-200); border-radius:50px; padding:3px 10px; font-size:10px; font-weight:600; color:var(--gray-500); cursor:pointer; margin-top:6px; transition:all 0.2s; }
+  .avis-reply-btn:hover { border-color:var(--orange); color:var(--orange); }
+  .avis-reply-form { margin-top:6px; }
+  .avis-reply-form textarea { width:100%; padding:8px 10px; border:1px solid var(--gray-200); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:12px; resize:none; height:60px; box-sizing:border-box; }
+  .avis-reply-form textarea:focus { outline:none; border-color:var(--orange); }
+  .avis-reply-actions { display:flex; gap:6px; justify-content:flex-end; margin-top:4px; }
+  .avis-reply-actions button { padding:4px 12px; border-radius:50px; font-size:11px; font-weight:600; cursor:pointer; border:none; }
+  .avis-reply-send { background:var(--orange); color:white; }
+  .avis-reply-cancel { background:var(--gray-100); color:var(--gray-500); }
 
   .abo-card { background:var(--dark); border-radius:var(--radius); padding:20px; color:white; border:none; }
   .abo-plan { font-family:'Sora',sans-serif; font-size:22px; font-weight:800; margin-top:6px; }
@@ -2881,7 +2897,10 @@
         var iconClass = 'new';
         var iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
 
-        if (d.statut === 'confirmee' || d.statut === 'acceptee') {
+        if (d.statut === 'terminee') {
+          statusClass = 'status-completed'; statusLabel = 'Terminée'; iconClass = 'completed';
+          iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+        } else if (d.statut === 'confirmee' || d.statut === 'acceptee') {
           statusClass = 'status-confirmed'; statusLabel = 'Confirmée'; iconClass = 'confirmed';
           iconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
         } else if (d.statut === 'refusee') {
@@ -2901,6 +2920,10 @@
         if (d.statut === 'nouvelle') {
           actions = '<button class="btn-sm btn-sm-accept" onclick="acceptDemandeDB(\'' + d.id + '\')">Accepter</button>'
             + '<button class="btn-sm btn-sm-refuse" onclick="openRefuseModal(this, \'' + (d.client_nom || '').replace(/'/g, "\\'") + '\', \'' + d.id + '\')">Refuser</button>'
+            + '<button class="btn-sm btn-sm-view" onclick="viewDemande(\'' + d.id + '\')">Voir</button>'
+            + '<button class="btn-sm btn-sm-delete" onclick="deleteDemandeDB(\'' + d.id + '\', this)">Supprimer</button>';
+        } else if (d.statut === 'confirmee' || d.statut === 'acceptee') {
+          actions = '<button class="btn-sm btn-sm-complete" onclick="completeDemandeDB(\'' + d.id + '\')">Terminer</button>'
             + '<button class="btn-sm btn-sm-view" onclick="viewDemande(\'' + d.id + '\')">Voir</button>'
             + '<button class="btn-sm btn-sm-delete" onclick="deleteDemandeDB(\'' + d.id + '\', this)">Supprimer</button>';
         } else {
@@ -2932,16 +2955,68 @@
         return;
       }
       var html = '';
-      var toShow = dashAvis.slice(0, 3);
+      var toShow = dashAvis.slice(0, 5);
       toShow.forEach(function(a) {
         var stars = '';
         for (var i = 0; i < 5; i++) stars += i < a.note ? '★' : '☆';
         var nom = a.client_nom || 'Client';
         var initials = nom.split(' ').map(function(w) { return w[0]; }).join('').substring(0, 2) + '.';
-        html += '<div class="avis-item"><div class="avis-top"><span class="avis-author">' + initials + '</span><span class="avis-stars">' + stars + '</span></div>'
-          + '<div class="avis-text">' + (a.commentaire || '').substring(0, 80) + (a.commentaire && a.commentaire.length > 80 ? '...' : '') + '</div></div>';
+
+        var replyHtml = '';
+        if (a.reponse_artisan) {
+          replyHtml = '<div class="avis-reply-existing"><strong>Votre réponse</strong>' + a.reponse_artisan.substring(0, 100) + (a.reponse_artisan.length > 100 ? '...' : '') + '</div>';
+        } else {
+          replyHtml = '<button class="avis-reply-btn" onclick="showReplyForm(\'' + a.id + '\', this)">Répondre</button>';
+        }
+
+        html += '<div class="avis-item" data-avis-id="' + a.id + '"><div class="avis-top"><span class="avis-author">' + initials + '</span><span class="avis-stars">' + stars + '</span></div>'
+          + '<div class="avis-text">' + (a.commentaire || '').substring(0, 80) + (a.commentaire && a.commentaire.length > 80 ? '...' : '') + '</div>'
+          + replyHtml + '</div>';
       });
       container.innerHTML = html;
+    }
+
+    // Afficher le formulaire de réponse à un avis
+    function showReplyForm(avisId, btn) {
+      var parent = btn.parentElement;
+      btn.style.display = 'none';
+      var form = document.createElement('div');
+      form.className = 'avis-reply-form';
+      form.innerHTML = '<textarea placeholder="Votre réponse..."></textarea>'
+        + '<div class="avis-reply-actions">'
+        + '<button class="avis-reply-cancel" onclick="cancelReply(\'' + avisId + '\', this)">Annuler</button>'
+        + '<button class="avis-reply-send" onclick="sendReply(\'' + avisId + '\', this)">Envoyer</button>'
+        + '</div>';
+      parent.appendChild(form);
+      form.querySelector('textarea').focus();
+    }
+
+    function cancelReply(avisId, btn) {
+      var item = btn.closest('.avis-item');
+      var form = item.querySelector('.avis-reply-form');
+      if (form) form.remove();
+      var replyBtn = item.querySelector('.avis-reply-btn');
+      if (replyBtn) replyBtn.style.display = '';
+    }
+
+    async function sendReply(avisId, btn) {
+      var item = btn.closest('.avis-item');
+      var textarea = item.querySelector('.avis-reply-form textarea');
+      var text = textarea.value.trim();
+      if (!text) return;
+
+      btn.disabled = true;
+      btn.textContent = '...';
+      try {
+        await replyToAvis(avisId, text);
+        var a = dashAvis.find(function(x) { return x.id === avisId; });
+        if (a) { a.reponse_artisan = text; a.reponse_date = new Date().toISOString(); }
+        renderDashAvis();
+      } catch(e) {
+        alert('Erreur: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = 'Envoyer';
+      }
     }
 
     // Mettre à jour les stats
@@ -2953,7 +3028,7 @@
       var thisMonth = new Date();
       var monthStart = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1);
       var confirmed = dashDemandes.filter(function(d) {
-        return (d.statut === 'confirmee' || d.statut === 'acceptee') && new Date(d.created_at) >= monthStart;
+        return (d.statut === 'confirmee' || d.statut === 'acceptee' || d.statut === 'terminee') && new Date(d.created_at) >= monthStart;
       }).length;
       var el2 = document.getElementById('statConfirmed');
       if (el2) el2.textContent = confirmed;
@@ -2988,6 +3063,19 @@
       }
     }
 
+    // Marquer une demande comme terminée (Supabase)
+    async function completeDemandeDB(demandeId) {
+      try {
+        await updateDemandeStatus(demandeId, 'terminee');
+        var d = dashDemandes.find(function(x) { return x.id === demandeId; });
+        if (d) d.statut = 'terminee';
+        renderDemandes();
+        updateDashStats();
+      } catch(e) {
+        alert('Erreur: ' + e.message);
+      }
+    }
+
     // Voir le détail d'une demande (modal professionnelle)
     function viewDemande(demandeId) {
       var d = dashDemandes.find(function(x) { return x.id === demandeId; });
@@ -2997,8 +3085,8 @@
       document.getElementById('detailClientName').textContent = d.client_nom || 'Client anonyme';
 
       // Badges (statut + type)
-      var statusMap = { nouvelle:'Nouvelle', confirmee:'Confirmée', acceptee:'Acceptée', refusee:'Refusée' };
-      var statusClass = d.statut === 'nouvelle' ? 'status-new' : (d.statut === 'confirmee' || d.statut === 'acceptee') ? 'status-confirmed' : d.statut === 'refusee' ? 'status-refused' : 'status-new';
+      var statusMap = { nouvelle:'Nouvelle', confirmee:'Confirmée', acceptee:'Acceptée', refusee:'Refusée', terminee:'Terminée' };
+      var statusClass = d.statut === 'terminee' ? 'status-completed' : d.statut === 'nouvelle' ? 'status-new' : (d.statut === 'confirmee' || d.statut === 'acceptee') ? 'status-confirmed' : d.statut === 'refusee' ? 'status-refused' : 'status-new';
       var typeLabel = d.type === 'devis' ? 'Demande de devis' : d.type === 'message' ? 'Message rapide' : 'Demande';
       document.getElementById('detailBadges').innerHTML = '<span class="status ' + statusClass + '">' + (statusMap[d.statut] || 'Nouvelle') + '</span>'
         + '<span class="detail-badge type">' + typeLabel + '</span>';
@@ -3036,6 +3124,8 @@
       if (d.statut === 'nouvelle') {
         footerHtml = '<button class="modal-btn modal-btn-cancel" onclick="openRefuseModal(null, \'' + (d.client_nom || '').replace(/'/g, "\\'") + '\', \'' + d.id + '\');closeDemandeDetail();">Refuser</button>'
           + '<button class="modal-btn" style="background:var(--green);color:white;" onclick="acceptDemandeDB(\'' + d.id + '\');closeDemandeDetail();">Accepter</button>';
+      } else if (d.statut === 'confirmee' || d.statut === 'acceptee') {
+        footerHtml = '<button class="modal-btn" style="background:#2E7D32;color:white;" onclick="completeDemandeDB(\'' + d.id + '\');closeDemandeDetail();">Marquer comme terminé</button>';
       }
       footerHtml += '<button class="modal-btn modal-btn-cancel" onclick="closeDemandeDetail()">Fermer</button>';
       document.getElementById('detailFooter').innerHTML = footerHtml;
