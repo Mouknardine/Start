@@ -1,5 +1,11 @@
 /* ===== ARTISANO SUPABASE CONFIG ===== */
 
+// Échapper le HTML pour éviter les failles XSS
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 // Initialisation du client Supabase
 var SUPABASE_URL = 'https://qonowxahjffayegvyqmq.supabase.co';
 var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFvbm93eGFoamZmYXllZ3Z5cW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTY2NDEsImV4cCI6MjA4OTQzMjY0MX0.OrSijcsho_YQStcDMvTaJEXDF-Q7jbbbjT4-h_Okrw0';

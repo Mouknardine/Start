@@ -136,10 +136,17 @@ CREATE POLICY "Avis visibles par tous"
   ON avis FOR SELECT
   USING (true);
 
--- N'importe qui peut laisser un avis
-CREATE POLICY "Tout le monde peut laisser un avis"
+-- Seul un client ayant une demande terminée peut publier un avis
+CREATE POLICY "Client vérifié peut publier un avis"
   ON avis FOR INSERT
-  WITH CHECK (true);
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM demandes
+      WHERE demandes.artisan_id = avis.artisan_id
+        AND demandes.client_email = avis.client_email
+        AND demandes.statut = 'terminee'
+    )
+  );
 
 -- Un artisan peut répondre à ses propres avis
 CREATE POLICY "Artisan peut modifier ses avis"

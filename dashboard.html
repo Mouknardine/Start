@@ -9,6 +9,8 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="canonical" href="https://artisano.ch/dashboard">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23E8700A'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="artisano-common.css">
 <style>
@@ -1539,9 +1541,28 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <script>
+    /* ========== LAZY-LOAD EXTERNAL LIBRARIES ========== */
+    var _libsLoaded = {};
+    function loadScript(url) {
+      if (_libsLoaded[url]) return _libsLoaded[url];
+      _libsLoaded[url] = new Promise(function(resolve, reject) {
+        var s = document.createElement('script');
+        s.src = url;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+      return _libsLoaded[url];
+    }
+
+    async function loadFacturationLibs() {
+      await Promise.all([
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+        loadScript('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js')
+      ]);
+    }
+
     /* ========== TAB SWITCHING ========== */
     function switchDashTab(tab) {
       document.querySelectorAll('.dash-tab').forEach(function(t) { t.classList.remove('active'); });
@@ -1564,6 +1585,7 @@
         });
       }
       if (tab === 'facturation') {
+        loadFacturationLibs();
         requestAnimationFrame(function() {
           if (typeof factLoadData === 'function' && !factDataLoaded) factLoadData();
         });
@@ -2919,7 +2941,7 @@
         var actions = '';
         if (d.statut === 'nouvelle') {
           actions = '<button class="btn-sm btn-sm-accept" onclick="acceptDemandeDB(\'' + d.id + '\')">Accepter</button>'
-            + '<button class="btn-sm btn-sm-refuse" onclick="openRefuseModal(this, \'' + (d.client_nom || '').replace(/'/g, "\\'") + '\', \'' + d.id + '\')">Refuser</button>'
+            + '<button class="btn-sm btn-sm-refuse" onclick="openRefuseModal(this, \'' + escapeHtml((d.client_nom || '').replace(/'/g, "\\'")) + '\', \'' + d.id + '\')">Refuser</button>'
             + '<button class="btn-sm btn-sm-view" onclick="viewDemande(\'' + d.id + '\')">Voir</button>'
             + '<button class="btn-sm btn-sm-delete" onclick="deleteDemandeDB(\'' + d.id + '\', this)">Supprimer</button>';
         } else if (d.statut === 'confirmee' || d.statut === 'acceptee') {
@@ -2936,8 +2958,8 @@
         html += '<div class="demande-item" data-id="' + d.id + '">'
           + '<div class="demande-icon ' + iconClass + '"' + iconExtraStyle + '>' + iconSvg + '</div>'
           + '<div class="demande-body">'
-          + '<div class="demande-name">' + (d.client_nom || 'Client anonyme') + ' <span class="status ' + statusClass + '">' + statusLabel + '</span></div>'
-          + '<div class="demande-desc">' + (d.message || 'Pas de message').substring(0, 100) + '</div>'
+          + '<div class="demande-name">' + (escapeHtml(d.client_nom) || 'Client anonyme') + ' <span class="status ' + statusClass + '">' + statusLabel + '</span></div>'
+          + '<div class="demande-desc">' + (escapeHtml(d.message) || 'Pas de message').substring(0, 100) + '</div>'
           + '<div class="demande-meta">' + meta + '</div>'
           + '</div>'
           + '<div class="demande-actions">' + actions + '</div>'
@@ -2964,13 +2986,13 @@
 
         var replyHtml = '';
         if (a.reponse_artisan) {
-          replyHtml = '<div class="avis-reply-existing"><strong>Votre réponse</strong>' + a.reponse_artisan.substring(0, 100) + (a.reponse_artisan.length > 100 ? '...' : '') + '</div>';
+          replyHtml = '<div class="avis-reply-existing"><strong>Votre réponse</strong>' + escapeHtml(a.reponse_artisan.substring(0, 100)) + (a.reponse_artisan.length > 100 ? '...' : '') + '</div>';
         } else {
           replyHtml = '<button class="avis-reply-btn" onclick="showReplyForm(\'' + a.id + '\', this)">Répondre</button>';
         }
 
         html += '<div class="avis-item" data-avis-id="' + a.id + '"><div class="avis-top"><span class="avis-author">' + initials + '</span><span class="avis-stars">' + stars + '</span></div>'
-          + '<div class="avis-text">' + (a.commentaire || '').substring(0, 80) + (a.commentaire && a.commentaire.length > 80 ? '...' : '') + '</div>'
+          + '<div class="avis-text">' + escapeHtml((a.commentaire || '').substring(0, 80)) + (a.commentaire && a.commentaire.length > 80 ? '...' : '') + '</div>'
           + replyHtml + '</div>';
       });
       container.innerHTML = html;
@@ -3094,23 +3116,23 @@
       // Contact grid
       var contactHtml = '';
       if (d.client_email) {
-        contactHtml += '<a href="mailto:' + d.client_email + '" class="detail-contact-item">'
+        contactHtml += '<a href="mailto:' + escapeHtml(d.client_email) + '" class="detail-contact-item">'
           + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>'
-          + d.client_email + '</a>';
+          + escapeHtml(d.client_email) + '</a>';
       }
       if (d.client_telephone) {
-        contactHtml += '<a href="tel:' + d.client_telephone + '" class="detail-contact-item">'
+        contactHtml += '<a href="tel:' + escapeHtml(d.client_telephone) + '" class="detail-contact-item">'
           + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>'
-          + d.client_telephone + '</a>';
+          + escapeHtml(d.client_telephone) + '</a>';
       }
       if (!contactHtml) contactHtml = '<div style="color:var(--gray-500);font-size:13px;">Aucune information de contact</div>';
       document.getElementById('detailContactGrid').innerHTML = contactHtml;
 
       // Date info
       var dateHtml = '';
-      if (d.client_adresse) dateHtml += 'Adresse : <strong>' + d.client_adresse + '</strong>';
-      if (d.date_souhaitee) dateHtml += (dateHtml ? '<br>' : '') + 'Date souhaitée : <strong>' + d.date_souhaitee + '</strong>';
-      if (d.moment_journee) dateHtml += (dateHtml ? '<br>' : '') + 'Moment : <strong>' + d.moment_journee + '</strong>';
+      if (d.client_adresse) dateHtml += 'Adresse : <strong>' + escapeHtml(d.client_adresse) + '</strong>';
+      if (d.date_souhaitee) dateHtml += (dateHtml ? '<br>' : '') + 'Date souhaitée : <strong>' + escapeHtml(d.date_souhaitee) + '</strong>';
+      if (d.moment_journee) dateHtml += (dateHtml ? '<br>' : '') + 'Moment : <strong>' + escapeHtml(d.moment_journee) + '</strong>';
       dateHtml += (dateHtml ? '<br>' : '') + 'Reçue : <strong>' + timeAgo(d.created_at) + '</strong>';
       var dateSection = document.getElementById('detailDateSection');
       document.getElementById('detailDateInfo').innerHTML = dateHtml;
@@ -3122,7 +3144,7 @@
       // Footer actions
       var footerHtml = '';
       if (d.statut === 'nouvelle') {
-        footerHtml = '<button class="modal-btn modal-btn-cancel" onclick="openRefuseModal(null, \'' + (d.client_nom || '').replace(/'/g, "\\'") + '\', \'' + d.id + '\');closeDemandeDetail();">Refuser</button>'
+        footerHtml = '<button class="modal-btn modal-btn-cancel" onclick="openRefuseModal(null, \'' + escapeHtml((d.client_nom || '').replace(/'/g, "\\'")) + '\', \'' + d.id + '\');closeDemandeDetail();">Refuser</button>'
           + '<button class="modal-btn" style="background:var(--green);color:white;" onclick="acceptDemandeDB(\'' + d.id + '\');closeDemandeDetail();">Accepter</button>';
       } else if (d.statut === 'confirmee' || d.statut === 'acceptee') {
         footerHtml = '<button class="modal-btn" style="background:#2E7D32;color:white;" onclick="completeDemandeDB(\'' + d.id + '\');closeDemandeDetail();">Marquer comme terminé</button>';
@@ -3495,14 +3517,14 @@
     }
 
     // ===== QUICK PDF FROM LIST =====
-    function factQuickPDF(docId) {
+    async function factQuickPDF(docId) {
       var doc = factDocuments.find(function(d) { return d.id === docId; });
       if (!doc) return;
       var prevDoc = factCurrentDoc;
       factCurrentDoc = JSON.parse(JSON.stringify(doc));
       if (typeof factCurrentDoc.lignes === 'string') factCurrentDoc.lignes = JSON.parse(factCurrentDoc.lignes);
       if (!Array.isArray(factCurrentDoc.lignes)) factCurrentDoc.lignes = [];
-      factExportPDF();
+      await factExportPDF();
       factCurrentDoc = prevDoc;
     }
 
@@ -4061,8 +4083,9 @@
     }
 
     // ===== PREVIEW =====
-    function factPreview() {
+    async function factPreview() {
       if (!factCurrentDoc) return;
+      await loadFacturationLibs();
       factCollectData();
       var d = factCurrentDoc;
       var prof = factArtisanProfile || {};
@@ -4151,8 +4174,9 @@
     function factClosePreview() { document.getElementById('factPreviewModal').classList.remove('active'); }
 
     // ===== PDF EXPORT (Nespresso-inspired layout) =====
-    function factExportPDF() {
+    async function factExportPDF() {
       if (!factCurrentDoc) return;
+      await loadFacturationLibs();
       factCollectData();
       var d = factCurrentDoc;
       var prof = factArtisanProfile || {};

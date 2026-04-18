@@ -16,6 +16,8 @@
 <meta property="og:url" content="https://artisano.ch/profil">
 <meta property="og:site_name" content="Artisano">
 <meta property="og:locale" content="fr_CH">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="artisano-common.css">
 <style>
@@ -1860,18 +1862,18 @@
       // Phone in meta
       var metaItems = document.querySelectorAll('.profile-meta-item');
       if (metaItems[1] && p.telephone) {
-        metaItems[1].innerHTML = metaItems[1].querySelector('svg').outerHTML + ' ' + p.telephone;
+        metaItems[1].innerHTML = metaItems[1].querySelector('svg').outerHTML + ' ' + escapeHtml(p.telephone);
       }
 
       // Location in meta
       if (metaItems[0] && p.zones && p.zones.length > 0) {
-        metaItems[0].innerHTML = metaItems[0].querySelector('svg').outerHTML + ' ' + p.zones[0] + ' et environs';
+        metaItems[0].innerHTML = metaItems[0].querySelector('svg').outerHTML + ' ' + escapeHtml(p.zones[0]) + ' et environs';
       }
 
       // Description
       var descEl = document.querySelector('.description-text');
       if (descEl && p.description) {
-        descEl.innerHTML = '<p>' + p.description.replace(/\n\n/g, '</p><br><p>').replace(/\n/g, '<br>') + '</p>';
+        descEl.innerHTML = '<p>' + escapeHtml(p.description).replace(/\n\n/g, '</p><br><p>').replace(/\n/g, '<br>') + '</p>';
       }
 
       // Specialites
@@ -1906,13 +1908,13 @@
       var contactItems = document.querySelectorAll('.contact-item');
       if (contactItems[0] && p.telephone) {
         var tel = p.telephone.replace(/\s/g, '');
-        contactItems[0].innerHTML = contactItems[0].querySelector('svg').outerHTML + ' <a href="tel:+41' + tel + '">' + p.telephone + '</a>';
+        contactItems[0].innerHTML = contactItems[0].querySelector('svg').outerHTML + ' <a href="tel:+41' + escapeHtml(tel) + '">' + escapeHtml(p.telephone) + '</a>';
       }
       if (contactItems[1] && p.email) {
-        contactItems[1].innerHTML = contactItems[1].querySelector('svg').outerHTML + ' <a href="mailto:' + p.email + '">' + p.email + '</a>';
+        contactItems[1].innerHTML = contactItems[1].querySelector('svg').outerHTML + ' <a href="mailto:' + escapeHtml(p.email) + '">' + escapeHtml(p.email) + '</a>';
       }
       if (contactItems[2] && p.adresse) {
-        contactItems[2].innerHTML = contactItems[2].querySelector('svg').outerHTML + ' ' + p.adresse;
+        contactItems[2].innerHTML = contactItems[2].querySelector('svg').outerHTML + ' ' + escapeHtml(p.adresse);
       }
 
       // Sidebar: horaires in contact card
@@ -1921,7 +1923,7 @@
         var horaireText = '';
         p.horaires.forEach(function(h) {
           if (h.ouvert) {
-            horaireText += h.jour + ' : ' + h.debut + ' – ' + h.fin + '<br>';
+            horaireText += escapeHtml(h.jour) + ' : ' + escapeHtml(h.debut) + ' – ' + escapeHtml(h.fin) + '<br>';
           }
         });
         if (!horaireText) horaireText = 'Horaires non définis';
@@ -1972,7 +1974,7 @@
       if (p.avatarUrl) {
         var avatarEl = document.querySelector('.profile-avatar');
         if (avatarEl) {
-          avatarEl.innerHTML = '<img src="' + p.avatarUrl + '?t=' + Date.now() + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:20px">' +
+          avatarEl.innerHTML = '<img src="' + escapeHtml(p.avatarUrl) + '?t=' + Date.now() + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:20px">' +
             '<div class="profile-verified-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>';
           avatarEl.style.overflow = 'hidden';
         }
@@ -2075,17 +2077,17 @@
         if (r.reponse_artisan) {
           replyHtml = '<div class="review-reply">' +
             '<div class="review-reply-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg> Réponse de l\'artisan</div>' +
-            '<div class="review-reply-text">' + r.reponse_artisan + '</div>' +
+            '<div class="review-reply-text">' + escapeHtml(r.reponse_artisan) + '</div>' +
           '</div>';
         }
 
         item.innerHTML =
           '<div class="review-top">' +
-            '<div class="review-author">' + authorName + '</div>' +
+            '<div class="review-author">' + escapeHtml(authorName) + '</div>' +
             '<div class="review-date">' + dateStr + '</div>' +
           '</div>' +
           '<div class="review-stars">' + starsStr + '</div>' +
-          '<div class="review-text">' + (r.commentaire || '') + '</div>' +
+          '<div class="review-text">' + (escapeHtml(r.commentaire) || '') + '</div>' +
           '<div class="review-badge">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
             ' Avis vérifié' +
