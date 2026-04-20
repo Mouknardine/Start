@@ -774,6 +774,120 @@
     .fact-preview-bottom-right { text-align:left; }
     .fact-preview-payment-grid { grid-template-columns:1fr; }
   }
+
+  /* ===== MODULE ÉQUIPE ===== */
+  .team-section { display:none; }
+  .team-section.active { display:block; }
+  .team-layout { display:grid; grid-template-columns:280px 1fr; gap:24px; }
+  .team-sidebar { background:white; border-radius:var(--radius); border:1px solid var(--gray-200); padding:20px; height:fit-content; }
+  .team-sidebar-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .team-sidebar-title { font-family:'Sora',sans-serif; font-size:16px; font-weight:700; }
+  .team-add-btn { background:var(--orange); color:white; border:none; border-radius:50px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; font-family:'Sora',sans-serif; transition:all 0.2s; }
+  .team-add-btn:hover { background:var(--orange-dark); transform:translateY(-1px); }
+  .team-emp-list { display:flex; flex-direction:column; gap:8px; }
+  .team-emp-item { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; cursor:pointer; transition:all 0.15s; border:1px solid transparent; }
+  .team-emp-item:hover { background:var(--gray-100); }
+  .team-emp-item.selected { border-color:var(--orange); background:rgba(232,112,10,0.04); }
+  .team-emp-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-family:'Sora',sans-serif; font-weight:800; font-size:13px; flex-shrink:0; }
+  .team-emp-info { flex:1; min-width:0; }
+  .team-emp-name { font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .team-emp-poste { font-size:11px; color:var(--gray-500); }
+  .team-emp-actions { display:flex; gap:4px; opacity:0; transition:opacity 0.15s; }
+  .team-emp-item:hover .team-emp-actions { opacity:1; }
+  .team-emp-action-btn { background:none; border:none; cursor:pointer; padding:4px; border-radius:6px; color:var(--gray-500); transition:all 0.15s; }
+  .team-emp-action-btn:hover { background:var(--gray-200); color:var(--dark); }
+  .team-emp-action-btn.delete:hover { color:var(--red); background:rgba(211,47,47,0.08); }
+
+  .team-emp-form { background:var(--gray-100); border-radius:12px; padding:16px; margin-top:12px; display:none; }
+  .team-emp-form.active { display:block; }
+  .team-emp-form input { width:100%; padding:8px 12px; border:1px solid var(--gray-200); border-radius:8px; font-size:13px; margin-bottom:8px; box-sizing:border-box; background:white; }
+  .team-emp-form input:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.08); }
+  .team-color-picker { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+  .team-color-dot { width:24px; height:24px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:all 0.15s; }
+  .team-color-dot:hover { transform:scale(1.15); }
+  .team-color-dot.selected { border-color:var(--dark); box-shadow:0 0 0 2px white, 0 0 0 4px var(--dark); }
+  .team-form-actions { display:flex; gap:8px; justify-content:flex-end; }
+  .team-form-btn { padding:7px 16px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; border:none; transition:all 0.15s; }
+  .team-form-btn.cancel { background:var(--gray-200); color:var(--gray-700); }
+  .team-form-btn.save { background:var(--orange); color:white; }
+  .team-form-btn.save:hover { background:var(--orange-dark); }
+
+  .team-timeline-card { background:white; border-radius:var(--radius); border:1px solid var(--gray-200); overflow:hidden; }
+  .team-timeline-header { padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--gray-100); }
+  .team-timeline-nav { display:flex; align-items:center; gap:10px; }
+  .team-nav-btn { width:32px; height:32px; border-radius:8px; border:1px solid var(--gray-200); background:white; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+  .team-nav-btn:hover { background:var(--gray-100); }
+  .team-nav-btn svg { width:14px; height:14px; }
+  .team-date-label { font-family:'Sora',sans-serif; font-size:14px; font-weight:700; min-width:200px; text-align:center; }
+  .team-today-btn { padding:6px 14px; border-radius:50px; border:1px solid var(--gray-200); background:white; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s; }
+  .team-today-btn:hover { background:var(--gray-100); }
+  .team-view-toggle { display:flex; gap:2px; background:var(--gray-200); padding:3px; border-radius:8px; }
+  .team-view-btn { padding:6px 14px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; border:none; background:transparent; color:var(--gray-500); transition:all 0.15s; }
+  .team-view-btn.active { background:white; color:var(--dark); box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+
+  .team-timeline-body { overflow-x:auto; }
+  .team-timeline-grid { min-width:900px; }
+  .team-timeline-hours { display:grid; grid-template-columns:160px repeat(12, 1fr); border-bottom:1px solid var(--gray-200); }
+  .team-timeline-hours-label { padding:8px 12px; font-size:10px; font-weight:700; color:var(--gray-400); text-transform:uppercase; }
+  .team-timeline-hour { padding:8px 0; text-align:center; font-size:10px; font-weight:600; color:var(--gray-400); border-left:1px solid var(--gray-100); }
+  .team-row { display:grid; grid-template-columns:160px 1fr; border-bottom:1px solid var(--gray-50); min-height:60px; }
+  .team-row:last-child { border-bottom:none; }
+  .team-row-label { display:flex; align-items:center; gap:10px; padding:10px 16px; border-right:1px solid var(--gray-100); }
+  .team-row-avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-family:'Sora',sans-serif; font-weight:800; font-size:10px; flex-shrink:0; }
+  .team-row-name { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .team-row-timeline { position:relative; display:grid; grid-template-columns:repeat(12, 1fr); }
+  .team-row-hour-cell { border-left:1px solid var(--gray-50); min-height:60px; cursor:pointer; transition:background 0.1s; }
+  .team-row-hour-cell:hover { background:rgba(232,112,10,0.03); }
+  .team-block { position:absolute; top:6px; bottom:6px; border-radius:6px; padding:4px 8px; cursor:pointer; display:flex; flex-direction:column; justify-content:center; overflow:hidden; border-left:4px solid; transition:all 0.15s; z-index:2; }
+  .team-block:hover { box-shadow:0 4px 12px rgba(0,0,0,0.12); transform:translateY(-1px); z-index:5; }
+  .team-block-title { font-size:11px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .team-block-time { font-size:9px; opacity:0.7; white-space:nowrap; }
+  .team-block-addr { font-size:9px; opacity:0.6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .team-empty-state { text-align:center; padding:60px 20px; color:var(--gray-500); }
+  .team-empty-state svg { width:48px; height:48px; color:var(--gray-300); margin-bottom:12px; }
+  .team-empty-state p { font-size:13px; margin:0 0 16px; }
+
+  /* Week view */
+  .team-week-grid { min-width:900px; }
+  .team-week-headers { display:grid; grid-template-columns:160px repeat(7, 1fr); border-bottom:1px solid var(--gray-200); }
+  .team-week-day-header { padding:10px 8px; text-align:center; font-size:11px; font-weight:700; color:var(--gray-500); border-left:1px solid var(--gray-100); }
+  .team-week-day-header.today { color:var(--orange); }
+  .team-week-row { display:grid; grid-template-columns:160px repeat(7, 1fr); border-bottom:1px solid var(--gray-50); min-height:70px; }
+  .team-week-cell { border-left:1px solid var(--gray-50); padding:4px; display:flex; flex-direction:column; gap:3px; cursor:pointer; transition:background 0.1s; }
+  .team-week-cell:hover { background:rgba(232,112,10,0.03); }
+  .team-week-block { border-radius:4px; padding:3px 6px; border-left:3px solid; font-size:10px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; transition:all 0.1s; }
+  .team-week-block:hover { opacity:0.8; }
+
+  /* Team popup */
+  .team-popup-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); z-index:200; align-items:center; justify-content:center; }
+  .team-popup-overlay.active { display:flex; }
+  .team-popup { background:white; border-radius:16px; padding:28px; width:440px; max-width:90vw; max-height:85vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.15); }
+  .team-popup-title { font-family:'Sora',sans-serif; font-size:18px; font-weight:700; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+  .team-popup-title svg { width:20px; height:20px; color:var(--orange); }
+  .team-popup label { display:block; font-size:12px; font-weight:600; color:var(--gray-600); margin-bottom:4px; }
+  .team-popup input, .team-popup select, .team-popup textarea { width:100%; padding:10px 14px; border:1px solid var(--gray-200); border-radius:10px; font-size:13px; box-sizing:border-box; margin-bottom:14px; font-family:'DM Sans',sans-serif; }
+  .team-popup input:focus, .team-popup select:focus, .team-popup textarea:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,112,10,0.08); }
+  .team-popup textarea { resize:vertical; min-height:60px; }
+  .team-popup-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .team-popup-actions { display:flex; justify-content:space-between; margin-top:8px; }
+  .team-popup-btn { padding:10px 22px; border-radius:50px; font-weight:700; font-size:13px; cursor:pointer; border:none; transition:all 0.15s; font-family:'Sora',sans-serif; }
+  .team-popup-btn.cancel { background:var(--gray-200); color:var(--gray-700); }
+  .team-popup-btn.cancel:hover { background:var(--gray-300); }
+  .team-popup-btn.save { background:var(--orange); color:white; }
+  .team-popup-btn.save:hover { background:var(--orange-dark); }
+  .team-popup-btn.delete { background:none; color:var(--red); padding:10px 0; }
+  .team-popup-btn.delete:hover { text-decoration:underline; }
+
+  @media(max-width:900px) {
+    .team-layout { grid-template-columns:1fr; }
+    .team-sidebar { order:1; }
+    .team-timeline-card { order:2; }
+  }
+  @media(max-width:500px) {
+    .team-popup { padding:20px; width:95vw; }
+    .team-popup-row { grid-template-columns:1fr; }
+  }
 </style>
 </head>
 <body>
@@ -831,6 +945,7 @@
     <div class="dash-tabs">
       <div class="dash-tab active" onclick="switchDashTab('demandes')">Demandes</div>
       <div class="dash-tab" onclick="switchDashTab('agenda')">Agenda</div>
+      <div class="dash-tab" onclick="switchDashTab('equipe')">Équipe</div>
       <div class="dash-tab" onclick="switchDashTab('facturation')">Facturation</div>
     </div>
 
@@ -1339,6 +1454,91 @@
     </div>
   </div>
 
+  <!-- ===== ÉQUIPE TAB ===== -->
+  <div class="team-section" id="tab-equipe" style="display:none;">
+    <div class="team-layout">
+      <!-- SIDEBAR EMPLOYÉS -->
+      <div class="team-sidebar">
+        <div class="team-sidebar-header">
+          <span class="team-sidebar-title">Mon équipe</span>
+          <button class="team-add-btn" onclick="showTeamAddForm()">+ Ajouter</button>
+        </div>
+        <div class="team-emp-list" id="teamEmpList">
+          <div class="team-empty-state" id="teamEmpEmpty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            <p>Ajoutez vos employés pour gérer leur planning</p>
+          </div>
+        </div>
+        <!-- Formulaire ajout/édition employé -->
+        <div class="team-emp-form" id="teamEmpForm">
+          <input type="text" id="teamEmpPrenom" placeholder="Prénom *">
+          <input type="text" id="teamEmpNom" placeholder="Nom">
+          <input type="text" id="teamEmpPoste" placeholder="Poste (ex: Apprenti, Chef)">
+          <input type="tel" id="teamEmpTel" placeholder="Téléphone">
+          <input type="email" id="teamEmpEmail" placeholder="Email">
+          <div class="team-color-picker" id="teamColorPicker"></div>
+          <div class="team-form-actions">
+            <button class="team-form-btn cancel" onclick="hideTeamForm()">Annuler</button>
+            <button class="team-form-btn save" id="teamFormSaveBtn" onclick="saveTeamEmploye()">Ajouter</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIMELINE -->
+      <div class="team-timeline-card">
+        <div class="team-timeline-header">
+          <div class="team-timeline-nav">
+            <button class="team-nav-btn" onclick="navigateTeamDate(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <span class="team-date-label" id="teamDateLabel"></span>
+            <button class="team-nav-btn" onclick="navigateTeamDate(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+            <button class="team-today-btn" onclick="teamGoToday()">Aujourd'hui</button>
+          </div>
+          <div class="team-view-toggle">
+            <button class="team-view-btn active" id="teamViewDayBtn" onclick="switchTeamView('day')">Jour</button>
+            <button class="team-view-btn" id="teamViewWeekBtn" onclick="switchTeamView('week')">Semaine</button>
+          </div>
+        </div>
+        <div class="team-timeline-body" id="teamTimelineBody">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEAM AFFECTATION POPUP -->
+  <div class="team-popup-overlay" id="teamAffectPopup">
+    <div class="team-popup">
+      <div class="team-popup-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> <span id="teamPopupTitle">Nouvelle affectation</span></div>
+      <label>Titre du chantier *</label>
+      <input type="text" id="teamAffTitre" placeholder="Ex: Rénovation salle de bain">
+      <label>Employé *</label>
+      <select id="teamAffEmploye"><option value="">Sélectionner un employé</option></select>
+      <div class="team-popup-row">
+        <div>
+          <label>Date</label>
+          <input type="date" id="teamAffDate">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div><label>Début</label><input type="time" id="teamAffDebut" value="08:00"></div>
+          <div><label>Fin</label><input type="time" id="teamAffFin" value="12:00"></div>
+        </div>
+      </div>
+      <label>Adresse</label>
+      <input type="text" id="teamAffAdresse" placeholder="Rue, ville (optionnel)">
+      <label>Notes</label>
+      <textarea id="teamAffNotes" placeholder="Instructions, matériel nécessaire..."></textarea>
+      <label>Lier à une demande</label>
+      <select id="teamAffDemande"><option value="">Aucune demande liée</option></select>
+      <div class="team-popup-actions">
+        <button class="team-popup-btn delete" id="teamPopupDeleteBtn" onclick="deleteTeamAffectation()" style="display:none;">Supprimer</button>
+        <div style="display:flex;gap:8px;">
+          <button class="team-popup-btn cancel" onclick="closeTeamPopup()">Annuler</button>
+          <button class="team-popup-btn save" onclick="saveTeamAffectation()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== FACTURATION TAB ===== -->
   <div class="facturation-section" id="tab-facturation" style="display:none;">
 
@@ -1566,12 +1766,12 @@
     /* ========== TAB SWITCHING ========== */
     function switchDashTab(tab) {
       document.querySelectorAll('.dash-tab').forEach(function(t) { t.classList.remove('active'); });
-      var sections = ['tab-demandes','tab-agenda','tab-facturation'];
+      var sections = ['tab-demandes','tab-agenda','tab-equipe','tab-facturation'];
       sections.forEach(function(id) {
         var el = document.getElementById(id);
         if (el) { el.classList.remove('active'); el.style.display = 'none'; }
       });
-      var tabIndex = { demandes:0, agenda:1, facturation:2 };
+      var tabIndex = { demandes:0, agenda:1, equipe:2, facturation:3 };
       var idx = tabIndex[tab];
       if (idx !== undefined) {
         var tabs = document.querySelectorAll('.dash-tab');
@@ -1582,6 +1782,11 @@
       if (tab === 'agenda') {
         requestAnimationFrame(function() {
           if (typeof renderCellTitles === 'function') renderCellTitles();
+        });
+      }
+      if (tab === 'equipe') {
+        requestAnimationFrame(function() {
+          if (typeof loadTeamData === 'function' && !teamDataLoaded) loadTeamData();
         });
       }
       if (tab === 'facturation') {
@@ -3368,6 +3573,452 @@
         dateEl.textContent = jours[now.getDay()] + ' ' + now.getDate() + ' ' + mois[now.getMonth()] + ' ' + now.getFullYear();
       }
     })();
+
+    /* ================================================================
+       MODULE ÉQUIPE — Gestion employés & planning
+       ================================================================ */
+
+    var teamDataLoaded = false;
+    var teamEmployes = [];
+    var teamAffectations = [];
+    var teamCurrentDate = new Date();
+    var teamView = 'day';
+    var teamEditingEmpId = null;
+    var teamEditingAffId = null;
+    var TEAM_COLORS = ['#2E7D32','#1565C0','#E65100','#6A1B9A','#C62828','#00838F','#4E342E','#37474F'];
+    var teamSelectedColor = TEAM_COLORS[0];
+
+    async function loadTeamData() {
+      var user = await getUser();
+      if (!user) return;
+      try {
+        teamEmployes = await getEmployes(user.id);
+        var range = getTeamDateRange();
+        teamAffectations = await getAffectations(user.id, range.start, range.end);
+        teamDataLoaded = true;
+        renderEmployeList();
+        renderTeamTimeline();
+      } catch(e) {
+        console.error('Erreur chargement équipe:', e);
+      }
+    }
+
+    function getTeamDateRange() {
+      if (teamView === 'day') {
+        var ds = formatDateISO(teamCurrentDate);
+        return { start: ds, end: ds };
+      } else {
+        var monday = getMonday(new Date(teamCurrentDate));
+        var sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        return { start: formatDateISO(monday), end: formatDateISO(sunday) };
+      }
+    }
+
+    function formatDateISO(d) {
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+
+    // === EMPLOYEE MANAGEMENT ===
+
+    function renderEmployeList() {
+      var list = document.getElementById('teamEmpList');
+      var empty = document.getElementById('teamEmpEmpty');
+      if (teamEmployes.length === 0) {
+        list.innerHTML = '';
+        list.appendChild(empty);
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      var html = '';
+      teamEmployes.forEach(function(emp) {
+        var initials = (emp.prenom[0] || '').toUpperCase() + (emp.nom ? emp.nom[0].toUpperCase() : '');
+        html += '<div class="team-emp-item" data-id="' + emp.id + '">' +
+          '<div class="team-emp-avatar" style="background:' + escapeHtml(emp.couleur) + ';">' + escapeHtml(initials) + '</div>' +
+          '<div class="team-emp-info"><div class="team-emp-name">' + escapeHtml(emp.prenom) + (emp.nom ? ' ' + escapeHtml(emp.nom) : '') + '</div>' +
+          (emp.poste ? '<div class="team-emp-poste">' + escapeHtml(emp.poste) + '</div>' : '') + '</div>' +
+          '<div class="team-emp-actions">' +
+            '<button class="team-emp-action-btn" onclick="editTeamEmploye(\'' + emp.id + '\')" title="Modifier"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
+            '<button class="team-emp-action-btn delete" onclick="deleteTeamEmploye(\'' + emp.id + '\')" title="Supprimer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>' +
+          '</div></div>';
+      });
+      list.innerHTML = html;
+    }
+
+    function showTeamAddForm() {
+      teamEditingEmpId = null;
+      document.getElementById('teamEmpPrenom').value = '';
+      document.getElementById('teamEmpNom').value = '';
+      document.getElementById('teamEmpPoste').value = '';
+      document.getElementById('teamEmpTel').value = '';
+      document.getElementById('teamEmpEmail').value = '';
+      teamSelectedColor = TEAM_COLORS[0];
+      renderTeamColorPicker();
+      document.getElementById('teamFormSaveBtn').textContent = 'Ajouter';
+      document.getElementById('teamEmpForm').classList.add('active');
+    }
+
+    function hideTeamForm() {
+      document.getElementById('teamEmpForm').classList.remove('active');
+      teamEditingEmpId = null;
+    }
+
+    function renderTeamColorPicker() {
+      var html = '';
+      TEAM_COLORS.forEach(function(c) {
+        html += '<div class="team-color-dot' + (c === teamSelectedColor ? ' selected' : '') + '" style="background:' + c + ';" onclick="selectTeamColor(\'' + c + '\')"></div>';
+      });
+      document.getElementById('teamColorPicker').innerHTML = html;
+    }
+
+    function selectTeamColor(c) {
+      teamSelectedColor = c;
+      renderTeamColorPicker();
+    }
+
+    function editTeamEmploye(id) {
+      var emp = teamEmployes.find(function(e) { return e.id === id; });
+      if (!emp) return;
+      teamEditingEmpId = id;
+      document.getElementById('teamEmpPrenom').value = emp.prenom || '';
+      document.getElementById('teamEmpNom').value = emp.nom || '';
+      document.getElementById('teamEmpPoste').value = emp.poste || '';
+      document.getElementById('teamEmpTel').value = emp.telephone || '';
+      document.getElementById('teamEmpEmail').value = emp.email || '';
+      teamSelectedColor = emp.couleur || TEAM_COLORS[0];
+      renderTeamColorPicker();
+      document.getElementById('teamFormSaveBtn').textContent = 'Modifier';
+      document.getElementById('teamEmpForm').classList.add('active');
+    }
+
+    async function saveTeamEmploye() {
+      var prenom = document.getElementById('teamEmpPrenom').value.trim();
+      if (!prenom) { alert('Le prénom est requis.'); return; }
+      var user = await getUser();
+      if (!user) return;
+      var data = {
+        prenom: prenom,
+        nom: document.getElementById('teamEmpNom').value.trim(),
+        poste: document.getElementById('teamEmpPoste').value.trim(),
+        telephone: document.getElementById('teamEmpTel').value.trim(),
+        email: document.getElementById('teamEmpEmail').value.trim(),
+        couleur: teamSelectedColor
+      };
+      try {
+        if (teamEditingEmpId) {
+          await updateEmploye(teamEditingEmpId, data);
+        } else {
+          data.artisan_id = user.id;
+          await addEmploye(data);
+        }
+        hideTeamForm();
+        await loadTeamData();
+      } catch(e) {
+        alert('Erreur: ' + e.message);
+      }
+    }
+
+    async function deleteTeamEmploye(id) {
+      if (!confirm('Supprimer cet employé ? Ses affectations futures seront aussi supprimées.')) return;
+      try {
+        await deleteEmploye(id);
+        await loadTeamData();
+      } catch(e) {
+        alert('Erreur: ' + e.message);
+      }
+    }
+
+    // === TIMELINE RENDERING ===
+
+    function navigateTeamDate(dir) {
+      if (teamView === 'day') {
+        teamCurrentDate.setDate(teamCurrentDate.getDate() + dir);
+      } else {
+        teamCurrentDate.setDate(teamCurrentDate.getDate() + dir * 7);
+      }
+      refreshTeamTimeline();
+    }
+
+    function teamGoToday() {
+      teamCurrentDate = new Date();
+      refreshTeamTimeline();
+    }
+
+    function switchTeamView(view) {
+      teamView = view;
+      document.getElementById('teamViewDayBtn').classList.toggle('active', view === 'day');
+      document.getElementById('teamViewWeekBtn').classList.toggle('active', view === 'week');
+      refreshTeamTimeline();
+    }
+
+    async function refreshTeamTimeline() {
+      var user = await getUser();
+      if (!user) return;
+      var range = getTeamDateRange();
+      try {
+        teamAffectations = await getAffectations(user.id, range.start, range.end);
+      } catch(e) { console.error(e); }
+      renderTeamTimeline();
+    }
+
+    function renderTeamTimeline() {
+      updateTeamDateLabel();
+      if (teamEmployes.length === 0) {
+        document.getElementById('teamTimelineBody').innerHTML = '<div class="team-empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><p>Ajoutez des employés pour voir leur planning ici</p></div>';
+        return;
+      }
+      if (teamView === 'day') {
+        renderTeamDayView();
+      } else {
+        renderTeamWeekView();
+      }
+    }
+
+    function updateTeamDateLabel() {
+      var label = document.getElementById('teamDateLabel');
+      var jourNoms = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+      var moisNoms = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+      if (teamView === 'day') {
+        label.textContent = jourNoms[teamCurrentDate.getDay()] + ' ' + teamCurrentDate.getDate() + ' ' + moisNoms[teamCurrentDate.getMonth()] + ' ' + teamCurrentDate.getFullYear();
+      } else {
+        var monday = getMonday(new Date(teamCurrentDate));
+        var sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        label.textContent = 'Semaine du ' + monday.getDate() + ' ' + moisNoms[monday.getMonth()] + ' au ' + sunday.getDate() + ' ' + moisNoms[sunday.getMonth()];
+      }
+    }
+
+    function renderTeamDayView() {
+      var body = document.getElementById('teamTimelineBody');
+      var todayStr = formatDateISO(teamCurrentDate);
+      var hours = [];
+      for (var h = 7; h <= 18; h++) hours.push(h);
+
+      var html = '<div class="team-timeline-grid">';
+      // Hours header
+      html += '<div class="team-timeline-hours"><div class="team-timeline-hours-label">Employé</div>';
+      hours.forEach(function(h) {
+        html += '<div class="team-timeline-hour">' + h + 'h</div>';
+      });
+      html += '</div>';
+
+      // Rows per employee
+      teamEmployes.forEach(function(emp) {
+        var initials = (emp.prenom[0] || '').toUpperCase() + (emp.nom ? emp.nom[0].toUpperCase() : '');
+        html += '<div class="team-row">';
+        html += '<div class="team-row-label"><div class="team-row-avatar" style="background:' + escapeHtml(emp.couleur) + ';">' + escapeHtml(initials) + '</div><div class="team-row-name">' + escapeHtml(emp.prenom) + (emp.nom ? ' ' + escapeHtml(emp.nom[0]) + '.' : '') + '</div></div>';
+        html += '<div class="team-row-timeline" data-emp="' + emp.id + '">';
+        // Hour cells
+        hours.forEach(function(h) {
+          html += '<div class="team-row-hour-cell" data-hour="' + h + '" onclick="openNewTeamAffect(\'' + emp.id + '\',\'' + todayStr + '\',' + h + ')"></div>';
+        });
+        // Affectation blocks
+        var empAffs = teamAffectations.filter(function(a) { return a.employe_id === emp.id && a.date_debut === todayStr; });
+        empAffs.forEach(function(aff) {
+          var startMin = timeToMinutes(aff.heure_debut);
+          var endMin = timeToMinutes(aff.heure_fin);
+          var gridStart = 7 * 60; // 7h
+          var gridEnd = 19 * 60; // 19h
+          var totalMin = gridEnd - gridStart;
+          var left = ((startMin - gridStart) / totalMin) * 100;
+          var width = ((endMin - startMin) / totalMin) * 100;
+          if (left < 0) left = 0;
+          if (left + width > 100) width = 100 - left;
+          var color = emp.couleur;
+          html += '<div class="team-block" style="left:' + left + '%;width:' + width + '%;border-left-color:' + color + ';background:' + color + '15;" onclick="event.stopPropagation();openEditTeamAffect(\'' + aff.id + '\')">';
+          html += '<div class="team-block-title" style="color:' + color + ';">' + escapeHtml(aff.titre) + '</div>';
+          html += '<div class="team-block-time">' + aff.heure_debut.substring(0,5) + ' - ' + aff.heure_fin.substring(0,5) + '</div>';
+          if (aff.adresse) html += '<div class="team-block-addr">' + escapeHtml(aff.adresse) + '</div>';
+          html += '</div>';
+        });
+        html += '</div></div>';
+      });
+      html += '</div>';
+      body.innerHTML = html;
+    }
+
+    function renderTeamWeekView() {
+      var body = document.getElementById('teamTimelineBody');
+      var monday = getMonday(new Date(teamCurrentDate));
+      var jourCourts = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+      var today = new Date();
+      today.setHours(0,0,0,0);
+
+      var html = '<div class="team-week-grid">';
+      // Day headers
+      html += '<div class="team-week-headers"><div class="team-timeline-hours-label">Employé</div>';
+      for (var i = 0; i < 7; i++) {
+        var dayDate = new Date(monday);
+        dayDate.setDate(monday.getDate() + i);
+        var isToday = dayDate.getTime() === today.getTime();
+        html += '<div class="team-week-day-header' + (isToday ? ' today' : '') + '">' + jourCourts[i] + ' ' + dayDate.getDate() + '</div>';
+      }
+      html += '</div>';
+
+      // Rows per employee
+      teamEmployes.forEach(function(emp) {
+        var initials = (emp.prenom[0] || '').toUpperCase() + (emp.nom ? emp.nom[0].toUpperCase() : '');
+        html += '<div class="team-week-row">';
+        html += '<div class="team-row-label"><div class="team-row-avatar" style="background:' + escapeHtml(emp.couleur) + ';">' + escapeHtml(initials) + '</div><div class="team-row-name">' + escapeHtml(emp.prenom) + (emp.nom ? ' ' + escapeHtml(emp.nom[0]) + '.' : '') + '</div></div>';
+        for (var d = 0; d < 7; d++) {
+          var dayDate = new Date(monday);
+          dayDate.setDate(monday.getDate() + d);
+          var ds = formatDateISO(dayDate);
+          var dayAffs = teamAffectations.filter(function(a) { return a.employe_id === emp.id && a.date_debut === ds; });
+          html += '<div class="team-week-cell" onclick="openNewTeamAffect(\'' + emp.id + '\',\'' + ds + '\', 8)">';
+          dayAffs.forEach(function(aff) {
+            var color = emp.couleur;
+            html += '<div class="team-week-block" style="border-left-color:' + color + ';background:' + color + '12;color:' + color + ';" onclick="event.stopPropagation();openEditTeamAffect(\'' + aff.id + '\')">' + escapeHtml(aff.titre) + ' <span style="opacity:0.6;">' + aff.heure_debut.substring(0,5) + '</span></div>';
+          });
+          html += '</div>';
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+      body.innerHTML = html;
+    }
+
+    function timeToMinutes(timeStr) {
+      var parts = timeStr.split(':');
+      return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    }
+
+    // === AFFECTATION POPUP ===
+
+    function openNewTeamAffect(empId, date, hour) {
+      teamEditingAffId = null;
+      document.getElementById('teamPopupTitle').textContent = 'Nouvelle affectation';
+      document.getElementById('teamPopupDeleteBtn').style.display = 'none';
+      document.getElementById('teamAffTitre').value = '';
+      document.getElementById('teamAffDate').value = date;
+      document.getElementById('teamAffDebut').value = String(hour).padStart(2,'0') + ':00';
+      document.getElementById('teamAffFin').value = String(hour + 2 > 19 ? 19 : hour + 2).padStart(2,'0') + ':00';
+      document.getElementById('teamAffAdresse').value = '';
+      document.getElementById('teamAffNotes').value = '';
+      document.getElementById('teamAffDemande').value = '';
+      populateTeamEmpSelect(empId);
+      populateTeamDemandeSelect();
+      document.getElementById('teamAffectPopup').classList.add('active');
+    }
+
+    function openEditTeamAffect(id) {
+      var aff = teamAffectations.find(function(a) { return a.id === id; });
+      if (!aff) return;
+      teamEditingAffId = id;
+      document.getElementById('teamPopupTitle').textContent = 'Modifier l\'affectation';
+      document.getElementById('teamPopupDeleteBtn').style.display = 'block';
+      document.getElementById('teamAffTitre').value = aff.titre || '';
+      document.getElementById('teamAffDate').value = aff.date_debut || '';
+      document.getElementById('teamAffDebut').value = aff.heure_debut ? aff.heure_debut.substring(0,5) : '';
+      document.getElementById('teamAffFin').value = aff.heure_fin ? aff.heure_fin.substring(0,5) : '';
+      document.getElementById('teamAffAdresse').value = aff.adresse || '';
+      document.getElementById('teamAffNotes').value = aff.notes || '';
+      document.getElementById('teamAffDemande').value = aff.demande_id || '';
+      populateTeamEmpSelect(aff.employe_id);
+      populateTeamDemandeSelect();
+      document.getElementById('teamAffectPopup').classList.add('active');
+    }
+
+    function closeTeamPopup() {
+      document.getElementById('teamAffectPopup').classList.remove('active');
+      teamEditingAffId = null;
+    }
+
+    function populateTeamEmpSelect(selectedId) {
+      var sel = document.getElementById('teamAffEmploye');
+      sel.innerHTML = '<option value="">Sélectionner un employé</option>';
+      teamEmployes.forEach(function(emp) {
+        sel.innerHTML += '<option value="' + emp.id + '"' + (emp.id === selectedId ? ' selected' : '') + '>' + escapeHtml(emp.prenom) + (emp.nom ? ' ' + escapeHtml(emp.nom) : '') + '</option>';
+      });
+    }
+
+    async function populateTeamDemandeSelect() {
+      var sel = document.getElementById('teamAffDemande');
+      var currentVal = sel.value;
+      sel.innerHTML = '<option value="">Aucune demande liée</option>';
+      try {
+        var user = await getUser();
+        if (!user) return;
+        var demandes = await loadDemandes(user.id);
+        var activeDemandes = demandes.filter(function(d) { return d.statut !== 'refusee'; });
+        activeDemandes.slice(0, 20).forEach(function(d) {
+          var label = (d.client_nom || 'Client') + ' — ' + (d.message || '').substring(0, 30);
+          sel.innerHTML += '<option value="' + d.id + '"' + (d.id === currentVal ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+        });
+      } catch(e) {}
+    }
+
+    async function saveTeamAffectation() {
+      var titre = document.getElementById('teamAffTitre').value.trim();
+      var empId = document.getElementById('teamAffEmploye').value;
+      var date = document.getElementById('teamAffDate').value;
+      var debut = document.getElementById('teamAffDebut').value;
+      var fin = document.getElementById('teamAffFin').value;
+
+      if (!titre) { alert('Le titre est requis.'); return; }
+      if (!empId) { alert('Sélectionnez un employé.'); return; }
+      if (!date) { alert('La date est requise.'); return; }
+      if (!debut || !fin) { alert('Les heures de début et fin sont requises.'); return; }
+      if (fin <= debut) { alert('L\'heure de fin doit être après l\'heure de début.'); return; }
+
+      // Check overlap
+      var overlap = teamAffectations.find(function(a) {
+        if (a.employe_id !== empId) return false;
+        if (a.date_debut !== date) return false;
+        if (teamEditingAffId && a.id === teamEditingAffId) return false;
+        var aStart = a.heure_debut.substring(0,5);
+        var aEnd = a.heure_fin.substring(0,5);
+        return (debut < aEnd && fin > aStart);
+      });
+      if (overlap) {
+        alert('Conflit : ' + (overlap.titre || 'une affectation') + ' occupe déjà ce créneau pour cet employé.');
+        return;
+      }
+
+      var user = await getUser();
+      if (!user) return;
+      var data = {
+        titre: titre,
+        employe_id: empId,
+        date_debut: date,
+        heure_debut: debut,
+        heure_fin: fin,
+        adresse: document.getElementById('teamAffAdresse').value.trim(),
+        notes: document.getElementById('teamAffNotes').value.trim(),
+        demande_id: document.getElementById('teamAffDemande').value || null
+      };
+
+      try {
+        if (teamEditingAffId) {
+          await updateAffectation(teamEditingAffId, data);
+        } else {
+          data.artisan_id = user.id;
+          await addAffectation(data);
+        }
+        closeTeamPopup();
+        await refreshTeamTimeline();
+      } catch(e) {
+        alert('Erreur: ' + e.message);
+      }
+    }
+
+    async function deleteTeamAffectation() {
+      if (!teamEditingAffId) return;
+      if (!confirm('Supprimer cette affectation ?')) return;
+      try {
+        await deleteAffectation(teamEditingAffId);
+        closeTeamPopup();
+        await refreshTeamTimeline();
+      } catch(e) {
+        alert('Erreur: ' + e.message);
+      }
+    }
+
+    // Close popup on overlay click
+    document.getElementById('teamAffectPopup').addEventListener('mousedown', function(e) {
+      if (e.target === this) closeTeamPopup();
+    });
 
     /* ================================================================
        MODULE FACTURATION — Devis & Factures

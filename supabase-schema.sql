@@ -293,3 +293,53 @@ BEGIN
       AND d.statut NOT IN ('refusee');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =============================================
+-- MODULE GESTION D'ÉQUIPE
+-- =============================================
+
+-- ===== TABLE EMPLOYÉS =====
+CREATE TABLE employes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  artisan_id UUID REFERENCES artisans(id) ON DELETE CASCADE NOT NULL,
+  prenom TEXT NOT NULL,
+  nom TEXT,
+  telephone TEXT,
+  email TEXT,
+  couleur TEXT NOT NULL DEFAULT '#2E7D32',
+  poste TEXT,
+  actif BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE employes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Artisan gère ses employés"
+  ON employes FOR ALL
+  USING (auth.uid() = artisan_id)
+  WITH CHECK (auth.uid() = artisan_id);
+
+CREATE INDEX idx_employes_artisan ON employes(artisan_id);
+
+-- ===== TABLE AFFECTATIONS =====
+CREATE TABLE affectations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  artisan_id UUID REFERENCES artisans(id) ON DELETE CASCADE NOT NULL,
+  employe_id UUID REFERENCES employes(id) ON DELETE CASCADE NOT NULL,
+  titre TEXT NOT NULL,
+  date_debut DATE NOT NULL,
+  heure_debut TIME NOT NULL,
+  heure_fin TIME NOT NULL,
+  adresse TEXT,
+  notes TEXT,
+  demande_id UUID REFERENCES demandes(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE affectations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Artisan gère ses affectations"
+  ON affectations FOR ALL
+  USING (auth.uid() = artisan_id)
+  WITH CHECK (auth.uid() = artisan_id);
+
+CREATE INDEX idx_affectations_artisan_date ON affectations(artisan_id, date_debut);
+CREATE INDEX idx_affectations_employe ON affectations(employe_id);

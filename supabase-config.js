@@ -278,6 +278,52 @@ async function replyToAvis(avisId, reponse) {
   if (error) throw error;
 }
 
+// ===== GESTION D'ÉQUIPE HELPERS =====
+
+async function getEmployes(artisanId) {
+  var { data, error } = await _sb.from('employes').select('*').eq('artisan_id', artisanId).eq('actif', true).order('prenom');
+  if (error) throw error;
+  return data || [];
+}
+
+async function addEmploye(data) {
+  var { data: result, error } = await _sb.from('employes').insert(data).select().single();
+  if (error) throw error;
+  return result;
+}
+
+async function updateEmploye(id, data) {
+  var { error } = await _sb.from('employes').update(data).eq('id', id);
+  if (error) throw error;
+}
+
+async function deleteEmploye(id) {
+  var { error } = await _sb.from('employes').update({ actif: false }).eq('id', id);
+  if (error) throw error;
+}
+
+async function getAffectations(artisanId, dateDebut, dateFin) {
+  var { data, error } = await _sb.from('affectations').select('*, employes(prenom, nom, couleur)').eq('artisan_id', artisanId).gte('date_debut', dateDebut).lte('date_debut', dateFin).order('heure_debut');
+  if (error) throw error;
+  return data || [];
+}
+
+async function addAffectation(data) {
+  var { data: result, error } = await _sb.from('affectations').insert(data).select('*, employes(prenom, nom, couleur)').single();
+  if (error) throw error;
+  return result;
+}
+
+async function updateAffectation(id, data) {
+  var { error } = await _sb.from('affectations').update(data).eq('id', id);
+  if (error) throw error;
+}
+
+async function deleteAffectation(id) {
+  var { error } = await _sb.from('affectations').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // ===== PROTECTION DES PAGES =====
 
 // Appeler sur les pages qui nécessitent une connexion (dashboard, mon-profil)
