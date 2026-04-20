@@ -128,6 +128,9 @@
   .cell-popup-btn.popup-unavailable .popup-dot { background:repeating-linear-gradient(135deg, var(--red-light), var(--red-light) 2px, #fff 2px, #fff 4px); border:1.5px solid var(--red); }
   .cell-popup-btn.popup-unavailable { color:var(--red); }
   .cell-popup-btn.popup-unavailable:hover { background:rgba(211,47,47,0.06); }
+  .cell-popup-btn.popup-affect .popup-dot { background:var(--orange-light); border:1.5px solid var(--orange); }
+  .cell-popup-btn.popup-affect { color:var(--orange); }
+  .cell-popup-btn.popup-affect:hover { background:rgba(232,112,10,0.06); }
   .cell-popup-btn.popup-clear .popup-dot { background:white; border:1.5px solid var(--gray-300); }
   .cell-popup-btn.popup-clear { color:var(--gray-500); font-size:12px; }
   .cell-popup-divider { height:1px; background:var(--gray-100); margin:8px 0; }
@@ -1318,6 +1321,10 @@
           <div class="cell-popup-section-label">Interventions</div>
           <div id="popupInterventionList"></div>
         </div>
+        <div class="cell-popup-divider"></div>
+        <button class="cell-popup-btn popup-affect" onclick="openAffectFromAgenda()">
+          <span class="popup-dot"></span> Affecter un employé
+        </button>
         <div class="cell-popup-divider"></div>
         <button class="cell-popup-btn popup-clear" onclick="applyPopupState('clear')">
           <span class="popup-dot"></span> Effacer
@@ -3135,13 +3142,91 @@
         block.innerHTML = '<span class="agenda-affect-block-text" style="color:' + empColor + ';">' + escapeHtml(empName[0] || '') + '. ' + escapeHtml(aff.titre) + '</span>';
         block.onclick = function(e) {
           e.stopPropagation();
-          // Switch to team tab and open edit
-          switchDashTab('equipe');
-          setTimeout(function() { openEditTeamAffect(aff.id); }, 300);
+          // Open edit popup directly from agenda cache
+          openEditAffectFromAgenda(aff);
         };
         firstCell.style.position = 'relative';
         firstCell.appendChild(block);
       });
+    }
+
+    // Ensure team employees are loaded (for use from agenda without switching to Équipe tab)
+    async function ensureTeamEmployesLoaded() {
+      if (teamEmployes.length === 0) {
+        var user = await getUser();
+        if (user) {
+          try { teamEmployes = await getEmployes(user.id); } catch(e) {}
+        }
+      }
+    }
+
+    // Open edit popup for an existing affectation (from agenda overlay click)
+    async function openEditAffectFromAgenda(aff) {
+      await ensureTeamEmployesLoaded();
+      teamEditingAffId = aff.id;
+      // Ensure teamAffectations has this entry for overlap check
+      if (!teamAffectations.find(function(a) { return a.id === aff.id; })) {
+        teamAffectations = teamAffectations.concat(agendaAffectationsCache);
+      }
+      document.getElementById('teamPopupTitle').textContent = 'Modifier l\'affectation';
+      document.getElementById('teamPopupDeleteBtn').style.display = 'block';
+      document.getElementById('teamAffTitre').value = aff.titre || '';
+      document.getElementById('teamAffDate').value = aff.date_debut || '';
+      document.getElementById('teamAffDebut').value = aff.heure_debut ? aff.heure_debut.substring(0,5) : '';
+      document.getElementById('teamAffFin').value = aff.heure_fin ? aff.heure_fin.substring(0,5) : '';
+      document.getElementById('teamAffAdresse').value = aff.adresse || '';
+      document.getElementById('teamAffNotes').value = aff.notes || '';
+      document.getElementById('teamAffDemande').value = aff.demande_id || '';
+      populateTeamEmpSelect(aff.employe_id);
+      populateTeamDemandeSelect();
+      document.getElementById('teamAffectPopup').classList.add('active');
+    }
+
+    // Open affectation popup directly from agenda cell selection
+    async function openAffectFromAgenda() {
+      if (selectedCells.length === 0) return;
+      await ensureTeamEmployesLoaded();
+
+      // Determine date from column
+      var monday = getCurrentWeekMonday();
+      var cols = selectedCells.map(function(c) { return parseInt(c.dataset.col); });
+      var rows = selectedCells.map(function(c) { return parseInt(c.dataset.row); });
+      var col = Math.min.apply(null, cols);
+      var rowMin = Math.min.apply(null, rows);
+      var rowMax = Math.max.apply(null, rows);
+
+      // Calculate date
+      var affDate = new Date(monday);
+      affDate.setDate(monday.getDate() + col);
+      var dateStr = affDate.getFullYear() + '-' + String(affDate.getMonth()+1).padStart(2,'0') + '-' + String(affDate.getDate()).padStart(2,'0');
+
+      // Calculate time (row 0 = 8h00, each row = 30min)
+      var startMin = 8 * 60 + rowMin * 30;
+      var endMin = 8 * 60 + (rowMax + 1) * 30;
+      var startStr = String(Math.floor(startMin/60)).padStart(2,'0') + ':' + String(startMin%60).padStart(2,'0');
+      var endStr = String(Math.floor(endMin/60)).padStart(2,'0') + ':' + String(endMin%60).padStart(2,'0');
+
+      // Get title from popup input if filled
+      var title = document.getElementById('popupTitleInput').value.trim();
+
+      // Close cell popup
+      hidePopup();
+      clearSelection();
+
+      // Open affectation popup pre-filled
+      teamEditingAffId = null;
+      document.getElementById('teamPopupTitle').textContent = 'Nouvelle affectation';
+      document.getElementById('teamPopupDeleteBtn').style.display = 'none';
+      document.getElementById('teamAffTitre').value = title;
+      document.getElementById('teamAffDate').value = dateStr;
+      document.getElementById('teamAffDebut').value = startStr;
+      document.getElementById('teamAffFin').value = endStr;
+      document.getElementById('teamAffAdresse').value = '';
+      document.getElementById('teamAffNotes').value = '';
+      document.getElementById('teamAffDemande').value = '';
+      populateTeamEmpSelect('');
+      populateTeamDemandeSelect();
+      document.getElementById('teamAffectPopup').classList.add('active');
     }
 
     /* ========== DEMANDES: DATA + RENDERING ========== */
@@ -4082,6 +4167,7 @@
         }
         closeTeamPopup();
         await refreshTeamTimeline();
+        renderAgendaAffectations();
       } catch(e) {
         alert('Erreur: ' + e.message);
       }
@@ -4094,6 +4180,7 @@
         await deleteAffectation(teamEditingAffId);
         closeTeamPopup();
         await refreshTeamTimeline();
+        renderAgendaAffectations();
       } catch(e) {
         alert('Erreur: ' + e.message);
       }
