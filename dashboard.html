@@ -775,6 +775,13 @@
     .fact-preview-payment-grid { grid-template-columns:1fr; }
   }
 
+  /* ===== AFFECTATIONS SUR AGENDA ===== */
+  .agenda-affect-marker { position:absolute; bottom:2px; right:2px; display:flex; gap:2px; z-index:3; pointer-events:none; }
+  .agenda-affect-dot { width:8px; height:8px; border-radius:50%; border:1px solid white; box-shadow:0 1px 2px rgba(0,0,0,0.15); }
+  .agenda-affect-block { position:absolute; left:2px; right:2px; bottom:0; top:0; border-radius:4px; border-left:3px solid; display:flex; align-items:center; padding:0 4px; z-index:4; cursor:pointer; overflow:hidden; }
+  .agenda-affect-block:hover { opacity:0.9; }
+  .agenda-affect-block-text { font-size:9px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
   /* ===== MODULE ÉQUIPE ===== */
   .team-section { display:none; }
   .team-section.active { display:block; }
@@ -1876,6 +1883,7 @@
       loadTitlesForWeek();
       blockedDays = JSON.parse(localStorage.getItem('artisano-blocked-days') || '[]');
       applyBlockedDaysToGrid();
+      renderAgendaAffectations();
     }
 
     function clearAgendaGrid() {
@@ -3061,6 +3069,81 @@
     // Init intervention dropdown
     updatePopupInterventionDropdown();
 
+    /* ========== AGENDA: AFFECTATIONS OVERLAY ========== */
+    var agendaAffectationsCache = [];
+
+    async function renderAgendaAffectations() {
+      // Remove existing markers
+      document.querySelectorAll('.agenda-affect-marker, .agenda-affect-block').forEach(function(el) { el.remove(); });
+
+      var user = await getUser();
+      if (!user) return;
+
+      var monday = getCurrentWeekMonday();
+      var sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      var startStr = formatWeekStart(monday);
+      var endStr = sunday.getFullYear() + '-' + String(sunday.getMonth()+1).padStart(2,'0') + '-' + String(sunday.getDate()).padStart(2,'0');
+
+      try {
+        agendaAffectationsCache = await getAffectations(user.id, startStr, endStr);
+      } catch(e) { return; }
+
+      if (agendaAffectationsCache.length === 0) return;
+
+      var grid = document.getElementById('agendaGrid');
+      if (!grid) return;
+
+      // Grid: row 0 = 8h00, each row = 30min, 7 columns (mon-sun)
+      var gridStartMin = 8 * 60; // 480
+
+      agendaAffectationsCache.forEach(function(aff) {
+        // Find which column (day of week) this affectation falls on
+        var affDate = new Date(aff.date_debut + 'T00:00:00');
+        var col = Math.round((affDate - monday) / (1000 * 60 * 60 * 24));
+        if (col < 0 || col > 6) return;
+
+        var startMin = timeToMinutes(aff.heure_debut);
+        var endMin = timeToMinutes(aff.heure_fin);
+        var startRow = Math.floor((startMin - gridStartMin) / 30);
+        var endRow = Math.ceil((endMin - gridStartMin) / 30) - 1;
+        if (startRow < 0) startRow = 0;
+        if (endRow > 19) endRow = 19;
+        if (startRow > 19 || endRow < 0) return;
+
+        var empColor = (aff.employes && aff.employes.couleur) ? aff.employes.couleur : '#666';
+        var empName = (aff.employes && aff.employes.prenom) ? aff.employes.prenom : '';
+
+        // Place a block on the first cell of this affectation
+        var firstCell = grid.querySelector('.agenda-cell[data-col="' + col + '"][data-row="' + startRow + '"]');
+        if (!firstCell) return;
+
+        // Calculate total height spanning multiple rows
+        var totalHeight = 0;
+        for (var r = startRow; r <= endRow; r++) {
+          var c = grid.querySelector('.agenda-cell[data-col="' + col + '"][data-row="' + r + '"]');
+          if (c) totalHeight += c.offsetHeight;
+        }
+
+        var block = document.createElement('div');
+        block.className = 'agenda-affect-block';
+        block.style.borderLeftColor = empColor;
+        block.style.background = empColor + '18';
+        block.style.height = totalHeight + 'px';
+        block.style.top = '0';
+        block.title = escapeHtml(aff.titre) + ' — ' + empName + ' (' + aff.heure_debut.substring(0,5) + '-' + aff.heure_fin.substring(0,5) + ')';
+        block.innerHTML = '<span class="agenda-affect-block-text" style="color:' + empColor + ';">' + escapeHtml(empName[0] || '') + '. ' + escapeHtml(aff.titre) + '</span>';
+        block.onclick = function(e) {
+          e.stopPropagation();
+          // Switch to team tab and open edit
+          switchDashTab('equipe');
+          setTimeout(function() { openEditTeamAffect(aff.id); }, 300);
+        };
+        firstCell.style.position = 'relative';
+        firstCell.appendChild(block);
+      });
+    }
+
     /* ========== DEMANDES: DATA + RENDERING ========== */
     var dashDemandes = [];
     var dashAvis = [];
@@ -3531,6 +3614,7 @@
       loadNotesForWeek();
       loadTitlesForWeek();
       updatePopupInterventionDropdown();
+      renderAgendaAffectations();
 
       // NOTE: Recurrence is NOT auto-applied on load.
       // It only applies when the artisan explicitly clicks "Enregistrer" in the recurrence modal.
