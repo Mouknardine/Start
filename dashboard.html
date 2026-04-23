@@ -200,6 +200,7 @@
   .demande-name { font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; }
   .demande-desc { font-size:12px; color:var(--gray-500); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .demande-meta { font-size:11px; color:var(--gray-500); margin-top:4px; }
+  .dem-unread-badge { background:var(--orange); color:white; font-size:9px; font-weight:800; padding:2px 7px; border-radius:50px; margin-left:4px; vertical-align:middle; }
   .status { padding:3px 8px; border-radius:50px; font-size:10px; font-weight:700; }
   .status-new { background:rgba(232,112,10,0.1); color:var(--orange); }
   .status-confirmed { background:var(--green-light); color:var(--green); }
@@ -269,6 +270,7 @@
   .chat-bubble.client { align-self:flex-start; background:var(--gray-100); color:var(--dark); border-bottom-left-radius:4px; }
   .chat-bubble.artisan { align-self:flex-end; background:var(--orange); color:white; border-bottom-right-radius:4px; }
   .chat-bubble-time { font-size:10px; opacity:0.6; margin-top:2px; }
+  .chat-bubble-sender { font-size:10px; font-weight:700; color:var(--orange); margin-bottom:2px; }
   .chat-empty { text-align:center; padding:16px 0; font-size:12px; color:var(--gray-400); }
   .chat-input-row { display:flex; gap:8px; margin-top:8px; }
   .chat-input { flex:1; padding:9px 14px; border:1px solid var(--gray-200); border-radius:50px; font-family:'DM Sans',sans-serif; font-size:13px; background:var(--gray-100); transition:all 0.15s; }
@@ -3267,6 +3269,7 @@
         dashDemandes = await loadDemandes(user.id);
         renderDemandes();
         updateDashStats();
+        loadArtisanUnreadBadges();
       } catch(e) {
         console.warn('Erreur chargement demandes:', e);
         document.getElementById('demandesList').innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--gray-500);font-size:13px;">Erreur de chargement</div>';
@@ -3355,7 +3358,7 @@
         html += '<div class="demande-item" data-id="' + d.id + '">'
           + '<div class="demande-icon ' + iconClass + '"' + iconExtraStyle + '>' + iconSvg + '</div>'
           + '<div class="demande-body">'
-          + '<div class="demande-name">' + (escapeHtml(d.client_nom) || 'Client anonyme') + ' <span class="status ' + statusClass + '">' + statusLabel + '</span></div>'
+          + '<div class="demande-name">' + (escapeHtml(d.client_nom) || 'Client anonyme') + ' <span class="status ' + statusClass + '">' + statusLabel + '</span> <span class="dem-unread-badge" id="unread-' + d.id + '" style="display:none;"></span></div>'
           + '<div class="demande-desc">' + (escapeHtml(d.message) || 'Pas de message').substring(0, 100) + '</div>'
           + '<div class="demande-meta">' + meta + '</div>'
           + '</div>'
@@ -3363,6 +3366,22 @@
           + '</div>';
       });
       container.innerHTML = html;
+    }
+
+    // Load unread message badges on demande cards
+    async function loadArtisanUnreadBadges() {
+      for (var i = 0; i < dashDemandes.length; i++) {
+        var d = dashDemandes[i];
+        try {
+          var msgs = await loadMessages(d.id);
+          var unread = msgs.filter(function(m) { return m.sender_type === 'client' && !m.lu; }).length;
+          var badge = document.getElementById('unread-' + d.id);
+          if (badge && unread > 0) {
+            badge.textContent = unread;
+            badge.style.display = 'inline-block';
+          }
+        } catch(e) {}
+      }
     }
 
     // Render les avis dans la sidebar
@@ -3553,13 +3572,15 @@
       document.getElementById('demandeDetailModal').classList.add('active');
 
       // Load chat messages
-      loadDemandeChat(d.id);
+      loadDemandeChat(d.id, d.client_nom || d.client_email || 'Client');
     }
 
     var currentChatDemandeId = null;
+    var currentChatClientName = '';
 
-    async function loadDemandeChat(demandeId) {
+    async function loadDemandeChat(demandeId, clientName) {
       currentChatDemandeId = demandeId;
+      if (clientName) currentChatClientName = clientName;
       var container = document.getElementById('detailChatMessages');
       container.innerHTML = '<div class="chat-empty">Chargement...</div>';
       try {
@@ -3573,7 +3594,8 @@
             div.className = 'chat-bubble ' + m.sender_type;
             var t = new Date(m.created_at);
             var timeStr = t.toLocaleDateString('fr-CH', {day:'numeric',month:'short'}) + ' ' + t.toLocaleTimeString('fr-CH', {hour:'2-digit',minute:'2-digit'});
-            div.innerHTML = escapeHtml(m.content) + '<div class="chat-bubble-time">' + timeStr + '</div>';
+            var senderLabel = m.sender_type === 'client' ? '<div class="chat-bubble-sender">' + escapeHtml(currentChatClientName) + '</div>' : '';
+            div.innerHTML = senderLabel + escapeHtml(m.content) + '<div class="chat-bubble-time">' + timeStr + '</div>';
             container.appendChild(div);
           });
           container.scrollTop = container.scrollHeight;
