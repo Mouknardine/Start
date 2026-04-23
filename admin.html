@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administration | Artisano</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#E8700A">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23E8700A'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="artisano-common.css">
+<style>
+  :root { --sidebar-w:220px; }
+  body { min-height:100vh; background:var(--gray-100); }
+
+  /* SIDEBAR */
+  .admin-sidebar { position:fixed; top:0; left:0; bottom:0; width:var(--sidebar-w); background:var(--dark); padding:24px 16px; display:flex; flex-direction:column; z-index:50; }
+  .admin-sidebar .logo { color:white; font-size:20px; margin-bottom:32px; }
+  .admin-sidebar .logo .logo-dot { background:var(--orange); }
+  .admin-nav { display:flex; flex-direction:column; gap:4px; flex:1; }
+  .admin-nav-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; font-size:14px; font-weight:600; color:rgba(255,255,255,0.55); cursor:pointer; border:none; background:none; text-align:left; transition:all 0.15s; width:100%; }
+  .admin-nav-item:hover { color:rgba(255,255,255,0.8); background:rgba(255,255,255,0.06); }
+  .admin-nav-item.active { color:white; background:rgba(232,112,10,0.2); }
+  .admin-nav-item svg { width:18px; height:18px; flex-shrink:0; }
+  .admin-nav-item .nav-count { margin-left:auto; background:var(--orange); color:white; font-size:10px; font-weight:800; padding:2px 7px; border-radius:50px; }
+  .admin-logout { margin-top:auto; padding-top:16px; border-top:1px solid rgba(255,255,255,0.08); }
+
+  /* MAIN */
+  .admin-main { margin-left:var(--sidebar-w); padding:24px 32px; }
+  .admin-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+  .admin-title { font-family:'Sora',sans-serif; font-size:24px; font-weight:800; color:var(--dark); }
+  .admin-subtitle { font-size:13px; color:var(--gray-500); margin-top:2px; }
+
+  /* STATS */
+  .admin-stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:28px; }
+  .stat-card { background:white; border-radius:var(--radius); padding:20px; border:1px solid var(--gray-200); }
+  .stat-value { font-family:'Sora',sans-serif; font-size:28px; font-weight:800; color:var(--dark); }
+  .stat-label { font-size:12px; color:var(--gray-500); font-weight:600; margin-top:4px; }
+
+  /* TABLE */
+  .admin-table-wrap { background:white; border-radius:var(--radius); border:1px solid var(--gray-200); overflow:hidden; }
+  .admin-table-header { padding:16px 20px; border-bottom:1px solid var(--gray-100); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .admin-search { padding:8px 14px; border:1px solid var(--gray-200); border-radius:8px; font-size:13px; width:260px; background:var(--gray-100); }
+  .admin-search:focus { outline:none; border-color:var(--orange); background:white; }
+  .admin-table { width:100%; border-collapse:collapse; }
+  .admin-table th { text-align:left; padding:10px 16px; font-size:11px; font-weight:700; color:var(--gray-500); text-transform:uppercase; letter-spacing:0.4px; background:var(--gray-50); border-bottom:1px solid var(--gray-100); }
+  .admin-table td { padding:12px 16px; font-size:13px; color:var(--dark); border-bottom:1px solid var(--gray-50); }
+  .admin-table tr:hover td { background:rgba(232,112,10,0.02); }
+  .admin-table .avatar-cell { display:flex; align-items:center; gap:10px; }
+  .admin-table .mini-avatar { width:32px; height:32px; border-radius:50%; background:var(--gray-200); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--dark); overflow:hidden; flex-shrink:0; }
+  .admin-table .mini-avatar img { width:100%; height:100%; object-fit:cover; }
+
+  /* BADGES */
+  .badge { display:inline-block; padding:3px 10px; border-radius:50px; font-size:11px; font-weight:700; }
+  .badge-green { background:var(--green-light); color:var(--green); }
+  .badge-orange { background:rgba(232,112,10,0.1); color:var(--orange); }
+  .badge-red { background:var(--red-light); color:var(--red); }
+  .badge-gray { background:var(--gray-100); color:var(--gray-500); }
+
+  /* ACTIONS */
+  .admin-btn { padding:5px 12px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; border:1px solid var(--gray-200); background:white; color:var(--dark); transition:all 0.15s; }
+  .admin-btn:hover { background:var(--gray-100); }
+  .admin-btn-danger { color:var(--red); border-color:rgba(211,47,47,0.3); }
+  .admin-btn-danger:hover { background:var(--red-light); }
+
+  /* SECTIONS */
+  .admin-section { display:none; }
+  .admin-section.active { display:block; }
+
+  /* STARS */
+  .stars { color:var(--orange); letter-spacing:1px; font-size:14px; }
+
+  /* EMPTY */
+  .admin-empty { text-align:center; padding:40px 20px; color:var(--gray-400); font-size:13px; }
+
+  /* RESPONSIVE */
+  @media(max-width:768px) {
+    .admin-sidebar { width:60px; padding:16px 8px; }
+    .admin-sidebar .logo, .admin-nav-item span, .admin-nav-item .nav-count { display:none; }
+    .admin-main { margin-left:60px; padding:16px; }
+    .admin-table-header { flex-direction:column; }
+    .admin-search { width:100%; }
+    .admin-stats { grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <div class="admin-sidebar">
+    <a href="index.html" class="logo">artisano<span class="logo-dot"></span></a>
+    <div class="admin-nav">
+      <button class="admin-nav-item active" onclick="switchAdminTab('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span>Tableau de bord</span>
+      </button>
+      <button class="admin-nav-item" onclick="switchAdminTab('artisans')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Artisans</span>
+        <span class="nav-count" id="navCountArtisans">0</span>
+      </button>
+      <button class="admin-nav-item" onclick="switchAdminTab('demandes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>Demandes</span>
+        <span class="nav-count" id="navCountDemandes">0</span>
+      </button>
+      <button class="admin-nav-item" onclick="switchAdminTab('avis')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span>Avis</span>
+        <span class="nav-count" id="navCountAvis">0</span>
+      </button>
+    </div>
+    <div class="admin-logout">
+      <button class="admin-nav-item" onclick="logout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Déconnexion</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="admin-main">
+
+    <!-- DASHBOARD -->
+    <div class="admin-section active" id="admin-dashboard">
+      <div class="admin-header">
+        <div>
+          <div class="admin-title">Tableau de bord</div>
+          <div class="admin-subtitle">Vue d'ensemble de la plateforme</div>
+        </div>
+      </div>
+      <div class="admin-stats">
+        <div class="stat-card"><div class="stat-value" id="statArtisans">-</div><div class="stat-label">Artisans inscrits</div></div>
+        <div class="stat-card"><div class="stat-value" id="statDemandes">-</div><div class="stat-label">Demandes totales</div></div>
+        <div class="stat-card"><div class="stat-value" id="statAvis">-</div><div class="stat-label">Avis publiés</div></div>
+        <div class="stat-card"><div class="stat-value" id="statDemandesNew">-</div><div class="stat-label">Demandes en attente</div></div>
+      </div>
+      <div class="admin-table-wrap">
+        <div class="admin-table-header"><strong>Derniers artisans inscrits</strong></div>
+        <table class="admin-table">
+          <thead><tr><th>Artisan</th><th>Métier</th><th>Zone</th><th>Inscrit le</th></tr></thead>
+          <tbody id="dashRecentArtisans"><tr><td colspan="4" class="admin-empty">Chargement...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ARTISANS -->
+    <div class="admin-section" id="admin-artisans">
+      <div class="admin-header">
+        <div><div class="admin-title">Artisans</div><div class="admin-subtitle">Gérer les artisans inscrits</div></div>
+      </div>
+      <div class="admin-table-wrap">
+        <div class="admin-table-header">
+          <input type="text" class="admin-search" id="searchArtisans" placeholder="Rechercher un artisan..." oninput="filterArtisans()">
+        </div>
+        <table class="admin-table">
+          <thead><tr><th>Artisan</th><th>Métier</th><th>Zone</th><th>Email</th><th>Inscrit le</th><th>Actions</th></tr></thead>
+          <tbody id="adminArtisansList"><tr><td colspan="6" class="admin-empty">Chargement...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- DEMANDES -->
+    <div class="admin-section" id="admin-demandes">
+      <div class="admin-header">
+        <div><div class="admin-title">Demandes</div><div class="admin-subtitle">Toutes les demandes de service</div></div>
+      </div>
+      <div class="admin-table-wrap">
+        <div class="admin-table-header">
+          <input type="text" class="admin-search" id="searchDemandes" placeholder="Rechercher..." oninput="filterDemandes()">
+        </div>
+        <table class="admin-table">
+          <thead><tr><th>Client</th><th>Artisan</th><th>Type</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="adminDemandesList"><tr><td colspan="6" class="admin-empty">Chargement...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AVIS -->
+    <div class="admin-section" id="admin-avis">
+      <div class="admin-header">
+        <div><div class="admin-title">Avis</div><div class="admin-subtitle">Modération des avis clients</div></div>
+      </div>
+      <div class="admin-table-wrap">
+        <div class="admin-table-header">
+          <input type="text" class="admin-search" id="searchAvis" placeholder="Rechercher un avis..." oninput="filterAvis()">
+        </div>
+        <table class="admin-table">
+          <thead><tr><th>Client</th><th>Artisan</th><th>Note</th><th>Commentaire</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="adminAvisList"><tr><td colspan="6" class="admin-empty">Chargement...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script>
+    // Admin emails authorized
+    var ADMIN_EMAILS = ['admin@artisano.ch', 'mouknardine@gmail.com'];
+
+    var allArtisans = [];
+    var allDemandes = [];
+    var allAvis = [];
+
+    // Tab switching
+    function switchAdminTab(tab) {
+      document.querySelectorAll('.admin-nav-item').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.admin-section').forEach(function(s) { s.classList.remove('active'); });
+      var idx = { dashboard:0, artisans:1, demandes:2, avis:3 };
+      var btns = document.querySelectorAll('.admin-nav-item');
+      if (btns[idx[tab]]) btns[idx[tab]].classList.add('active');
+      var section = document.getElementById('admin-' + tab);
+      if (section) section.classList.add('active');
+    }
+
+    // Format date
+    function fmtDate(d) {
+      if (!d) return '-';
+      var dt = new Date(d);
+      return dt.toLocaleDateString('fr-CH', { day:'numeric', month:'short', year:'numeric' });
+    }
+
+    // Load all data
+    async function loadAdminData() {
+      try {
+        // Artisans (public read via RLS)
+        var { data: artisans } = await _sb.from('artisans').select('*').order('created_at', { ascending: false });
+        allArtisans = artisans || [];
+
+        // Demandes — admin needs service_role for this, fallback to what RLS allows
+        var { data: demandes } = await _sb.from('demandes').select('*, artisans(entreprise, prenom, nom)').order('created_at', { ascending: false });
+        allDemandes = demandes || [];
+
+        // Avis (public read)
+        var { data: avis } = await _sb.from('avis').select('*, artisans(entreprise, prenom, nom)').order('created_at', { ascending: false });
+        allAvis = avis || [];
+
+        updateStats();
+        renderDashboard();
+        renderArtisans();
+        renderDemandes();
+        renderAvis();
+      } catch(e) {
+        console.error('Admin load error:', e);
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('statArtisans').textContent = allArtisans.length;
+      document.getElementById('statDemandes').textContent = allDemandes.length;
+      document.getElementById('statAvis').textContent = allAvis.length;
+      document.getElementById('statDemandesNew').textContent = allDemandes.filter(function(d) { return d.statut === 'nouvelle'; }).length;
+      document.getElementById('navCountArtisans').textContent = allArtisans.length;
+      document.getElementById('navCountDemandes').textContent = allDemandes.length;
+      document.getElementById('navCountAvis').textContent = allAvis.length;
+    }
+
+    function artisanName(a) {
+      if (!a) return '-';
+      return a.entreprise || ((a.prenom || '') + ' ' + (a.nom || '')).trim() || '-';
+    }
+
+    function artisanInitials(a) {
+      var n = artisanName(a);
+      return n.split(/[\s&]+/).filter(function(w) { return w.length>0; }).slice(0,2).map(function(w) { return w[0].toUpperCase(); }).join('');
+    }
+
+    // Dashboard
+    function renderDashboard() {
+      var tbody = document.getElementById('dashRecentArtisans');
+      if (allArtisans.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="admin-empty">Aucun artisan inscrit</td></tr>';
+        return;
+      }
+      tbody.innerHTML = allArtisans.slice(0, 10).map(function(a) {
+        var avatarHtml = a.avatar_url
+          ? '<div class="mini-avatar"><img src="' + escapeHtml(a.avatar_url) + '"></div>'
+          : '<div class="mini-avatar">' + escapeHtml(artisanInitials(a)) + '</div>';
+        return '<tr><td><div class="avatar-cell">' + avatarHtml + '<span>' + escapeHtml(artisanName(a)) + '</span></div></td>'
+          + '<td>' + escapeHtml(a.metier || '-') + '</td>'
+          + '<td>' + escapeHtml((a.zones || []).slice(0,2).join(', ') || '-') + '</td>'
+          + '<td>' + fmtDate(a.created_at) + '</td></tr>';
+      }).join('');
+    }
+
+    // Artisans list
+    function renderArtisans(list) {
+      var data = list || allArtisans;
+      var tbody = document.getElementById('adminArtisansList');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="admin-empty">Aucun artisan</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(function(a) {
+        var avatarHtml = a.avatar_url
+          ? '<div class="mini-avatar"><img src="' + escapeHtml(a.avatar_url) + '"></div>'
+          : '<div class="mini-avatar">' + escapeHtml(artisanInitials(a)) + '</div>';
+        return '<tr><td><div class="avatar-cell">' + avatarHtml + '<span>' + escapeHtml(artisanName(a)) + '</span></div></td>'
+          + '<td>' + escapeHtml(a.metier || '-') + '</td>'
+          + '<td>' + escapeHtml((a.zones || []).slice(0,2).join(', ') || '-') + '</td>'
+          + '<td>' + escapeHtml(a.email || '-') + '</td>'
+          + '<td>' + fmtDate(a.created_at) + '</td>'
+          + '<td><a href="profil.html?id=' + a.id + '" target="_blank" class="admin-btn">Voir</a></td></tr>';
+      }).join('');
+    }
+
+    function filterArtisans() {
+      var q = document.getElementById('searchArtisans').value.toLowerCase();
+      if (!q) { renderArtisans(); return; }
+      renderArtisans(allArtisans.filter(function(a) {
+        return (artisanName(a) + ' ' + (a.metier||'') + ' ' + (a.email||'') + ' ' + (a.zones||[]).join(' ')).toLowerCase().indexOf(q) !== -1;
+      }));
+    }
+
+    // Demandes list
+    function renderDemandes(list) {
+      var data = list || allDemandes;
+      var tbody = document.getElementById('adminDemandesList');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="admin-empty">Aucune demande</td></tr>';
+        return;
+      }
+      var statusMap = { nouvelle:'En attente', confirmee:'Confirmée', acceptee:'Acceptée', refusee:'Refusée', terminee:'Terminée' };
+      var badgeMap = { nouvelle:'badge-orange', confirmee:'badge-green', acceptee:'badge-green', refusee:'badge-red', terminee:'badge-gray' };
+      tbody.innerHTML = data.map(function(d) {
+        var aName = d.artisans ? artisanName(d.artisans) : '-';
+        return '<tr><td>' + escapeHtml(d.client_nom || d.client_email || '-') + '</td>'
+          + '<td>' + escapeHtml(aName) + '</td>'
+          + '<td>' + (d.type === 'devis' ? 'Devis' : 'Message') + '</td>'
+          + '<td><span class="badge ' + (badgeMap[d.statut]||'badge-gray') + '">' + (statusMap[d.statut]||d.statut) + '</span></td>'
+          + '<td>' + fmtDate(d.created_at) + '</td>'
+          + '<td><button class="admin-btn admin-btn-danger" onclick="adminDeleteDemande(\'' + d.id + '\', this)">Suppr.</button></td></tr>';
+      }).join('');
+    }
+
+    function filterDemandes() {
+      var q = document.getElementById('searchDemandes').value.toLowerCase();
+      if (!q) { renderDemandes(); return; }
+      renderDemandes(allDemandes.filter(function(d) {
+        var aName = d.artisans ? artisanName(d.artisans) : '';
+        return ((d.client_nom||'') + ' ' + (d.client_email||'') + ' ' + aName + ' ' + (d.statut||'')).toLowerCase().indexOf(q) !== -1;
+      }));
+    }
+
+    async function adminDeleteDemande(id, btn) {
+      if (!confirm('Supprimer cette demande ? Cette action est irréversible.')) return;
+      btn.disabled = true;
+      try {
+        await _sb.from('demandes').delete().eq('id', id);
+        allDemandes = allDemandes.filter(function(d) { return d.id !== id; });
+        updateStats();
+        renderDemandes();
+      } catch(e) {
+        alert('Erreur: ' + e.message);
+        btn.disabled = false;
+      }
+    }
+
+    // Avis list
+    function renderAvis(list) {
+      var data = list || allAvis;
+      var tbody = document.getElementById('adminAvisList');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="admin-empty">Aucun avis</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(function(a) {
+        var aName = a.artisans ? artisanName(a.artisans) : '-';
+        var stars = '';
+        for (var i = 0; i < 5; i++) stars += i < a.note ? '★' : '☆';
+        var comment = (a.commentaire || '').substring(0, 80) + ((a.commentaire||'').length > 80 ? '...' : '');
+        return '<tr><td>' + escapeHtml(a.client_nom || a.client_email || '-') + '</td>'
+          + '<td>' + escapeHtml(aName) + '</td>'
+          + '<td><span class="stars">' + stars + '</span></td>'
+          + '<td>' + escapeHtml(comment) + '</td>'
+          + '<td>' + fmtDate(a.created_at) + '</td>'
+          + '<td><button class="admin-btn admin-btn-danger" onclick="adminDeleteAvis(\'' + a.id + '\', this)">Suppr.</button></td></tr>';
+      }).join('');
+    }
+
+    function filterAvis() {
+      var q = document.getElementById('searchAvis').value.toLowerCase();
+      if (!q) { renderAvis(); return; }
+      renderAvis(allAvis.filter(function(a) {
+        var aName = a.artisans ? artisanName(a.artisans) : '';
+        return ((a.client_nom||'') + ' ' + (a.client_email||'') + ' ' + aName + ' ' + (a.commentaire||'')).toLowerCase().indexOf(q) !== -1;
+      }));
+    }
+
+    async function adminDeleteAvis(id, btn) {
+      if (!confirm('Supprimer cet avis ? Cette action est irréversible.')) return;
+      btn.disabled = true;
+      try {
+        await _sb.from('avis').delete().eq('id', id);
+        allAvis = allAvis.filter(function(a) { return a.id !== id; });
+        updateStats();
+        renderAvis();
+      } catch(e) {
+        alert('Erreur: ' + e.message);
+        btn.disabled = false;
+      }
+    }
+
+    // Init
+    (async function() {
+      var session = await getSession();
+      if (!session) { window.location.href = 'connexion.html'; return; }
+      var email = session.user.email;
+      if (ADMIN_EMAILS.indexOf(email) === -1) {
+        document.querySelector('.admin-main').innerHTML = '<div style="text-align:center;padding:100px 20px;"><h2 style="font-family:Sora,sans-serif;color:var(--red);">Accès refusé</h2><p style="color:var(--gray-500);margin-top:8px;">Votre compte n\'a pas les droits d\'administration.</p><a href="index.html" style="color:var(--orange);margin-top:16px;display:inline-block;">Retour à l\'accueil</a></div>';
+        return;
+      }
+      loadAdminData();
+    })();
+  </script>
+</body>
+</html>

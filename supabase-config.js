@@ -324,6 +324,37 @@ async function deleteAffectation(id) {
   if (error) throw error;
 }
 
+// ===== MESSAGERIE HELPERS =====
+
+async function loadMessages(demandeId) {
+  var { data, error } = await _sb.from('messages').select('*').eq('demande_id', demandeId).order('created_at', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+async function sendMessage(demandeId, senderType, senderId, content) {
+  var { data, error } = await _sb.from('messages').insert({
+    demande_id: demandeId,
+    sender_type: senderType,
+    sender_id: senderId,
+    content: content
+  }).select().single();
+  if (error) throw error;
+  return data;
+}
+
+async function markMessagesRead(demandeId, readerType) {
+  var oppositeType = readerType === 'artisan' ? 'client' : 'artisan';
+  var { error } = await _sb.from('messages').update({ lu: true }).eq('demande_id', demandeId).eq('sender_type', oppositeType).eq('lu', false);
+  if (error) throw error;
+}
+
+async function countUnreadMessages(userId) {
+  var { data, error } = await _sb.from('messages').select('demande_id', { count: 'exact', head: true }).eq('sender_type', 'client').eq('lu', false);
+  if (error) return 0;
+  return data ? data.length : 0;
+}
+
 // ===== PROTECTION DES PAGES =====
 
 // Appeler sur les pages qui nécessitent une connexion (dashboard, mon-profil)

@@ -121,6 +121,20 @@
   .modal-btn-close { background:var(--gray-100); color:var(--gray-700); border:1px solid var(--gray-200); }
   .modal-btn-close:hover { background:var(--gray-200); }
 
+  /* CHAT */
+  .chat-messages { max-height:240px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding:8px 0; }
+  .chat-bubble { max-width:80%; padding:8px 12px; border-radius:12px; font-size:13px; line-height:1.4; word-break:break-word; }
+  .chat-bubble.client { align-self:flex-end; background:var(--orange); color:white; border-bottom-right-radius:4px; }
+  .chat-bubble.artisan { align-self:flex-start; background:var(--gray-100); color:var(--dark); border-bottom-left-radius:4px; }
+  .chat-bubble-time { font-size:10px; opacity:0.6; margin-top:2px; }
+  .chat-empty { text-align:center; padding:16px 0; font-size:12px; color:var(--gray-400); }
+  .chat-input-row { display:flex; gap:8px; margin-top:8px; }
+  .chat-input { flex:1; padding:9px 14px; border:1px solid var(--gray-200); border-radius:50px; font-family:'DM Sans',sans-serif; font-size:13px; background:var(--gray-100); transition:all 0.15s; }
+  .chat-input:focus { outline:none; border-color:var(--orange); background:white; box-shadow:0 0 0 3px rgba(232,112,10,0.08); }
+  .chat-send-btn { width:36px; height:36px; border-radius:50%; background:var(--orange); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .chat-send-btn:hover { background:var(--orange-dark); }
+  .chat-send-btn svg { width:16px; height:16px; color:white; stroke:white; }
+
   /* LOADING */
   .client-loading { text-align:center; padding:40px 0; color:var(--gray-500); font-size:13px; }
 
@@ -229,8 +243,18 @@
           <div class="detail-value" id="cDetailDateInfo"></div>
         </div>
         <div class="detail-section">
-          <div class="detail-label">Votre message</div>
+          <div class="detail-label">Votre message initial</div>
           <div class="detail-message-box" id="cDetailMessage"></div>
+        </div>
+        <div class="detail-section" id="cDetailChatSection">
+          <div class="detail-label">Conversation</div>
+          <div class="chat-messages" id="cDetailChatMessages"></div>
+          <div class="chat-input-row">
+            <input type="text" class="chat-input" id="cDetailChatInput" placeholder="Écrire un message..." onkeydown="if(event.key==='Enter')sendClientMessage()">
+            <button class="chat-send-btn" onclick="sendClientMessage()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
         </div>
       </div>
       <div class="detail-footer">
@@ -438,6 +462,50 @@
 
       // Ouvrir la modal
       document.getElementById('clientDetailModal').classList.add('active');
+
+      // Load chat
+      loadClientChat(demandeId);
+    }
+
+    var currentClientChatId = null;
+
+    async function loadClientChat(demandeId) {
+      currentClientChatId = demandeId;
+      var container = document.getElementById('cDetailChatMessages');
+      container.innerHTML = '<div class="chat-empty">Chargement...</div>';
+      try {
+        var msgs = await loadMessages(demandeId);
+        if (msgs.length === 0) {
+          container.innerHTML = '<div class="chat-empty">Aucun message pour le moment.</div>';
+        } else {
+          container.innerHTML = '';
+          msgs.forEach(function(m) {
+            var div = document.createElement('div');
+            div.className = 'chat-bubble ' + m.sender_type;
+            var t = new Date(m.created_at);
+            var timeStr = t.toLocaleDateString('fr-CH', {day:'numeric',month:'short'}) + ' ' + t.toLocaleTimeString('fr-CH', {hour:'2-digit',minute:'2-digit'});
+            div.innerHTML = escapeHtml(m.content) + '<div class="chat-bubble-time">' + timeStr + '</div>';
+            container.appendChild(div);
+          });
+          container.scrollTop = container.scrollHeight;
+        }
+        await markMessagesRead(demandeId, 'client');
+      } catch(e) {
+        container.innerHTML = '<div class="chat-empty">Erreur de chargement</div>';
+      }
+    }
+
+    async function sendClientMessage() {
+      var input = document.getElementById('cDetailChatInput');
+      var text = input.value.trim();
+      if (!text || !currentClientChatId) return;
+      input.value = '';
+      try {
+        await sendMessage(currentClientChatId, 'client', clientEmail, text);
+        await loadClientChat(currentClientChatId);
+      } catch(e) {
+        alert('Erreur envoi: ' + e.message);
+      }
     }
 
     // Style badge dynamique
@@ -454,6 +522,7 @@
     // Fermer la modal détail
     function closeClientDetail() {
       document.getElementById('clientDetailModal').classList.remove('active');
+      currentClientChatId = null;
     }
 
     // Fermer modal au clic backdrop

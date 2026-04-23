@@ -343,3 +343,59 @@ CREATE POLICY "Artisan gère ses affectations"
 
 CREATE INDEX idx_affectations_artisan_date ON affectations(artisan_id, date_debut);
 CREATE INDEX idx_affectations_employe ON affectations(employe_id);
+
+-- =============================================
+-- MODULE MESSAGERIE
+-- =============================================
+
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  demande_id UUID REFERENCES demandes(id) ON DELETE CASCADE NOT NULL,
+  sender_type TEXT NOT NULL CHECK (sender_type IN ('client', 'artisan')),
+  sender_id TEXT NOT NULL,
+  content TEXT NOT NULL,
+  lu BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+
+-- L'artisan peut voir les messages de ses demandes
+CREATE POLICY "Artisan voit messages de ses demandes"
+  ON messages FOR SELECT
+  USING (EXISTS (
+    SELECT 1 FROM demandes WHERE demandes.id = messages.demande_id AND demandes.artisan_id = auth.uid()
+  ));
+
+-- Le client peut voir les messages de ses demandes (via email dans JWT)
+CREATE POLICY "Client voit messages de ses demandes"
+  ON messages FOR SELECT
+  USING (EXISTS (
+    SELECT 1 FROM demandes WHERE demandes.id = messages.demande_id AND demandes.client_email = auth.jwt() ->> 'email'
+  ));
+
+-- L'artisan peut envoyer un message sur ses demandes
+CREATE POLICY "Artisan peut envoyer message"
+  ON messages FOR INSERT
+  WITH CHECK (
+    sender_type = 'artisan' AND sender_id = auth.uid()::TEXT
+    AND EXISTS (SELECT 1 FROM demandes WHERE demandes.id = messages.demande_id AND demandes.artisan_id = auth.uid())
+  );
+
+-- Le client peut envoyer un message sur ses demandes
+CREATE POLICY "Client peut envoyer message"
+  ON messages FOR INSERT
+  WITH CHECK (
+    sender_type = 'client' AND sender_id = auth.jwt() ->> 'email'
+    AND EXISTS (SELECT 1 FROM demandes WHERE demandes.id = messages.demande_id AND demandes.client_email = auth.jwt() ->> 'email')
+  );
+
+-- Marquer comme lu (artisan ou client)
+CREATE POLICY "Marquer message lu"
+  ON messages FOR UPDATE
+  USING (
+    EXISTS (SELECT 1 FROM demandes WHERE demandes.id = messages.demande_id AND (demandes.artisan_id = auth.uid() OR demandes.client_email = auth.jwt() ->> 'email'))
+  );
+
+CREATE INDEX idx_messages_demande ON messages(demande_id, created_at);
+CREATE INDEX idx_messages_sender ON messages(sender_id);

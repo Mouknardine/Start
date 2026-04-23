@@ -1946,7 +1946,20 @@
       // Title tag
       var name = p.entreprise || ((p.prenom || '') + ' ' + (p.nom || '')).trim();
       if (name) {
-        document.title = name + ' — ' + (p.metier || 'Artisan') + ' | Artisano';
+        var seoTitle = name + ' — ' + (p.metier || 'Artisan') + ' | Artisano';
+        var seoZone = (p.zones && p.zones.length > 0) ? p.zones[0] : '';
+        var seoDesc = name + ', ' + (p.metier || 'artisan') + (seoZone ? ' à ' + seoZone : '') + '. Avis vérifiés. Demandez un devis gratuit sur Artisano.';
+        document.title = seoTitle;
+        var metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) metaDesc.setAttribute('content', seoDesc);
+        var ogTitle = document.querySelector('meta[property="og:title"]');
+        if (ogTitle) ogTitle.setAttribute('content', seoTitle);
+        var ogDesc = document.querySelector('meta[property="og:description"]');
+        if (ogDesc) ogDesc.setAttribute('content', seoDesc);
+        var canonical = document.querySelector('link[rel="canonical"]');
+        if (canonical && artisanId) canonical.setAttribute('href', 'https://artisano.ch/profil?id=' + artisanId);
+        var ogUrl = document.querySelector('meta[property="og:url"]');
+        if (ogUrl && artisanId) ogUrl.setAttribute('content', 'https://artisano.ch/profil?id=' + artisanId);
       }
 
       // Update Contacter / demande links to include artisan ID
