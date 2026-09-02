@@ -28,7 +28,7 @@ import { emailLimiter, getClientKey } from '@/lib/rate-limit'
  */
 export async function POST(request: Request) {
   // Rate limit : max 10 emails/min par IP
-  const { allowed, retryAfterSec } = emailLimiter.check(getClientKey(request))
+  const { allowed, retryAfterSec } = await emailLimiter.check(getClientKey(request))
   if (!allowed) {
     return NextResponse.json(
       { error: `Trop d'emails envoyés. Réessayez dans ${retryAfterSec}s.` },

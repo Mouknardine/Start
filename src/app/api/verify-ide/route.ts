@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabase/service'
 import { parsePayload } from '@/lib/validation/schemas'
 import { createLimiter, getClientKey } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
@@ -33,7 +33,7 @@ const bodySchema = z.object({
  */
 export async function POST(request: Request) {
   // Rate limit
-  const { allowed, retryAfterSec } = verifyIdeLimiter.check(getClientKey(request))
+  const { allowed, retryAfterSec } = await verifyIdeLimiter.check(getClientKey(request))
   if (!allowed) {
     return NextResponse.json(
       { error: `Trop de tentatives. Réessayez dans ${retryAfterSec}s.` },
@@ -105,18 +105,14 @@ export async function POST(request: Request) {
     // service_role pour éviter qu'un artisan puisse se marquer "vérifié"
     // sans passer par Zefix (cette API). On utilise donc le client admin
     // avec la nouvelle fonction `set_ide_verification_admin`.
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    if (!serviceRoleKey || !supabaseUrl) {
+    const admin = createServiceClient()
+    if (!admin) {
       logger.error('SUPABASE_SERVICE_ROLE_KEY ou NEXT_PUBLIC_SUPABASE_URL absente')
       return NextResponse.json(
         { error: 'Configuration serveur incomplète' },
         { status: 500 },
       )
     }
-    const admin = createAdminClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    })
 
     const { error: rpcErr } = await admin.rpc('set_ide_verification_admin', {
       p_artisan_id: user.id,

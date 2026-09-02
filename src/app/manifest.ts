@@ -1,10 +1,11 @@
 import type { MetadataRoute } from 'next'
+import { COVERAGE_LABEL } from '@/lib/site'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Artisano',
     short_name: 'Artisano',
-    description: 'Trouve ton artisan en 2 clics dans le canton de Vaud',
+    description: `Trouve ton artisan en 2 clics en ${COVERAGE_LABEL}`,
     start_url: '/',
     display: 'standalone',
     background_color: '#FAFAF8',

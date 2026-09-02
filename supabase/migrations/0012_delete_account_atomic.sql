@@ -106,10 +106,11 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.delete_my_account() TO authenticated;
 
+-- ⚠️ Un seul littéral : COMMENT ON n'accepte pas d'expression (||). La version
+-- précédente échouait ici — raison pour laquelle 0012 n'a jamais été appliquée
+-- en prod avant le 2 septembre 2026.
 COMMENT ON FUNCTION public.delete_my_account() IS
-  'Purge transactionnelle des données métier d''un user. À appeler depuis ' ||
-  '/api/account/delete après vérification du mot de passe. Le compte ' ||
-  'auth.users est supprimé séparément via le service_role.';
+  'Purge transactionnelle des données métier d''un user. À appeler depuis /api/account/delete après vérification du mot de passe. Le compte auth.users est supprimé séparément via le service_role.';
 
 
 -- ============================================================================

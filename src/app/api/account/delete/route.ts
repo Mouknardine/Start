@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient as createServerSupabase } from '@/lib/supabase/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAnonClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabase/service'
 import { logger } from '@/lib/logger'
 import { accountActionLimiter, getClientKey } from '@/lib/rate-limit'
 
@@ -28,7 +29,7 @@ import { accountActionLimiter, getClientKey } from '@/lib/rate-limit'
  */
 export async function DELETE(request: Request) {
   // 1. Rate limit (3 tentatives/min/IP)
-  const { allowed, retryAfterSec } = accountActionLimiter.check(getClientKey(request))
+  const { allowed, retryAfterSec } = await accountActionLimiter.check(getClientKey(request))
   if (!allowed) {
     return NextResponse.json(
       { error: `Trop de requêtes. Réessayez dans ${retryAfterSec}s.` },
@@ -58,10 +59,10 @@ export async function DELETE(request: Request) {
   }
 
   // 4. Vérification env vars
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!serviceRoleKey || !supabaseUrl || !anonKey) {
+  const admin = createServiceClient()
+  if (!admin || !supabaseUrl || !anonKey) {
     logger.error('Variables Supabase manquantes (URL/ANON/SERVICE_ROLE)')
     return NextResponse.json(
       { error: 'Configuration serveur incomplète' },
@@ -71,7 +72,7 @@ export async function DELETE(request: Request) {
 
   // 5. Re-vérification du mot de passe via un client ANON temporaire qui
   //    ne persiste rien (sinon la session de l'API serait écrasée).
-  const verifier = createAdminClient(supabaseUrl, anonKey, {
+  const verifier = createAnonClient(supabaseUrl, anonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
   const { error: pwdErr } = await verifier.auth.signInWithPassword({
@@ -101,9 +102,6 @@ export async function DELETE(request: Request) {
 
   // 7. Cleanup storage — best effort, ne bloque pas si ça échoue.
   //    Si l'artisan a des avatars/galeries, ils sont stockés sous {userId}/.
-  const admin = createAdminClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
   try {
     const { data: files } = await admin.storage
       .from('artisan-media')

@@ -1,3 +1,4 @@
+import { getSiteUrl, COVERAGE_LABEL } from '@/lib/site'
 /**
  * Layout HTML de base pour tous les emails Artisano.
  * Style inline minimal pour compatibilité maximale (Outlook, Gmail, etc.).
@@ -10,7 +11,7 @@ export function emailLayout(opts: {
   footerNote?: string
 }): string {
   const { title, body, ctaLabel, ctaUrl, footerNote } = opts
-  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://artisano.ch'
+  const base = getSiteUrl()
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -64,7 +65,7 @@ export function emailLayout(opts: {
           </tr>
         </table>
         <p style="margin:16px 0 0;font-size:11px;color:#8A8680;text-align:center;">
-          © ${new Date().getFullYear()} Artisano — Suisse romande
+          © ${new Date().getFullYear()} Artisano — ${COVERAGE_LABEL}
         </p>
       </td>
     </tr>

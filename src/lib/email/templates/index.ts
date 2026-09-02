@@ -1,6 +1,7 @@
 import { emailLayout, escape } from './layout'
+import { getSiteUrl } from '@/lib/site'
 
-const base = () => process.env.NEXT_PUBLIC_SITE_URL || 'https://artisano.ch'
+const base = () => getSiteUrl()
 
 // ============================================================================
 // NOUVELLE DEMANDE REÇUE (→ artisan)

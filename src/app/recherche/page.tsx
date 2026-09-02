@@ -8,6 +8,7 @@ import Logo from '@/components/Logo'
 import AuthNavButton from '@/components/AuthNavButton'
 import type { Artisan } from '@/lib/supabase/helpers'
 import { logger } from '@/lib/logger'
+import { DEFAULT_ZONE_LABEL } from '@/lib/site'
 
 type ArtisanRating = { avg: number; count: number }
 
@@ -55,7 +56,7 @@ function RechercheContent() {
   const urgenceParam = searchParams.get('urgence')
 
   const metierDisplay = metier || 'Artisan'
-  const villeDisplay = ville || 'Suisse romande'
+  const villeDisplay = ville || DEFAULT_ZONE_LABEL
 
   const [artisans, setArtisans] = useState<Artisan[]>([])
   const [ratings, setRatings] = useState<Record<string, ArtisanRating>>({})
@@ -113,6 +114,7 @@ function RechercheContent() {
 
   // Reset + recharge quand les filtres/tri changent
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     setError('')
     setPage(0)

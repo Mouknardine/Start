@@ -1,12 +1,13 @@
 import type { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase/server'
+import { getSiteUrl } from '@/lib/site'
 
 /**
  * Sitemap dynamique : inclut les pages statiques + tous les profils artisans
  * publiés. Régénéré à chaque requête (revalidate via ISR si on veut cache).
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || 'https://artisano.ch'
+const BASE_URL = getSiteUrl()
 
 // Cache 1h — évite de retaper la DB à chaque crawl Google
 export const revalidate = 3600

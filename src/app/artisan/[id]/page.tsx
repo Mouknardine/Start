@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { Artisan, Avis } from '@/lib/supabase/helpers'
 import ArtisanProfileClient from './ArtisanProfileClient'
+import { DEFAULT_ZONE_LABEL } from '@/lib/site'
 
 type Params = Promise<{ id: string }>
 
@@ -43,7 +44,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { profile, reviews } = data
   const name = profile.entreprise || `${profile.prenom || ''} ${profile.nom || ''}`.trim() || 'Artisan'
   const metier = profile.metier || 'Artisan'
-  const zone = (profile.zones && profile.zones[0]) || 'Suisse romande'
+  const zone = (profile.zones && profile.zones[0]) || DEFAULT_ZONE_LABEL
   const avg = reviews.length > 0
     ? Math.round(reviews.reduce((s, r) => s + (r.note || 0), 0) / reviews.length * 10) / 10
     : null

@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import { getSiteUrl } from '@/lib/site'
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -9,6 +10,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/dashboard', '/mon-profil', '/client', '/admin', '/api/'],
       },
     ],
-    sitemap: 'https://artisano.ch/sitemap.xml',
+    sitemap: `${getSiteUrl()}/sitemap.xml`,
   }
 }

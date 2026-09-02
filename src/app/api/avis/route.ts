@@ -17,7 +17,7 @@ const avisLimiter = createLimiter({
  * terminée existe entre le client et l'artisan.
  */
 export async function POST(request: Request) {
-  const { allowed, retryAfterSec } = avisLimiter.check(getClientKey(request))
+  const { allowed, retryAfterSec } = await avisLimiter.check(getClientKey(request))
   if (!allowed) {
     return NextResponse.json(
       { error: `Trop d'avis. Réessayez dans ${retryAfterSec}s.` },

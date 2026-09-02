@@ -19,6 +19,9 @@ export default function Analytics() {
 
   useEffect(() => {
     const c = getStoredConsent()
+    // Lecture du consentement stocké (localStorage) : uniquement côté client,
+    // d'où l'initialisation dans l'effet plutôt que dans useState.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setConsented(!!c?.analytics)
 
     const handler = (e: Event) => {

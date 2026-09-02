@@ -13,7 +13,7 @@ import { accountActionLimiter, getClientKey } from '@/lib/rate-limit'
  */
 export async function GET(request: Request) {
   // Rate limit pour éviter le scraping massif
-  const { allowed, retryAfterSec } = accountActionLimiter.check(getClientKey(request))
+  const { allowed, retryAfterSec } = await accountActionLimiter.check(getClientKey(request))
   if (!allowed) {
     return NextResponse.json(
       { error: `Trop de requêtes. Réessayez dans ${retryAfterSec}s.` },

@@ -22,11 +22,8 @@ import type { Artisan } from '@/lib/supabase/helpers'
 import { logger } from '@/lib/logger'
 import { compressImage } from '@/lib/image'
 import IdeVerification from '@/components/IdeVerification'
+import { METIERS_AVEC_AUTRE as METIERS } from '@/lib/metiers'
 
-const METIERS = [
-  'Plombier', 'Electricien', 'Serrurier', 'Chauffagiste', 'Peintre',
-  'Menuisier', 'Carreleur', 'Maçon', 'Couvreur', 'Jardinier', 'Autre',
-]
 
 const JOURS_SEMAINE = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
 const JOURS_URGENCE = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']

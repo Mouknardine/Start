@@ -20,7 +20,7 @@ const demandeLimiter = createLimiter({
  */
 export async function POST(request: Request) {
   // Rate limit
-  const { allowed, retryAfterSec } = demandeLimiter.check(getClientKey(request))
+  const { allowed, retryAfterSec } = await demandeLimiter.check(getClientKey(request))
   if (!allowed) {
     return NextResponse.json(
       { error: `Trop de demandes. Réessayez dans ${retryAfterSec}s.` },
@@ -40,11 +40,19 @@ export async function POST(request: Request) {
   const parsed = parsePayload(demandeSchema, payload)
   if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
-  // Insertion via le client server (passe par RLS — sera bloqué si abus)
+  // Le client_email n'est jamais pris du body : c'est l'email de session.
+  // (Sinon n'importe qui pourrait créer des demandes au nom d'un tiers, qui
+  // les verrait ensuite apparaître dans son espace client.) La policy RLS
+  // demandes_insert_client impose la même règle en 2ᵉ couche.
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.email) {
+    return NextResponse.json({ error: 'Connectez-vous pour envoyer une demande.' }, { status: 401 })
+  }
+
   const { data: created, error: dbErr } = await supabase
     .from('demandes')
-    .insert({ ...parsed.data, statut: 'nouvelle' })
+    .insert({ ...parsed.data, client_email: user.email, statut: 'nouvelle' })
     .select('id')
     .single()
 

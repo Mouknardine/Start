@@ -24,7 +24,7 @@ const signalementSchema = z.object({
  * Crée un signalement sur un avis ou un profil artisan.
  */
 export async function POST(request: Request) {
-  const { allowed, retryAfterSec } = signalementLimiter.check(getClientKey(request))
+  const { allowed, retryAfterSec } = await signalementLimiter.check(getClientKey(request))
   if (!allowed) {
     return NextResponse.json(
       { error: `Trop de signalements. Réessayez dans ${retryAfterSec}s.` },

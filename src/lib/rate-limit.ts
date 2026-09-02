@@ -1,20 +1,24 @@
 /**
- * Rate limiter en mémoire (par instance serveur).
+ * Rate limiter partagé entre toutes les instances serveur.
  *
- * Limitation : ne fonctionne que sur un seul serveur Node. Pour un déploiement
- * multi-instance (ex: Vercel multi-régions), il faudra migrer vers Upstash
- * Redis ou similaire. Suffisant pour démarrer en bêta.
+ * Stockage : table `rate_limits` + fonction `check_rate_limit()` (migration
+ * 0014), appelées avec la clé service_role. Un seul aller-retour DB par
+ * vérification, atomique (UPSERT).
+ *
+ * Repli : si la DB est injoignable ou la clé service absente (tests unitaires,
+ * dev sans .env), on retombe sur un compteur en mémoire — suffisant pour un
+ * seul processus, inopérant entre lambdas Vercel (d'où la version DB).
  *
  * Usage :
- *   const limiter = createLimiter({ windowMs: 60_000, max: 5 })
- *   const allowed = limiter.check(key) // true / false
+ *   const limiter = createLimiter({ name: 'signup', windowMs: 60_000, max: 5 })
+ *   const { allowed, retryAfterSec } = await limiter.check(getClientKey(request))
  */
 
-type Bucket = { count: number; resetAt: number }
-const stores = new Map<string, Map<string, Bucket>>()
+import { createServiceClient } from '@/lib/supabase/service'
+import { logger } from '@/lib/logger'
 
 export type LimiterConfig = {
-  /** Identifiant unique du limiter (par ex: "signup", "demande") */
+  /** Identifiant unique du limiter (préfixe des clés) */
   name: string
   /** Fenêtre en millisecondes */
   windowMs: number
@@ -22,43 +26,88 @@ export type LimiterConfig = {
   max: number
 }
 
-export function createLimiter(config: LimiterConfig) {
-  const { name, windowMs, max } = config
-  if (!stores.has(name)) stores.set(name, new Map())
-  const store = stores.get(name)!
+export type LimitResult = {
+  allowed: boolean
+  retryAfterSec: number
+  remaining: number
+}
 
-  // Cleanup périodique pour éviter une fuite mémoire infinie
+// ============================================================================
+// REPLI MÉMOIRE (par processus)
+// ============================================================================
+
+type Bucket = { count: number; resetAt: number }
+const memoryStores = new Map<string, Map<string, Bucket>>()
+
+function memoryCheck(config: LimiterConfig, key: string): LimitResult {
+  const { name, windowMs, max } = config
+  if (!memoryStores.has(name)) memoryStores.set(name, new Map())
+  const store = memoryStores.get(name)!
+  const now = Date.now()
+
+  // Nettoyage opportuniste pour éviter une fuite mémoire
   if (Math.random() < 0.01) {
-    const now = Date.now()
-    for (const [key, bucket] of store) {
-      if (bucket.resetAt < now) store.delete(key)
+    for (const [k, bucket] of store) {
+      if (bucket.resetAt < now) store.delete(k)
     }
   }
 
+  const existing = store.get(key)
+  if (!existing || existing.resetAt < now) {
+    store.set(key, { count: 1, resetAt: now + windowMs })
+    return { allowed: true, retryAfterSec: 0, remaining: max - 1 }
+  }
+  if (existing.count >= max) {
+    return {
+      allowed: false,
+      retryAfterSec: Math.ceil((existing.resetAt - now) / 1000),
+      remaining: 0,
+    }
+  }
+  existing.count += 1
+  return { allowed: true, retryAfterSec: 0, remaining: max - existing.count }
+}
+
+// ============================================================================
+// LIMITER
+// ============================================================================
+
+export function createLimiter(config: LimiterConfig) {
+  const { name, windowMs, max } = config
+
   return {
     /**
-     * Renvoie { allowed, retryAfterSec } pour la clé donnée.
-     * Incrémente le compteur si autorisé.
+     * Vérifie et incrémente le compteur pour la clé donnée.
+     * Ne lève jamais : en cas d'erreur DB on log et on utilise le repli mémoire
+     * (fail-open contrôlé — la disponibilité prime sur la stricte limitation).
      */
-    check(key: string): { allowed: boolean; retryAfterSec: number; remaining: number } {
-      const now = Date.now()
-      const existing = store.get(key)
+    async check(key: string): Promise<LimitResult> {
+      const admin = createServiceClient()
+      if (!admin) return memoryCheck(config, key)
 
-      if (!existing || existing.resetAt < now) {
-        store.set(key, { count: 1, resetAt: now + windowMs })
-        return { allowed: true, retryAfterSec: 0, remaining: max - 1 }
-      }
-
-      if (existing.count >= max) {
+      try {
+        const { data, error } = await admin.rpc('check_rate_limit', {
+          p_key: `${name}:${key}`,
+          p_window_ms: windowMs,
+          p_max: max,
+        })
+        if (error) throw error
+        const row = Array.isArray(data) ? data[0] : data
+        if (!row) throw new Error('check_rate_limit : réponse vide')
         return {
-          allowed: false,
-          retryAfterSec: Math.ceil((existing.resetAt - now) / 1000),
-          remaining: 0,
+          allowed: Boolean(row.allowed),
+          retryAfterSec: Number(row.retry_after_sec) || 0,
+          remaining: Number(row.remaining) || 0,
         }
+      } catch (e) {
+        logger.warn(`Rate limit DB indisponible (${name}) — repli mémoire :`, e)
+        return memoryCheck(config, key)
       }
+    },
 
-      existing.count += 1
-      return { allowed: true, retryAfterSec: 0, remaining: max - existing.count }
+    /** Variante synchrone, mémoire uniquement (tests, scripts). */
+    checkSync(key: string): LimitResult {
+      return memoryCheck(config, key)
     },
   }
 }
@@ -90,8 +139,3 @@ export const accountActionLimiter = createLimiter({
   windowMs: 60 * 1000,
   max: 3, // 3 actions sensibles (delete, etc.) par minute
 })
-
-// Limites suggérées pour intégration future côté Edge Function / API routes :
-//  - signup : 3 par heure par IP
-//  - login  : 5 par 5 minutes par IP
-//  - demande: 10 par jour par utilisateur

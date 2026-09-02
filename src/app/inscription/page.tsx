@@ -10,6 +10,7 @@ import { notify } from '@/lib/email/notify'
 import PasswordStrength, { isPasswordValid } from '@/components/PasswordStrength'
 import { compressImage } from '@/lib/image'
 import IdeVerification from '@/components/IdeVerification'
+import { METIERS } from '@/lib/metiers'
 
 // ===== TYPES =====
 type HoraireSlot = { debut: string; fin: string }
@@ -17,7 +18,6 @@ type HoraireDay = { jour: string; ouvert: boolean; slots: HoraireSlot[] }
 type ContactPrefs = { complete: boolean; message: boolean; appel: boolean }
 type FieldErrors = Record<string, string>
 
-const METIERS = ['Plombier', 'Électricien', 'Serrurier', 'Chauffagiste']
 const SPECIALITE_SUGGESTIONS = ['Dépannage urgent', 'Installation', 'Rénovation', 'Entretien', 'Salle de bain', 'Chauffage']
 const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
 const URGENCE_JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']

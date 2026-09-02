@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
+import { LEGAL, LEGAL_COMPLETE } from '@/lib/legal'
 
-// Tant que les infos officielles ne sont pas remplies, on bloque l'indexation
-// pour éviter une publication trompeuse (LCD art. 3 al. 1 let. s).
-// → Une fois les "À COMPLÉTER" remplacés, retirer `robots: noindex`.
-const MENTIONS_INCOMPLETES = true
+// Tant que les infos officielles (src/lib/legal.ts) ne sont pas remplies, on
+// bloque l'indexation pour éviter une publication trompeuse (LCD art. 3 al. 1
+// let. s). Le flag se lève tout seul quand les champs obligatoires sont saisis.
+const MENTIONS_INCOMPLETES = !LEGAL_COMPLETE
 
 export const metadata: Metadata = {
   title: 'Mentions légales',
@@ -19,12 +20,19 @@ const TODO = ({ children }: { children: React.ReactNode }) => (
   </span>
 )
 
+/** Affiche la valeur légale, ou le marqueur « À compléter » si elle manque. */
+const Field = ({ value, hint, optional }: { value: string | null; hint: string; optional?: boolean }) => {
+  if (value) return <>{value}</>
+  if (optional) return <span className="text-[var(--gray-500)]">Non renseigné (facultatif)</span>
+  return <TODO>{hint}</TODO>
+}
+
 /**
  * Page mentions légales — obligatoire en Suisse pour tout site commercial
  * (LCD art. 3 al. 1 let. s — Loi contre la concurrence déloyale).
  *
- * ⚠️ Les valeurs marquées « À COMPLÉTER » doivent être remplies par
- * l'exploitant avant la mise en production.
+ * Toutes les valeurs viennent de src/lib/legal.ts : remplir ce fichier,
+ * rien à changer ici.
  */
 export default function MentionsLegalesPage() {
   return (
@@ -40,7 +48,7 @@ export default function MentionsLegalesPage() {
         </Link>
 
         <h1 className="font-sora text-[28px] font-extrabold text-[var(--dark)] mb-2 max-[900px]:text-[22px]">Mentions légales</h1>
-        <p className="text-[13px] text-[var(--gray-500)] mb-4">Dernière mise à jour : mai 2026</p>
+        <p className="text-[13px] text-[var(--gray-500)] mb-4">Dernière mise à jour : {LEGAL.derniereMiseAJour}</p>
 
         {MENTIONS_INCOMPLETES && (
           <div className="mb-8 p-4 bg-[var(--red-light)] border border-[var(--red)] rounded-[var(--radius-sm)]">
@@ -58,38 +66,38 @@ export default function MentionsLegalesPage() {
           <h2>1. Éditeur du site</h2>
           <dl>
             <dt>Raison sociale</dt>
-            <dd>Artisano — <TODO>Sàrl / SA / raison individuelle</TODO></dd>
+            <dd><Field value={LEGAL.raisonSociale} hint="raison sociale (ex. Artisano Sàrl)" /></dd>
 
             <dt>Forme juridique</dt>
-            <dd><TODO>Sàrl, SA, RI, etc.</TODO></dd>
+            <dd><Field value={LEGAL.formeJuridique} hint="Sàrl, SA, raison individuelle…" /></dd>
 
             <dt>Siège social</dt>
-            <dd><TODO>Adresse complète, NPA, ville, Suisse</TODO></dd>
+            <dd><Field value={LEGAL.siege} hint="adresse complète, NPA, ville, Suisse" /></dd>
 
             <dt>Numéro IDE</dt>
-            <dd><TODO>CHE-XXX.XXX.XXX</TODO></dd>
+            <dd><Field value={LEGAL.ide} hint="CHE-XXX.XXX.XXX" /></dd>
 
             <dt>Numéro TVA</dt>
-            <dd><TODO>CHE-XXX.XXX.XXX TVA ou « Non assujetti »</TODO></dd>
+            <dd><Field value={LEGAL.tva} hint="CHE-XXX.XXX.XXX TVA ou « Non assujetti »" /></dd>
 
             <dt>Inscription au Registre du Commerce</dt>
-            <dd><TODO>Canton et n° d'inscription</TODO></dd>
+            <dd><Field value={LEGAL.registreCommerce} hint="canton et n° d'inscription" /></dd>
 
             <dt>Représentant légal</dt>
-            <dd><TODO>Prénom, nom, fonction</TODO></dd>
+            <dd><Field value={LEGAL.representant} hint="prénom, nom, fonction" /></dd>
           </dl>
 
           <h2>2. Contact</h2>
           <dl>
             <dt>Email</dt>
-            <dd><a href="mailto:contact@artisano.ch">contact@artisano.ch</a></dd>
+            <dd><a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a></dd>
 
             <dt>Téléphone</dt>
-            <dd><span className="text-[var(--gray-500)]">À COMPLÉTER (facultatif)</span></dd>
+            <dd><Field value={LEGAL.telephone} hint="" optional /></dd>
           </dl>
 
           <h2>3. Directeur de la publication</h2>
-          <p><span className="text-[var(--gray-500)]">À COMPLÉTER : nom du responsable éditorial</span></p>
+          <p><Field value={LEGAL.directeurPublication ?? LEGAL.representant} hint="nom du responsable éditorial" /></p>
 
           <h2>4. Hébergement</h2>
           <dl>
@@ -119,7 +127,7 @@ export default function MentionsLegalesPage() {
           <p>Artisano s&apos;efforce d&apos;assurer un fonctionnement continu de la plateforme mais ne peut garantir une disponibilité de 100%. Des interruptions pour maintenance ou des incidents techniques peuvent survenir.</p>
 
           <h2>7. Droit applicable et juridiction</h2>
-          <p>Les présentes mentions légales sont régies par le droit suisse. Tout litige relatif à la plateforme sera soumis à la compétence exclusive des tribunaux du canton de Vaud, sous réserve des dispositions impératives en matière de protection des consommateurs.</p>
+          <p>Les présentes mentions légales sont régies par le droit suisse. Tout litige relatif à la plateforme sera soumis à la compétence exclusive des tribunaux du {LEGAL.forJuridique}, sous réserve des dispositions impératives en matière de protection des consommateurs.</p>
 
           <h2>8. Liens utiles</h2>
           <ul>

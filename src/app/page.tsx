@@ -4,6 +4,7 @@ import Footer from '@/components/Footer'
 import ScrollReveal from '@/components/ScrollReveal'
 import HeroSearch from '@/components/HeroSearch'
 import { createClient } from '@/lib/supabase/server'
+import { COVERAGE_BADGE } from '@/lib/site'
 
 // Stats hero calculées dynamiquement à chaque rendu (cache 5 min)
 export const revalidate = 300
@@ -54,7 +55,7 @@ export default async function Home() {
         {/* Badge */}
         <div className="inline-flex items-center gap-2 bg-[var(--gray-100)] border border-[var(--gray-200)] px-5 py-2 rounded-full text-sm font-medium text-[var(--gray-700)] mb-8 animate-fade-up delay-1 relative z-[2] max-[900px]:text-xs max-[900px]:px-3.5 max-[900px]:mb-5">
           <span className="bg-[var(--orange)] text-white px-2.5 py-0.5 rounded-full text-xs font-bold">Nouveau</span>
-          Disponible dans le canton de Vaud
+          {COVERAGE_BADGE}
         </div>
 
         {/* Title */}

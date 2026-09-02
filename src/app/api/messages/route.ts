@@ -20,7 +20,7 @@ const messageLimiter = createLimiter({
  * si auth.uid() = demande.artisan_id, sinon client).
  */
 export async function POST(request: Request) {
-  const { allowed, retryAfterSec } = messageLimiter.check(getClientKey(request))
+  const { allowed, retryAfterSec } = await messageLimiter.check(getClientKey(request))
   if (!allowed) {
     return NextResponse.json(
       { error: `Trop de messages. Réessayez dans ${retryAfterSec}s.` },
