@@ -158,7 +158,7 @@ export const documentSchema = z.object({
   sous_total: z.number().min(0),
   taux_tva: z.number().min(0).max(100),
   montant_tva: z.number().min(0),
-  remise_type: z.enum(['pourcent', 'montant']).optional().nullable(),
+  remise_type: z.enum(['pourcentage', 'montant']).optional().nullable(),
   remise_valeur: z.number().optional().nullable(),
   montant_remise: z.number().optional().nullable(),
   total_ttc: z.number().min(0),

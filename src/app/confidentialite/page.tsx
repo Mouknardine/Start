@@ -77,7 +77,7 @@ export default function ConfidentialitePage() {
           <ul>
             <li><strong>Supabase</strong> (hébergement et base de données) — serveurs en Europe</li>
             <li><strong>Resend</strong> (service d&apos;envoi d&apos;emails transactionnels)</li>
-            <li><strong>Stripe</strong> (traitement des paiements, le cas échéant)</li>
+            <li>Un prestataire de paiement (par ex. Stripe ou Payrexx) sera ajouté à cette liste lorsque les abonnements payants seront activés — aucun paiement n&apos;est traité aujourd&apos;hui</li>
           </ul>
           <p>Ces prestataires sont tenus par des obligations contractuelles de confidentialité et de sécurité.</p>
 

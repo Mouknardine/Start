@@ -980,7 +980,9 @@ export default function InscriptionPage() {
               <div className="bg-[rgba(232,112,10,0.05)] border border-[rgba(232,112,10,0.15)] rounded-[var(--radius-sm)] p-4 flex gap-3 items-start mb-6 max-[900px]:p-3 max-[900px]:gap-2.5">
                 <svg className="w-5 h-5 text-[var(--orange)] shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 <p className="text-[13px] leading-relaxed text-[var(--gray-700)] max-[900px]:text-xs">
-                  Le paiement est sécurisé par Stripe. Vous pouvez résilier à tout moment depuis votre tableau de bord.
+                  <strong>Bêta gratuite</strong> : aucun paiement ne vous est demandé aujourd&apos;hui.
+                  Vous serez prévenu au moins 30 jours avant l&apos;activation de l&apos;abonnement
+                  et pourrez résilier à tout moment.
                 </p>
               </div>
 

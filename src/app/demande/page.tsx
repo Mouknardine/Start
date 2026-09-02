@@ -1,7 +1,6 @@
 'use client'
 
 import Image from 'next/image'
-import { notify } from '@/lib/email/notify'
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -91,18 +90,24 @@ function DemandeContent() {
     if (Object.keys(errs).length > 0 || !artisanId) return
 
     setSending(true)
-    const supabase = createClient()
-    // Si l'utilisateur est connecté, on force son email du compte
-    // (RLS bloque sinon avec client_email ≠ auth.email())
-    const emailToUse = authEmail || qEmail.trim() || null
-    const { data: created, error } = await supabase.from('demandes').insert({
-      artisan_id: artisanId, client_nom: qPrenom.trim(), client_email: emailToUse,
-      client_telephone: qTel.trim(), type: 'message', message: qMessage.trim(), statut: 'nouvelle',
-    }).select('id').single()
+    // Passe par /api/demandes : validation Zod + rate limit côté serveur,
+    // et notification email de l'artisan déclenchée par le serveur.
+    // L'email du compte est forcé (RLS exige client_email = auth.email()).
+    const res = await fetch('/api/demandes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        artisan_id: artisanId, client_nom: qPrenom.trim(), client_email: authEmail || qEmail.trim() || null,
+        client_telephone: qTel.trim(), type: 'message', message: qMessage.trim(),
+      }),
+    }).catch(() => null)
     setSending(false)
-    if (error) { alert("Erreur lors de l'envoi. Veuillez réessayer."); return }
+    if (!res || !res.ok) {
+      const body = res ? await res.json().catch(() => ({})) : {}
+      alert(body.error || "Erreur lors de l'envoi. Veuillez réessayer.")
+      return
+    }
     setSent(true)
-    if (created?.id) notify.newDemande(created.id)
   }
 
   async function sendFullRequest() {
@@ -117,19 +122,24 @@ function DemandeContent() {
     if (Object.keys(errs).length > 0 || !artisanId) return
 
     setSending(true)
-    const supabase = createClient()
-    // Force l'email du compte si connecté (RLS)
-    const emailToUse = authEmail || fEmail.trim()
-    const { data: created, error } = await supabase.from('demandes').insert({
-      artisan_id: artisanId, client_nom: `${fPrenom.trim()} ${fNom.trim()}`, client_email: emailToUse,
-      client_telephone: fTel.trim(), client_adresse: fAdresse.trim() || null, type: 'devis',
-      message: fMessage.trim(), date_souhaitee: fDate.trim() || null, moment_journee: fMoment || null,
-      creneau_date: fulldateParam || null, creneau_heure: heureParam || null, statut: 'nouvelle',
-    }).select('id').single()
+    // Passe par /api/demandes (validation + rate limit + email serveur).
+    const res = await fetch('/api/demandes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        artisan_id: artisanId, client_nom: `${fPrenom.trim()} ${fNom.trim()}`, client_email: authEmail || fEmail.trim(),
+        client_telephone: fTel.trim(), client_adresse: fAdresse.trim() || null, type: 'devis',
+        message: fMessage.trim(), date_souhaitee: fDate.trim() || null, moment_journee: fMoment || null,
+        creneau_date: fulldateParam || null, creneau_heure: heureParam || null,
+      }),
+    }).catch(() => null)
     setSending(false)
-    if (error) { alert("Erreur lors de l'envoi. Veuillez réessayer."); return }
+    if (!res || !res.ok) {
+      const body = res ? await res.json().catch(() => ({})) : {}
+      alert(body.error || "Erreur lors de l'envoi. Veuillez réessayer.")
+      return
+    }
     setSent(true)
-    if (created?.id) notify.newDemande(created.id)
   }
 
   const inputClass = (field?: string) =>

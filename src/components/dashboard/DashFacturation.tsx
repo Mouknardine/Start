@@ -5,9 +5,10 @@ import { createClient } from '@/lib/supabase/client'
 import {
   loadDocuments, saveDocument, deleteDocument,
   loadPrestations, savePrestation, deletePrestation,
-  getNextDocNumber,
+  getNextDocNumber, loadMyBankDetails,
 } from '@/lib/supabase/helpers'
 import type { Document, Prestation, Artisan } from '@/lib/supabase/helpers'
+import { printInvoice, type InvoiceData, type InvoiceLine } from '@/lib/invoice-pdf'
 
 // ===== Types =====
 
@@ -222,6 +223,40 @@ export default function DashFacturation({ userId, profile }: Props) {
       devis_source_id: editingDoc?.devis_source_id || null,
     }
   }, [editingDoc, userId, clientNom, clientEmail, clientTelephone, clientAdresse, lineItems, sousTotal, tauxTva, montantTva, remiseType, remiseValeur, montantRemise, totalTtc, dateEmission, dateEcheance, notes])
+
+  // ===== PDF =====
+  // Depuis un document enregistré (ligne de liste).
+  const pdfFromDoc = useCallback((doc: Document) => {
+    const lignes: InvoiceLine[] = (Array.isArray(doc.lignes) ? doc.lignes : []).map(l => ({
+      description: String((l as Record<string, unknown>).description || ''),
+      quantite: Number((l as Record<string, unknown>).quantite) || 0,
+      unite: String((l as Record<string, unknown>).unite || 'unite'),
+      prix_unitaire: Number((l as Record<string, unknown>).prix_unitaire) || 0,
+      total: Number((l as Record<string, unknown>).total) || 0,
+    }))
+    const data: InvoiceData = {
+      type: doc.type, numero: doc.numero, client_nom: doc.client_nom,
+      client_email: doc.client_email, client_telephone: doc.client_telephone, client_adresse: doc.client_adresse,
+      lignes, sous_total: doc.sous_total, taux_tva: doc.taux_tva, montant_tva: doc.montant_tva,
+      montant_remise: doc.montant_remise, total_ttc: doc.total_ttc,
+      date_emission: doc.date_emission, date_echeance: doc.date_echeance, notes: doc.notes,
+    }
+    printInvoice(data, profile).catch(() => showToast('error', 'Erreur lors de la génération du PDF.'))
+  }, [profile, showToast])
+
+  // Depuis l'état courant de l'éditeur (aperçu, même avant enregistrement).
+  const pdfFromEditor = useCallback(() => {
+    if (!editingDoc) return
+    const data: InvoiceData = {
+      type: editingDoc.type, numero: editingDoc.numero, client_nom: clientNom,
+      client_email: clientEmail, client_telephone: clientTelephone, client_adresse: clientAdresse,
+      lignes: lineItems.map(l => ({ description: l.description, quantite: l.quantite, unite: l.unite, prix_unitaire: l.prix_unitaire, total: l.total })),
+      sous_total: sousTotal, taux_tva: tauxTva, montant_tva: montantTva,
+      montant_remise: montantRemise, total_ttc: totalTtc,
+      date_emission: dateEmission, date_echeance: dateEcheance, notes,
+    }
+    printInvoice(data, profile).catch(() => showToast('error', 'Erreur lors de la génération du PDF.'))
+  }, [editingDoc, clientNom, clientEmail, clientTelephone, clientAdresse, lineItems, sousTotal, tauxTva, montantTva, montantRemise, totalTtc, dateEmission, dateEcheance, notes, profile, showToast])
 
   // ===== Create new =====
   const createNew = useCallback(async (type: 'devis' | 'facture') => {
@@ -507,6 +542,7 @@ export default function DashFacturation({ userId, profile }: Props) {
                 <div className="flex gap-1 shrink-0 max-[600px]:w-full max-[600px]:justify-end">
                   <button onClick={() => populateEditor(doc)} className="text-[10px] font-bold py-1 px-2.5 rounded-md bg-[var(--gray-100)] text-[var(--gray-700)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors">Modifier</button>
                   <button onClick={() => duplicateDoc(doc.id)} className="text-[10px] font-bold py-1 px-2.5 rounded-md bg-[var(--gray-100)] text-[var(--gray-700)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors">Dupliquer</button>
+                  <button onClick={() => pdfFromDoc(doc)} title="Télécharger en PDF" className="text-[10px] font-bold py-1 px-2.5 rounded-md bg-[var(--gray-100)] text-[var(--gray-700)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors">PDF</button>
                   <button onClick={() => setDeleteTarget(doc.id)} className="text-[10px] font-bold py-1 px-2.5 rounded-md bg-[var(--red-light)] text-[var(--red)] border-none cursor-pointer hover:bg-[rgba(211,47,47,0.12)] transition-colors">
                     <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                   </button>
@@ -844,7 +880,7 @@ export default function DashFacturation({ userId, profile }: Props) {
 
               <div className="flex justify-end gap-2 p-4 border-t border-[var(--gray-200)]">
                 <button onClick={() => setShowPreview(false)} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--gray-100)] text-[var(--gray-500)] border-none cursor-pointer">Fermer</button>
-                <button onClick={() => { showToast('success', 'Export PDF disponible bientôt'); setShowPreview(false) }} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--orange)] text-white border-none cursor-pointer hover:bg-[var(--orange-dark)]">Télécharger PDF</button>
+                <button onClick={pdfFromEditor} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--orange)] text-white border-none cursor-pointer hover:bg-[var(--orange-dark)]">Télécharger PDF</button>
               </div>
             </div>
           </div>

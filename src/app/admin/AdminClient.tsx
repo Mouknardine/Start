@@ -182,7 +182,12 @@ export default function AdminClient() {
       const supabase = createClient()
       await supabase.from('signalements').update({ statut, updated_at: new Date().toISOString() }).eq('id', id)
       setAllSignalements(prev => prev.map(s => s.id === id ? { ...s, statut } : s))
-      await logAuditAction(supabase, { action: `signalement_${statut}`, targetType: 'signalement', targetId: id })
+      // Noms whitelistés par record_audit_event (migration 0013)
+      const auditAction = statut === 'accepte' ? 'accept_signalement'
+        : statut === 'rejete' ? 'reject_signalement'
+        : statut === 'examine' ? 'examine_signalement'
+        : 'reopen_signalement'
+      await logAuditAction(supabase, { action: auditAction, targetType: 'signalement', targetId: id, details: { statut } })
     } catch (e) {
       alert('Erreur: ' + (e as Error).message)
     }
@@ -205,7 +210,7 @@ export default function AdminClient() {
       }
       await supabase.from('signalements').update({ statut: 'accepte' }).eq('id', s.id)
       setAllSignalements(prev => prev.map(x => x.id === s.id ? { ...x, statut: 'accepte' } : x))
-      await logAuditAction(supabase, { action: 'signalement_accepte', targetType: 'signalement', targetId: s.id })
+      await logAuditAction(supabase, { action: 'accept_signalement', targetType: 'signalement', targetId: s.id })
     } catch (e) {
       alert('Erreur: ' + (e as Error).message)
     }

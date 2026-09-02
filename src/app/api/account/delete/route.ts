@@ -7,17 +7,27 @@ import { accountActionLimiter, getClientKey } from '@/lib/rate-limit'
 /**
  * DELETE /api/account/delete
  *
- * Supprime totalement le compte de l'utilisateur connecté :
- *  - Toutes ses données métier (demandes, avis, prestations, documents, etc.)
- *  - Le compte auth Supabase lui-même (via le service role)
+ * Supprime totalement le compte de l'utilisateur connecté.
  *
- * L'utilisateur est identifié à partir de la session côté serveur.
+ * Body JSON requis : { password: string }
+ *   Le mot de passe est revérifié côté serveur pour éviter qu'un XSS ou
+ *   un CSRF puisse provoquer la suppression depuis une page tierce.
  *
- * Pré-requis : la variable d'env SUPABASE_SERVICE_ROLE_KEY doit être définie
- * (clé service role, JAMAIS exposée côté client).
+ * Flow (R5 — audit du 22 mai 2026) :
+ *   1. Vérif session via getUser()
+ *   2. Vérif mot de passe via signInWithPassword sur un client temporaire
+ *      (n'écrase pas la session active)
+ *   3. RPC delete_my_account() — transaction atomique côté DB qui purge
+ *      toutes les données métier + écrit l'audit log
+ *   4. Cleanup storage (artisan-media/{userId}/) — best effort
+ *   5. admin.auth.admin.deleteUser(userId) — supprime auth.users
+ *   6. signOut de la session courante
+ *
+ * Pré-requis : SUPABASE_SERVICE_ROLE_KEY + NEXT_PUBLIC_SUPABASE_URL +
+ * NEXT_PUBLIC_SUPABASE_ANON_KEY en env vars.
  */
 export async function DELETE(request: Request) {
-  // Rate limit : max 3 tentatives/min par IP pour éviter le bruteforce
+  // 1. Rate limit (3 tentatives/min/IP)
   const { allowed, retryAfterSec } = accountActionLimiter.check(getClientKey(request))
   if (!allowed) {
     return NextResponse.json(
@@ -26,99 +36,106 @@ export async function DELETE(request: Request) {
     )
   }
 
+  // 2. Auth check (session côté serveur)
   const supabase = await createServerSupabase()
-
-  // 1. Vérifier la session côté serveur
   const { data: { user }, error: authErr } = await supabase.auth.getUser()
-  if (authErr || !user) {
+  if (authErr || !user || !user.email) {
     return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
   }
 
-  const userId = user.id
-  const email = user.email || ''
-
-  // 2. Service role client (bypass RLS pour suppression auth)
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  if (!serviceRoleKey || !supabaseUrl) {
-    logger.error('SUPABASE_SERVICE_ROLE_KEY ou NEXT_PUBLIC_SUPABASE_URL absente')
+  // 3. Lecture du body — password requis
+  let body: { password?: unknown }
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'JSON invalide' }, { status: 400 })
+  }
+  if (typeof body.password !== 'string' || body.password.length < 1) {
     return NextResponse.json(
-      { error: 'Configuration serveur incomplète' },
-      { status: 500 }
+      { error: 'Mot de passe requis pour confirmer la suppression.' },
+      { status: 400 },
     )
   }
 
+  // 4. Vérification env vars
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!serviceRoleKey || !supabaseUrl || !anonKey) {
+    logger.error('Variables Supabase manquantes (URL/ANON/SERVICE_ROLE)')
+    return NextResponse.json(
+      { error: 'Configuration serveur incomplète' },
+      { status: 500 },
+    )
+  }
+
+  // 5. Re-vérification du mot de passe via un client ANON temporaire qui
+  //    ne persiste rien (sinon la session de l'API serait écrasée).
+  const verifier = createAdminClient(supabaseUrl, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+  const { error: pwdErr } = await verifier.auth.signInWithPassword({
+    email: user.email,
+    password: body.password,
+  })
+  if (pwdErr) {
+    logger.warn('Tentative suppression compte : mot de passe erroné', {
+      userId: user.id,
+    })
+    return NextResponse.json(
+      { error: 'Mot de passe incorrect.' },
+      { status: 401 },
+    )
+  }
+
+  // 6. RPC transactionnelle — purge atomique des données métier
+  //    (audit log écrit dans la même transaction côté DB).
+  const { error: rpcErr } = await supabase.rpc('delete_my_account')
+  if (rpcErr) {
+    logger.error('delete_my_account RPC error:', rpcErr)
+    return NextResponse.json(
+      { error: 'Suppression des données échouée' },
+      { status: 500 },
+    )
+  }
+
+  // 7. Cleanup storage — best effort, ne bloque pas si ça échoue.
+  //    Si l'artisan a des avatars/galeries, ils sont stockés sous {userId}/.
   const admin = createAdminClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
-
   try {
-    // 3. Détecter si l'utilisateur est artisan (présence dans la table artisans)
-    const { data: artisanRow } = await admin
-      .from('artisans')
-      .select('id')
-      .eq('id', userId)
-      .maybeSingle()
-
-    const isArtisanUser = !!artisanRow
-
-    // 4. Suppression des données métier
-    if (isArtisanUser) {
-      // Côté artisan : nettoyer toutes les tables liées
-      await admin.from('messages').delete()
-        .in('demande_id',
-          (await admin.from('demandes').select('id').eq('artisan_id', userId)).data?.map(d => d.id) || []
-        )
-      await admin.from('affectations').delete().eq('artisan_id', userId)
-      await admin.from('employes').delete().eq('artisan_id', userId)
-      await admin.from('documents').delete().eq('artisan_id', userId)
-      await admin.from('prestations').delete().eq('artisan_id', userId)
-      await admin.from('demandes').delete().eq('artisan_id', userId)
-      await admin.from('avis').delete().eq('artisan_id', userId)
-      await admin.from('artisans').delete().eq('id', userId)
-
-      // Vider le storage de l'artisan
-      try {
-        const { data: files } = await admin.storage.from('artisan-media').list(userId)
-        if (files && files.length > 0) {
-          await admin.storage.from('artisan-media').remove(files.map(f => `${userId}/${f.name}`))
-        }
-      } catch (e) {
-        logger.warn('Cleanup storage échec (non bloquant):', e)
-      }
-    } else if (email) {
-      // Côté client : supprimer demandes, avis, et messages liés à ses demandes
-      const { data: clientDemandes } = await admin
-        .from('demandes')
-        .select('id')
-        .eq('client_email', email)
-      const demandeIds = clientDemandes?.map(d => d.id) || []
-      if (demandeIds.length > 0) {
-        await admin.from('messages').delete().in('demande_id', demandeIds)
-      }
-      await admin.from('demandes').delete().eq('client_email', email)
-      await admin.from('avis').delete().eq('client_email', email)
+    const { data: files } = await admin.storage
+      .from('artisan-media')
+      .list(user.id)
+    if (files && files.length > 0) {
+      await admin.storage
+        .from('artisan-media')
+        .remove(files.map(f => `${user.id}/${f.name}`))
     }
-
-    // 5. Suppression du compte auth Supabase
-    const { error: deleteAuthErr } = await admin.auth.admin.deleteUser(userId)
-    if (deleteAuthErr) {
-      logger.error('Erreur suppression auth user:', deleteAuthErr)
-      return NextResponse.json(
-        { error: 'Suppression auth échouée' },
-        { status: 500 }
-      )
-    }
-
-    // 6. Déconnexion de la session courante
-    await supabase.auth.signOut()
-
-    return NextResponse.json({ success: true })
   } catch (e) {
-    logger.error('Erreur suppression compte:', e)
+    logger.warn('Cleanup storage échec (non bloquant):', e)
+  }
+
+  // 8. Suppression du compte auth Supabase
+  const { error: deleteAuthErr } = await admin.auth.admin.deleteUser(user.id)
+  if (deleteAuthErr) {
+    logger.error('Erreur suppression auth user:', deleteAuthErr)
+    // Données métier déjà purgées + audit log écrit. Le user existe
+    // encore côté auth mais n'a plus aucune donnée. Il peut réessayer
+    // ou contacter le support pour finaliser.
     return NextResponse.json(
-      { error: 'Erreur interne durant la suppression' },
-      { status: 500 }
+      {
+        error:
+          'Données supprimées mais le compte auth n\'a pas pu être effacé. ' +
+          'Contactez le support pour finaliser.',
+      },
+      { status: 500 },
     )
   }
+
+  // 9. Déconnexion de la session courante
+  await supabase.auth.signOut()
+
+  return NextResponse.json({ success: true })
 }

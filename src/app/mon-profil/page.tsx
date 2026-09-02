@@ -321,9 +321,13 @@ export default function MonProfilPage() {
     const step2 = confirm('Derniere confirmation : toutes vos donnees seront supprimees DEFINITIVEMENT.\n\nContinuer ?')
     if (!step2) return
 
+    // R5 (audit 22/05/2026) : confirmation explicite par mot de passe
+    const password = prompt('Pour confirmer la suppression, entrez votre mot de passe :')
+    if (!password) return
+
     try {
       const supabase = createClient()
-      await deleteArtisanAccount(supabase, userId)
+      await deleteArtisanAccount(supabase, userId, password)
       router.push('/connexion')
     } catch (err) {
       alert('Erreur lors de la suppression : ' + (err as Error).message)

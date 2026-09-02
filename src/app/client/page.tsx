@@ -10,7 +10,6 @@ import { loadClientDemandes, loadClientAvis, deleteClientDemande, loadMessages, 
 import type { Demande, Avis, Message } from '@/lib/supabase/helpers'
 import { useRealtimeMessages, useRealtimeIncomingMessages } from '@/lib/hooks/useRealtimeMessages'
 import { useRealtimeClientDemandes } from '@/lib/hooks/useRealtimeDemandes'
-import { notify } from '@/lib/email/notify'
 
 function timeAgo(dateStr: string): string {
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
@@ -163,11 +162,11 @@ export default function ClientPage() {
     setChatInput('')
     const supabase = createClient()
     try {
-      const sent = await sendMessage(supabase, selectedDemande.id, 'client', email, text)
+      // L'email de notification est désormais envoyé côté serveur par /api/messages
+      await sendMessage(supabase, selectedDemande.id, 'client', email, text)
       const msgs = await loadMessages(supabase, selectedDemande.id)
       setChatMessages(msgs)
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
-      if (sent?.id) notify.newMessage(sent.id)
     } catch (e) {
       alert('Erreur envoi: ' + (e instanceof Error ? e.message : ''))
     }
@@ -187,9 +186,12 @@ export default function ClientPage() {
   async function handleDeleteAccount() {
     if (!confirm('Voulez-vous vraiment supprimer votre compte ? Cette action est irréversible.')) return
     if (!confirm('Dernière confirmation : toutes vos demandes et avis seront supprimés définitivement.')) return
+    // R5 (audit 22/05/2026) : confirmation explicite par mot de passe
+    const password = prompt('Pour confirmer la suppression, entrez votre mot de passe :')
+    if (!password) return
     const supabase = createClient()
     try {
-      await deleteClientAccount(supabase, email)
+      await deleteClientAccount(supabase, email, password)
       localStorage.removeItem('artisano-client')
       router.push('/connexion')
     } catch (e) {

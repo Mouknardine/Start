@@ -178,11 +178,11 @@ export default function DashDemandes({ demandes, setDemandes, avis, setAvis, use
     setChatInput('')
     const supabase = createClient()
     try {
-      const sent = await sendMessage(supabase, selectedDemande.id, 'artisan', userId, text)
+      // L'email de notification est désormais envoyé côté serveur par /api/messages
+      await sendMessage(supabase, selectedDemande.id, 'artisan', userId, text)
       const msgs = await loadMessages(supabase, selectedDemande.id)
       setChatMessages(msgs)
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
-      if (sent?.id) notify.newMessage(sent.id)
     } catch (e) { alert('Erreur envoi: ' + (e instanceof Error ? e.message : '')) }
   }, [chatInput, selectedDemande, userId])
 

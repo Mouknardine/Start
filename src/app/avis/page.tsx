@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import Logo from '@/components/Logo'
@@ -12,6 +12,7 @@ const LABELS = ['', 'Très insatisfait', 'Insatisfait', 'Correct', 'Satisfait', 
 
 function AvisContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const artisanId = searchParams.get('artisan') || searchParams.get('id')
 
   const [artisanName, setArtisanName] = useState('Chargement...')
@@ -35,6 +36,19 @@ function AvisContent() {
       setNotFound(true); setLoading(false); return
     }
     const supabase = createClient()
+
+    // Connexion requise : la RLS exige client_email = auth.email() pour
+    // poster un avis. Sans ce check, un visiteur non connecté remplissait
+    // tout le formulaire pour finir sur une erreur opaque.
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        const back = `/avis?artisan=${encodeURIComponent(artisanId)}`
+        router.replace(`/connexion?next=${encodeURIComponent(back)}`)
+        return
+      }
+      if (user.email) setClientEmail(user.email)
+    })
+
     supabase.from('artisans').select('entreprise, prenom, nom, metier, avatar_url').eq('id', artisanId).single().then(({ data, error }) => {
       if (error || !data) { setNotFound(true); setLoading(false); return }
       setArtisanName(data.entreprise || `${data.prenom || ''} ${data.nom || ''}`.trim() || 'Artisan')
@@ -42,7 +56,7 @@ function AvisContent() {
       setArtisanAvatar(data.avatar_url || '')
       setLoading(false)
     })
-  }, [artisanId])
+  }, [artisanId, router])
 
   async function submitReview() {
     setFeedback(null)
@@ -52,25 +66,24 @@ function AvisContent() {
     if (!artisanId) { setFeedback({ type: 'error', msg: "Artisan introuvable." }); return }
 
     setSubmitting(true)
-    const supabase = createClient()
 
+    // Passe par /api/avis : validation Zod + rate limit + vérification
+    // « intervention terminée » et correspondance email/compte côté serveur.
     try {
-      // Check completed demande
-      const { data: hasCompleted, error: checkErr } = await supabase.rpc('check_completed_demande', {
-        p_artisan_id: artisanId, p_client_email: clientEmail.trim(),
+      const res = await fetch('/api/avis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artisan_id: artisanId, client_nom: clientNom.trim(), client_email: clientEmail.trim(),
+          note: rating, commentaire: comment.trim(),
+        }),
       })
-      if (checkErr) throw checkErr
-      if (!hasCompleted) {
-        setFeedback({ type: 'error', msg: "Aucune intervention terminée trouvée avec cet email. Vous ne pouvez laisser un avis que si votre demande a été marquée comme terminée par l'artisan." })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setFeedback({ type: 'error', msg: body.error || 'Erreur lors de la publication. Veuillez réessayer.' })
         setSubmitting(false)
         return
       }
-
-      const { error } = await supabase.from('avis').insert({
-        artisan_id: artisanId, client_nom: clientNom.trim(), client_email: clientEmail.trim(),
-        note: rating, commentaire: comment.trim() || null,
-      })
-      if (error) throw error
 
       setFeedback({ type: 'success', msg: 'Merci ! Votre avis a été publié avec succès.' })
       setSubmitted(true)

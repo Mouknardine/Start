@@ -60,7 +60,8 @@ export default function CGUPage() {
 
           <h2>6. Abonnement Artisan</h2>
           <ul>
-            <li>L&apos;accès aux fonctionnalités Artisan est soumis à un abonnement mensuel payant.</li>
+            <li><strong>Période de bêta</strong> : pendant la phase de bêta, l&apos;accès aux fonctionnalités Artisan est gratuit. Le passage à l&apos;abonnement payant sera annoncé aux Artisans inscrits avec un préavis d&apos;au moins 30 jours, et nécessitera leur accord explicite.</li>
+            <li>À l&apos;issue de la bêta, l&apos;accès aux fonctionnalités Artisan est soumis à un abonnement mensuel payant.</li>
             <li>Le montant de l&apos;abonnement est indiqué lors de l&apos;inscription et peut être modifié avec un préavis de 30 jours.</li>
             <li>L&apos;abonnement se renouvelle automatiquement sauf résiliation.</li>
             <li>La résiliation prend effet à la fin de la période en cours.</li>

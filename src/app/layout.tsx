@@ -49,7 +49,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="fr" className={`${dmSans.variable} ${sora.variable}`}>
+    <html lang="fr" data-scroll-behavior="smooth" className={`${dmSans.variable} ${sora.variable}`}>
       <body>
         {children}
         <CookieConsent />

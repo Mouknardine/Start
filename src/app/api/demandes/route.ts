@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { demandeSchema, parsePayload } from '@/lib/validation/schemas'
 import { createLimiter, getClientKey } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
+import { sendEmail } from '@/lib/email/resend'
+import { newDemandeEmail } from '@/lib/email/templates'
 
 // Max 10 demandes par heure par IP — protège contre le spam
 const demandeLimiter = createLimiter({
@@ -49,6 +51,30 @@ export async function POST(request: Request) {
   if (dbErr) {
     logger.error('Erreur création demande:', dbErr)
     return NextResponse.json({ error: 'Création échouée' }, { status: 500 })
+  }
+
+  // Notification email à l'artisan — envoyée ici côté serveur (fiable même
+  // si le client ferme l'onglet). Best effort : ne bloque pas la création.
+  try {
+    const { data: artisan } = await supabase
+      .from('artisans_public')
+      .select('prenom, email, metier')
+      .eq('id', parsed.data.artisan_id)
+      .maybeSingle<{ prenom: string; email: string; metier: string }>()
+
+    if (artisan?.email) {
+      const { subject, html } = newDemandeEmail({
+        artisanPrenom: artisan.prenom || 'Artisan',
+        clientNom: parsed.data.client_nom || 'Un client',
+        metier: artisan.metier,
+        type: parsed.data.type,
+        messagePreview: parsed.data.message || '',
+        demandeId: created.id,
+      })
+      await sendEmail({ to: artisan.email, subject, html })
+    }
+  } catch (e) {
+    logger.warn('Notification email demande échouée (non bloquant):', e)
   }
 
   return NextResponse.json({ id: created.id })

@@ -17,7 +17,11 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: Request) {
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
-  const next = url.searchParams.get('next') || '/'
+  // Anti open-redirect : seuls les chemins internes sont acceptés.
+  // "https://evil.com" ou "//evil.com" seraient résolus comme URL absolues
+  // par new URL(next, origin) → fallback sur "/".
+  const rawNext = url.searchParams.get('next') || '/'
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/'
 
   if (!code) {
     return NextResponse.redirect(new URL('/connexion?error=missing_code', url.origin))

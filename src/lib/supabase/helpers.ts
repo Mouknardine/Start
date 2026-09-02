@@ -215,12 +215,23 @@ export async function signOut(supabase: SupabaseClient) {
 
 /**
  * Supprime totalement le compte courant (artisan ou client) côté serveur :
- * données métier + compte auth Supabase via service role.
+ * données métier (transaction atomique côté DB) + compte auth Supabase
+ * via service role.
+ *
+ * R5 (audit 22/05/2026) : le mot de passe est désormais re-demandé côté
+ * API pour éviter qu'un XSS/CSRF puisse provoquer la suppression sans
+ * action consciente de l'utilisateur.
+ *
  * Lance une erreur si la requête échoue, sinon la session est déjà
  * déconnectée à la sortie.
  */
-export async function deleteCurrentAccount() {
-  const res = await fetch('/api/account/delete', { method: 'DELETE' })
+export async function deleteCurrentAccount(password: string) {
+  if (!password) throw new Error('Mot de passe requis pour confirmer la suppression.')
+  const res = await fetch('/api/account/delete', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error(body.error || 'Suppression échouée')
@@ -228,13 +239,13 @@ export async function deleteCurrentAccount() {
 }
 
 // Anciens helpers conservés pour compatibilité — préférer deleteCurrentAccount()
-export async function deleteArtisanAccount(supabase: SupabaseClient, _userId: string) {
-  await deleteCurrentAccount()
+export async function deleteArtisanAccount(supabase: SupabaseClient, _userId: string, password: string) {
+  await deleteCurrentAccount(password)
   await supabase.auth.signOut()
 }
 
-export async function deleteClientAccount(supabase: SupabaseClient, _email: string) {
-  await deleteCurrentAccount()
+export async function deleteClientAccount(supabase: SupabaseClient, _email: string, password: string) {
+  await deleteCurrentAccount(password)
   await supabase.auth.signOut()
 }
 
@@ -550,20 +561,36 @@ export async function loadMessages(supabase: SupabaseClient, demandeId: string) 
   return (data || []) as Message[]
 }
 
-export async function sendMessage(supabase: SupabaseClient, demandeId: string, senderType: 'client' | 'artisan', senderId: string, content: string) {
-  const { data, error } = await supabase.from('messages').insert({
-    demande_id: demandeId,
-    sender_type: senderType,
-    sender_id: senderId,
-    content,
-  }).select().single()
-  if (error) throw error
-  return data as Message
+/**
+ * Envoie un message via /api/messages : le serveur déduit le sender_type,
+ * applique le rate limit + la validation Zod, et déclenche la notification
+ * email au destinataire (fiable même si l'onglet ferme ensuite).
+ *
+ * Les paramètres supabase/senderType/senderId sont conservés pour
+ * compatibilité de signature mais ne sont plus utilisés : le serveur
+ * dérive tout de la session.
+ */
+export async function sendMessage(_supabase: SupabaseClient, demandeId: string, _senderType: 'client' | 'artisan', _senderId: string, content: string) {
+  void _supabase; void _senderType; void _senderId
+  const res = await fetch('/api/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ demande_id: demandeId, content }),
+  })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(body.error || 'Envoi échoué')
+  return body.message as Message
 }
 
-export async function markMessagesRead(supabase: SupabaseClient, demandeId: string, readerType: 'client' | 'artisan') {
-  const oppositeType = readerType === 'artisan' ? 'client' : 'artisan'
-  const { error } = await supabase.from('messages').update({ lu: true }).eq('demande_id', demandeId).eq('sender_type', oppositeType).eq('lu', false)
+/**
+ * Marque comme lus les messages reçus dans une demande, via la RPC
+ * mark_messages_read (migration 0013). L'UPDATE direct sur messages est
+ * désormais réservé aux admins (anti-falsification de contenu).
+ * readerType est dérivé côté serveur — paramètre conservé pour compat.
+ */
+export async function markMessagesRead(supabase: SupabaseClient, demandeId: string, _readerType: 'client' | 'artisan') {
+  void _readerType
+  const { error } = await supabase.rpc('mark_messages_read', { p_demande_id: demandeId })
   if (error) throw error
 }
 

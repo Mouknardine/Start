@@ -2,9 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { saveArtisanProfile, getAffectations } from '@/lib/supabase/helpers'
+import {
+  saveArtisanProfile, getAffectations, getEmployes, loadDemandes,
+  addAffectation, updateAffectation, deleteAffectation,
+} from '@/lib/supabase/helpers'
 import { loadAgendaKey, loadAgendaKeyCached, saveAgendaKey, debounce } from '@/lib/supabase/agenda'
-import type { Affectation } from '@/lib/supabase/helpers'
+import type { Affectation, Employe, Demande } from '@/lib/supabase/helpers'
 import { logger } from '@/lib/logger'
 import type {
   CellStatus, Slots, TitleEntry, Titles, Notes,
@@ -82,6 +85,13 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
 
   // Affectations
   const [affectations, setAffectations] = useState<Affectation[]>([])
+  const [employees, setEmployees] = useState<Employe[]>([])
+  const [demandes, setDemandes] = useState<Demande[]>([])
+
+  // Affectation popup (création / édition depuis le calendrier principal)
+  type AffData = { titre: string; employe_id: string; date: string; heure_debut: string; heure_fin: string; adresse: string; notes: string; demande_id: string }
+  const emptyAff = useMemo<AffData>(() => ({ titre: '', employe_id: '', date: '', heure_debut: '08:00', heure_fin: '10:00', adresse: '', notes: '', demande_id: '' }), [])
+  const [affPopup, setAffPopup] = useState<{ open: boolean; editId: string | null; data: AffData }>({ open: false, editId: null, data: emptyAff })
 
   // Drag state refs
   const isDragging = useRef(false)
@@ -223,17 +233,126 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
 
   // ===== AFFECTATIONS =====
 
-  useEffect(() => {
-    async function loadAffectations() {
-      try {
-        const sunday = new Date(monday)
-        sunday.setDate(monday.getDate() + 6)
-        const data = await getAffectations(supabase, userId, formatWeekStart(monday), formatDateStr(sunday))
-        setAffectations(data)
-      } catch { setAffectations([]) }
-    }
-    loadAffectations()
+  const reloadAffectations = useCallback(async () => {
+    if (!userId) return
+    try {
+      const sunday = new Date(monday)
+      sunday.setDate(monday.getDate() + 6)
+      const data = await getAffectations(supabase, userId, formatWeekStart(monday), formatDateStr(sunday))
+      setAffectations(data)
+    } catch { setAffectations([]) }
   }, [supabase, userId, monday])
+
+  // Recharge les affectations à chaque changement de semaine. Le setState se
+  // fait après un await réseau (pas un cascading render synchrone).
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { reloadAffectations() }, [reloadAffectations])
+
+  // Employés + demandes (pour le popup d'affectation) — chargés une fois.
+  useEffect(() => {
+    if (!userId) return
+    getEmployes(supabase, userId).then(setEmployees).catch(() => setEmployees([]))
+    loadDemandes(supabase, userId).then(setDemandes).catch(() => setDemandes([]))
+  }, [supabase, userId])
+
+  const activeDemandes = useMemo(
+    () => demandes.filter(d => d.statut !== 'refusee').slice(0, 20),
+    [demandes]
+  )
+
+  const closeAff = useCallback(() => setAffPopup({ open: false, editId: null, data: emptyAff }), [emptyAff])
+
+  // Ouvre le popup « nouvelle affectation » pré-rempli depuis une cellule de la grille.
+  const openNewAffect = useCallback((col: number, row: number) => {
+    if (employees.length === 0) {
+      setFeedback({ type: 'error', msg: 'Ajoutez d\'abord un employé dans l\'onglet Équipe.' })
+      setTimeout(() => setFeedback(null), 4000)
+      return
+    }
+    const cellDate = new Date(monday)
+    cellDate.setDate(monday.getDate() + col)
+    const startMin = GRID_START_MIN + row * 30
+    const endMin = Math.min(startMin + 120, GRID_START_MIN + TOTAL_ROWS * 30)
+    const toHM = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+    setAffPopup({
+      open: true, editId: null,
+      data: { ...emptyAff, date: formatDateStr(cellDate), heure_debut: toHM(startMin), heure_fin: toHM(endMin) },
+    })
+  }, [employees.length, monday, emptyAff])
+
+  const openEditAffect = useCallback((aff: Affectation) => {
+    setAffPopup({
+      open: true, editId: aff.id,
+      data: {
+        titre: aff.titre || '', employe_id: aff.employe_id || '', date: aff.date_debut || '',
+        heure_debut: aff.heure_debut ? aff.heure_debut.substring(0, 5) : '',
+        heure_fin: aff.heure_fin ? aff.heure_fin.substring(0, 5) : '',
+        adresse: aff.adresse || '', notes: aff.notes || '', demande_id: aff.demande_id || '',
+      },
+    })
+  }, [])
+
+  const checkAffOverlap = useCallback((empId: string, date: string, debut: string, fin: string, excludeId?: string | null) => {
+    return affectations.find(a => {
+      if (a.employe_id !== empId || a.date_debut !== date) return false
+      if (excludeId && a.id === excludeId) return false
+      return debut < a.heure_fin.substring(0, 5) && fin > a.heure_debut.substring(0, 5)
+    })
+  }, [affectations])
+
+  const saveAff = useCallback(async () => {
+    const { titre, employe_id, date, heure_debut, heure_fin, adresse, notes, demande_id } = affPopup.data
+    if (!titre.trim()) { setFeedback({ type: 'error', msg: 'Le titre est requis.' }); return }
+    if (!employe_id) { setFeedback({ type: 'error', msg: 'Sélectionnez un employé.' }); return }
+    if (!date) { setFeedback({ type: 'error', msg: 'La date est requise.' }); return }
+    if (!heure_debut || !heure_fin) { setFeedback({ type: 'error', msg: 'Heures de début et fin requises.' }); return }
+    if (heure_fin <= heure_debut) { setFeedback({ type: 'error', msg: "L'heure de fin doit être après le début." }); return }
+    const overlap = checkAffOverlap(employe_id, date, heure_debut, heure_fin, affPopup.editId)
+    if (overlap) { setFeedback({ type: 'error', msg: 'Conflit : « ' + (overlap.titre || 'affectation') + ' » occupe déjà ce créneau pour cet employé.' }); return }
+
+    const payload: Partial<Affectation> = {
+      titre: titre.trim(), employe_id, date_debut: date, heure_debut, heure_fin,
+      adresse: adresse.trim(), notes: notes.trim(), demande_id: demande_id || null,
+    }
+    try {
+      if (affPopup.editId) await updateAffectation(supabase, affPopup.editId, payload)
+      else await addAffectation(supabase, { ...payload, artisan_id: userId })
+      closeAff()
+      await reloadAffectations()
+      setFeedback({ type: 'success', msg: 'Affectation enregistrée.' })
+      setTimeout(() => setFeedback(null), 3000)
+    } catch (e) {
+      setFeedback({ type: 'error', msg: 'Erreur : ' + (e instanceof Error ? e.message : String(e)) })
+    }
+  }, [affPopup, checkAffOverlap, supabase, userId, closeAff, reloadAffectations])
+
+  // Ouvre une nouvelle affectation à partir du créneau sélectionné par glissement.
+  const openAffectFromSelection = useCallback(() => {
+    if (selectedCells.length === 0) return
+    const col = selectedCells[0].col
+    const sameCol = selectedCells.filter(c => c.col === col)
+    const minRow = Math.min(...sameCol.map(c => c.row))
+    const maxRow = Math.max(...sameCol.map(c => c.row))
+    setPopupPos(null)
+    openNewAffect(col, minRow)
+    // Étend l'heure de fin jusqu'au bas de la sélection.
+    const endMin = Math.min(GRID_START_MIN + (maxRow + 1) * 30, GRID_START_MIN + TOTAL_ROWS * 30)
+    const toHM = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+    setAffPopup(p => p.open ? { ...p, data: { ...p.data, heure_fin: toHM(endMin) } } : p)
+  }, [selectedCells, openNewAffect])
+
+  const removeAff = useCallback(async () => {
+    if (!affPopup.editId) return
+    try {
+      await deleteAffectation(supabase, affPopup.editId)
+      closeAff()
+      await reloadAffectations()
+      setFeedback({ type: 'success', msg: 'Affectation supprimée.' })
+      setTimeout(() => setFeedback(null), 3000)
+    } catch (e) {
+      setFeedback({ type: 'error', msg: 'Erreur : ' + (e instanceof Error ? e.message : String(e)) })
+    }
+  }, [affPopup.editId, supabase, closeAff, reloadAffectations])
 
   // ===== WEEK NAVIGATION =====
 
@@ -1042,6 +1161,21 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
               )}
             </div>
 
+            {/* Affecter un employé */}
+            <button
+              onClick={() => {
+                const today = new Date(); today.setHours(0, 0, 0, 0)
+                const diff = Math.round((today.getTime() - monday.getTime()) / 86400000)
+                openNewAffect(diff >= 0 && diff <= 6 ? diff : 0, 0)
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-[var(--radius-sm)] text-sm font-semibold border border-[var(--gray-200)] bg-white hover:bg-[var(--gray-100)] transition-colors"
+              style={{ color: 'var(--dark)' }}
+              title="Affecter un employé à un chantier"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>
+              <span className="max-[600px]:hidden">Affecter</span>
+            </button>
+
             {/* Publish */}
             <button
               onClick={publishDisponibilites}
@@ -1197,8 +1331,9 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
                                   background: `${affBlock.empColor}18`,
                                   borderLeftColor: affBlock.empColor,
                                 }}
-                                title={`${affBlock.aff.titre} - ${affBlock.empName} (${affBlock.aff.heure_debut.substring(0, 5)}-${affBlock.aff.heure_fin.substring(0, 5)})`}
-                                onClick={(e) => e.stopPropagation()}
+                                title={`${affBlock.aff.titre} - ${affBlock.empName} (${affBlock.aff.heure_debut.substring(0, 5)}-${affBlock.aff.heure_fin.substring(0, 5)}) — cliquez pour modifier`}
+                                onClick={(e) => { e.stopPropagation(); openEditAffect(affBlock.aff) }}
+                                onMouseDown={(e) => e.stopPropagation()}
                               >
                                 <span
                                   className="text-[10px] font-semibold leading-tight block truncate pt-0.5"
@@ -1409,6 +1544,15 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
 
           <div className="border-t border-[var(--gray-200)] my-1.5" />
           <button
+            onClick={openAffectFromSelection}
+            className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded-[var(--radius-sm)] hover:bg-[var(--gray-100)] transition-colors"
+            style={{ color: 'var(--orange)' }}
+          >
+            <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>
+            Affecter un employé
+          </button>
+          <div className="border-t border-[var(--gray-200)] my-1.5" />
+          <button
             onClick={() => applyPopupState('clear')}
             className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded-[var(--radius-sm)] hover:bg-[var(--gray-100)] transition-colors"
             style={{ color: 'var(--gray-500)' }}
@@ -1436,6 +1580,86 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
           <div className="flex justify-between mt-2">
             <button onClick={deleteNoteAction} className="text-xs text-[var(--red)] hover:underline">Supprimer</button>
             <button onClick={saveNoteAction} className="text-xs text-white px-3 py-1 rounded-[var(--radius-sm)]" style={{ background: 'var(--green)' }}>Enregistrer</button>
+          </div>
+        </div>
+      )}
+
+      {/* ===== AFFECTATION POPUP ===== */}
+      {affPopup.open && (
+        <div className="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center" onMouseDown={e => { if (e.target === e.currentTarget) closeAff() }}>
+          <div className="bg-white rounded-2xl p-7 w-[440px] max-w-[90vw] max-h-[85vh] overflow-y-auto shadow-[0_20px_60px_rgba(0,0,0,0.15)] max-[600px]:p-5 max-[600px]:w-[95vw]">
+            <div className="font-sora text-lg font-bold mb-5 flex items-center gap-2.5">
+              <svg className="w-5 h-5 text-[var(--orange)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+              {affPopup.editId ? "Modifier l'affectation" : 'Nouvelle affectation'}
+            </div>
+
+            <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Titre du chantier *</label>
+            <input type="text" placeholder="Ex: Rénovation salle de bain" value={affPopup.data.titre}
+              onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, titre: e.target.value } }))}
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
+
+            <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Employé *</label>
+            <select value={affPopup.data.employe_id}
+              onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, employe_id: e.target.value } }))}
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]">
+              <option value="">Sélectionner un employé</option>
+              {employees.map(emp => (
+                <option key={emp.id} value={emp.id}>{emp.prenom}{emp.nom ? ' ' + emp.nom : ''}</option>
+              ))}
+            </select>
+
+            <div className="grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
+              <div>
+                <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Date</label>
+                <input type="date" value={affPopup.data.date}
+                  onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, date: e.target.value } }))}
+                  className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Début</label>
+                  <input type="time" value={affPopup.data.heure_debut}
+                    onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, heure_debut: e.target.value } }))}
+                    className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Fin</label>
+                  <input type="time" value={affPopup.data.heure_fin}
+                    onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, heure_fin: e.target.value } }))}
+                    className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
+                </div>
+              </div>
+            </div>
+
+            <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Adresse</label>
+            <input type="text" placeholder="Rue, ville (optionnel)" value={affPopup.data.adresse}
+              onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, adresse: e.target.value } }))}
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
+
+            <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Notes</label>
+            <textarea placeholder="Instructions, matériel nécessaire..." value={affPopup.data.notes}
+              onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, notes: e.target.value } }))}
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 resize-y min-h-[60px] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
+
+            <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Lier à une demande</label>
+            <select value={affPopup.data.demande_id}
+              onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, demande_id: e.target.value } }))}
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]">
+              <option value="">Aucune demande liée</option>
+              {activeDemandes.map(d => (
+                <option key={d.id} value={d.id}>{(d.client_nom || 'Client') + ' — ' + (d.message || '').substring(0, 30)}</option>
+              ))}
+            </select>
+
+            <div className="flex justify-between mt-2">
+              {affPopup.editId ? (
+                <button onClick={removeAff} className="bg-transparent border-none text-[var(--red)] py-2.5 px-0 font-bold text-[13px] cursor-pointer font-sora hover:underline">Supprimer</button>
+              ) : <div />}
+              <div className="flex gap-2">
+                <button onClick={closeAff} className="px-5 py-2.5 rounded-full font-bold text-[13px] cursor-pointer border-none bg-[var(--gray-200)] text-[var(--gray-700)] font-sora transition-all hover:bg-[var(--gray-300)]">Annuler</button>
+                <button onClick={saveAff} className="px-5 py-2.5 rounded-full font-bold text-[13px] cursor-pointer border-none bg-[var(--orange)] text-white font-sora transition-all hover:bg-[var(--orange-dark)]">Enregistrer</button>
+              </div>
+            </div>
           </div>
         </div>
       )}
