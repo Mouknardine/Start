@@ -18,9 +18,11 @@ async function getArtisanData(id: string) {
 
   if (!artisan) return null
 
+  // Colonnes explicites : client_email ne doit jamais partir dans la page
+  // publique (les props du composant client sont sérialisées dans le HTML).
   const { data: reviews } = await supabase
     .from('avis')
-    .select('*')
+    .select('id, artisan_id, client_nom, note, commentaire, reponse_artisan, reponse_date, created_at')
     .eq('artisan_id', id)
     .order('created_at', { ascending: false })
 

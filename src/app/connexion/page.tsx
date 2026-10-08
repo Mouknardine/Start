@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Logo from '@/components/Logo'
 import { createClient } from '@/lib/supabase/client'
 import { signIn, loadArtisanProfile, isArtisan } from '@/lib/supabase/helpers'
+import { safeNextPath } from '@/lib/safe-redirect'
 
 export default function ConnexionPage() {
   return (
@@ -21,7 +22,7 @@ function ConnexionContent() {
   // URL de retour après connexion (ex: /demande?artisan=X)
   const nextUrl = searchParams.get('next')
   // Liste blanche : seules les redirections internes sont autorisées
-  const safeNext = (nextUrl && nextUrl.startsWith('/')) ? nextUrl : null
+  const safeNext = nextUrl ? safeNextPath(nextUrl, '') || null : null
   const [tab, setTab] = useState<'artisan' | 'client'>('artisan')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
