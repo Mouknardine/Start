@@ -686,6 +686,8 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
         loadAgendaKey<InterventionType[]>(supabase, userId, 'intervention_types', []),
       ])
 
+      // artisans.disponibilites est public (vue artisans_public) : les notes et
+      // titres de RDV, privés, restent dans agenda_data et ne sont pas publiés.
       const v2Data = {
         version: 2,
         week_start: formatWeekStart(monday),
@@ -693,8 +695,6 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
         recurrence: rec,
         blocked_days: blocked,
         intervention_types: intTypes,
-        notes,
-        titles,
       }
 
       await saveArtisanProfile(supabase, userId, { disponibilites: v2Data as unknown as Record<string, unknown> })

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { safeNextPath } from '@/lib/safe-redirect'
 
 /**
  * GET /auth/callback?code=...&next=/path
@@ -17,11 +18,8 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: Request) {
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
-  // Anti open-redirect : seuls les chemins internes sont acceptés.
-  // "https://evil.com" ou "//evil.com" seraient résolus comme URL absolues
-  // par new URL(next, origin) → fallback sur "/".
-  const rawNext = url.searchParams.get('next') || '/'
-  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/'
+  // Anti open-redirect : seuls les chemins internes sont acceptés (voir safeNextPath)
+  const next = safeNextPath(url.searchParams.get('next'))
 
   if (!code) {
     return NextResponse.redirect(new URL('/connexion?error=missing_code', url.origin))
