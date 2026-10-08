@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
@@ -29,8 +29,11 @@ function ConnexionContent() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const emailRef = useRef<HTMLInputElement>(null)
 
-  async function handleLogin() {
+  async function handleLogin(e?: React.FormEvent) {
+    e?.preventDefault()
     setError('')
     setSuccess('')
 
@@ -83,7 +86,8 @@ function ConnexionContent() {
     setSuccess('')
 
     if (!email.trim()) {
-      setError('Entrez votre email ci-dessus, puis cliquez sur "Mot de passe oublié".')
+      setError('Entrez votre email ci-dessus, puis cliquez sur « Mot de passe oublié ».')
+      emailRef.current?.focus()
       return
     }
 
@@ -104,19 +108,18 @@ function ConnexionContent() {
   async function handleGoogleLogin() {
     const supabase = createClient()
     try {
+      // Retour via /auth/callback, qui échange le code contre une session puis
+      // redirige (revenir sur /connexion laissait l'utilisateur sur le formulaire).
+      const next = safeNext || (tab === 'artisan' ? '/dashboard' : '/client')
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin + '/connexion' },
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
       })
       if (error) throw error
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erreur avec Google.'
       setError(message)
     }
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter') handleLogin()
   }
 
   return (
@@ -135,12 +138,16 @@ function ConnexionContent() {
           {/* Tabs */}
           <div className="grid grid-cols-2 mb-8 bg-[var(--gray-100)] rounded-[var(--radius-sm)] p-1 max-[900px]:mb-6">
             <button
+              type="button"
+              aria-pressed={tab === 'artisan'}
               onClick={() => { setTab('artisan'); setError(''); setSuccess('') }}
               className={`py-3 text-center font-sora text-sm font-bold rounded-lg cursor-pointer transition-all select-none max-[900px]:text-[13px] max-[900px]:min-h-11 max-[900px]:flex max-[900px]:items-center max-[900px]:justify-center ${tab === 'artisan' ? 'bg-white text-[var(--dark)] shadow-[0_2px_8px_rgba(0,0,0,0.06)]' : 'bg-transparent text-[var(--gray-500)]'}`}
             >
               Je suis artisan
             </button>
             <button
+              type="button"
+              aria-pressed={tab === 'client'}
               onClick={() => { setTab('client'); setError(''); setSuccess('') }}
               className={`py-3 text-center font-sora text-sm font-bold rounded-lg cursor-pointer transition-all select-none max-[900px]:text-[13px] max-[900px]:min-h-11 max-[900px]:flex max-[900px]:items-center max-[900px]:justify-center ${tab === 'client' ? 'bg-white text-[var(--dark)] shadow-[0_2px_8px_rgba(0,0,0,0.06)]' : 'bg-transparent text-[var(--gray-500)]'}`}
             >
@@ -148,11 +155,16 @@ function ConnexionContent() {
             </button>
           </div>
 
-          {/* Form */}
+          {/* Form — un vrai <form> : Entrée partout, gestionnaires de mots de passe */}
+          <form onSubmit={handleLogin} noValidate>
           <div className="mb-5">
-            <label className="block text-sm font-semibold text-[var(--dark)] mb-1.5">Adresse email</label>
+            <label htmlFor="login-email" className="block text-sm font-semibold text-[var(--dark)] mb-1.5">Adresse email</label>
             <input
+              ref={emailRef}
+              id="login-email"
               type="email"
+              autoComplete="email"
+              inputMode="email"
               placeholder={tab === 'artisan' ? 'contact@mon-entreprise.ch' : 'jean.dupont@email.ch'}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -162,7 +174,7 @@ function ConnexionContent() {
 
           <div className="mb-5">
             <div className="flex justify-between items-center mb-1.5 max-[900px]:flex-wrap max-[900px]:gap-1">
-              <label className="text-sm font-semibold text-[var(--dark)]">Mot de passe</label>
+              <label htmlFor="login-password" className="text-sm font-semibold text-[var(--dark)]">Mot de passe</label>
               <button
                 type="button"
                 onClick={handleForgotPassword}
@@ -171,32 +183,46 @@ function ConnexionContent() {
                 Mot de passe oublié ?
               </button>
             </div>
+            <div className="relative">
             <input
-              type="password"
+              id="login-password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
               placeholder="Votre mot de passe"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="w-full py-3.5 px-4 border-2 border-[var(--gray-200)] rounded-[var(--radius-sm)] text-[15px] text-[var(--dark)] bg-white transition-all outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.1)] placeholder:text-[var(--gray-500)] max-[900px]:text-base max-[900px]:min-h-11"
+              className="w-full py-3.5 pl-4 pr-24 border-2 border-[var(--gray-200)] rounded-[var(--radius-sm)] text-[15px] text-[var(--dark)] bg-white transition-all outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.1)] placeholder:text-[var(--gray-500)] max-[900px]:text-base max-[900px]:min-h-11"
             />
+            {/* Afficher / masquer (modèle Square, Flodesk — via Mobbin) */}
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-pressed={showPassword}
+              aria-controls="login-password"
+              className="absolute right-2 top-1/2 -translate-y-1/2 py-1.5 px-3 rounded-lg text-[13px] font-semibold text-[var(--gray-700)] bg-transparent border-none cursor-pointer hover:bg-[var(--gray-100)]"
+            >
+              {showPassword ? 'Masquer' : 'Afficher'}
+            </button>
+            </div>
           </div>
 
           {/* Error / Success */}
           {error && (
-            <div className="text-[var(--red)] text-sm mb-3">{error}</div>
+            <div role="alert" className="text-[var(--red)] text-sm mb-3 font-semibold">{error}</div>
           )}
           {success && (
-            <div className="text-[var(--green)] text-sm mb-3">{success}</div>
+            <div role="status" className="text-[var(--green)] text-sm mb-3 font-semibold">{success}</div>
           )}
 
           {/* Login button */}
           <button
-            onClick={handleLogin}
+            type="submit"
             disabled={loading}
             className="bg-[var(--orange)] text-white py-4 rounded-full font-sora font-bold text-base border-none cursor-pointer transition-all w-full mt-2 hover:bg-[var(--orange-dark)] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(232,112,10,0.3)] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none max-[900px]:min-h-11 max-[900px]:text-[15px] max-[900px]:py-3.5"
           >
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
+          </form>
 
           {/* Google login (artisan only) */}
           {tab === 'artisan' && (
@@ -208,6 +234,7 @@ function ConnexionContent() {
               </div>
 
               <button
+                type="button"
                 onClick={handleGoogleLogin}
                 className="w-full py-3.5 border-2 border-[var(--gray-200)] rounded-full bg-white text-[15px] font-semibold text-[var(--dark)] cursor-pointer transition-all flex items-center justify-center gap-2.5 hover:border-[var(--gray-300)] hover:bg-[var(--gray-100)] max-[900px]:min-h-11 max-[900px]:text-sm"
               >

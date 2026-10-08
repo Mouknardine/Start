@@ -272,7 +272,8 @@ export default function InscriptionPage() {
   const renderStepper = () => {
     const steps = ['Votre entreprise', 'Votre activité', 'Disponibilités', 'Abonnement']
     return (
-      <div className="flex items-center gap-0 mb-10 overflow-x-auto max-[900px]:mb-6" style={{ scrollbarWidth: 'none' }}>
+      <>
+      <div role="list" aria-label="Étapes de l’inscription" className="flex items-center gap-0 mb-10 overflow-x-auto max-[900px]:mb-2" style={{ scrollbarWidth: 'none' }}>
         {steps.map((label, i) => {
           const num = i + 1
           const isActive = num === step
@@ -282,7 +283,7 @@ export default function InscriptionPage() {
               {i > 0 && (
                 <div className={`flex-1 h-0.5 mx-4 min-w-4 max-[900px]:mx-2 max-[500px]:mx-1 max-[500px]:min-w-2 ${isCompleted ? 'bg-[var(--orange)]' : 'bg-[var(--gray-200)]'}`} />
               )}
-              <div className={`flex items-center gap-2.5 max-[900px]:gap-1.5 ${isActive ? '' : ''}`}>
+              <div role="listitem" aria-current={isActive ? 'step' : undefined} className="flex items-center gap-2.5 max-[900px]:gap-1.5">
                 <div className={`w-9 h-9 min-w-9 rounded-full flex items-center justify-center font-sora font-bold text-sm transition-all max-[900px]:w-7 max-[900px]:h-7 max-[900px]:min-w-7 max-[900px]:text-xs max-[500px]:w-6 max-[500px]:h-6 max-[500px]:min-w-6 max-[500px]:text-[11px] ${
                   isActive ? 'bg-[var(--orange)] text-white shadow-[0_0_0_4px_rgba(232,112,10,0.15)]' :
                   isCompleted ? 'bg-[var(--orange)] text-white' :
@@ -292,12 +293,17 @@ export default function InscriptionPage() {
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
                   ) : num}
                 </div>
-                <span className={`text-[13px] font-semibold whitespace-nowrap max-[900px]:hidden ${isActive ? 'text-[var(--dark)]' : 'text-[var(--gray-500)]'}`}>{label}</span>
+                <span className={`text-[13px] font-semibold whitespace-nowrap max-[900px]:sr-only ${isActive ? 'text-[var(--dark)]' : 'text-[var(--gray-500)]'}`}>{label}</span>
               </div>
             </div>
           )
         })}
       </div>
+      {/* Sur mobile les libellés sont masqués : on rappelle l'étape en cours */}
+      <p aria-hidden="true" className="hidden max-[900px]:block text-[13px] font-semibold text-[var(--gray-500)] mb-6">
+        Étape {step} sur {steps.length} · <span className="text-[var(--dark)]">{steps[step - 1]}</span>
+      </p>
+      </>
     )
   }
 

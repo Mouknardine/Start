@@ -657,7 +657,7 @@ export default function MonProfilPage() {
 
         {/* ACTIONS BAR */}
         <div className="flex gap-3 justify-end mt-8 max-[900px]:flex-col">
-          <Link href="/profil" className="no-underline bg-white text-[var(--dark)] py-4 px-8 rounded-full font-sora font-bold text-[15px] border-2 border-[var(--gray-200)] cursor-pointer transition-all inline-flex items-center gap-2 hover:border-[var(--gray-300)] hover:bg-[var(--gray-100)] max-[900px]:w-full max-[900px]:justify-center">
+          <Link href={userId ? `/artisan/${userId}` : '/recherche'} className="no-underline bg-white text-[var(--dark)] py-4 px-8 rounded-full font-sora font-bold text-[15px] border-2 border-[var(--gray-200)] cursor-pointer transition-all inline-flex items-center gap-2 hover:border-[var(--gray-300)] hover:bg-[var(--gray-100)] max-[900px]:w-full max-[900px]:justify-center">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             Voir mon profil public
           </Link>

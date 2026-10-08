@@ -197,6 +197,7 @@ export default function DashboardPage() {
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
+              aria-pressed={tab === t.key}
               className={`py-2.5 px-6 rounded-full text-sm font-semibold transition-all whitespace-nowrap max-[600px]:py-2 max-[600px]:px-4 max-[600px]:text-[13px] max-[600px]:flex-1 ${
                 tab === t.key
                   ? 'bg-white text-[var(--dark)] shadow-[0_1px_3px_rgba(0,0,0,0.08)]'
@@ -204,6 +205,11 @@ export default function DashboardPage() {
               }`}
             >
               {t.label}
+              {t.key === 'demandes' && newDemandes > 0 && (
+                <span className="ml-1.5 inline-block min-w-5 px-1.5 rounded-full text-[11px] leading-5 text-center bg-[var(--orange)] text-white">
+                  {newDemandes}<span className="sr-only"> nouvelle{newDemandes > 1 ? 's' : ''}</span>
+                </span>
+              )}
             </button>
           ))}
         </div>
