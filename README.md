@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Artisano
 
-## Getting Started
+Plateforme suisse qui met en relation particuliers et artisans locaux (plombiers,
+électriciens, serruriers…) : recherche par métier et localité, profils avec avis et
+disponibilités, demandes de contact avec messagerie, et un espace artisan (agenda,
+équipe, devis et factures avec QR-facture).
 
-First, run the development server:
+Stack : Next.js 16 (App Router) · React 19 · Tailwind CSS 4 · Supabase (Postgres, Auth,
+Storage, RLS) · Resend · Sentry · Vercel.
+
+## Démarrer en local
+
+Node 22 recommandé (version utilisée par la CI).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm ci
+cp .env.example .env.local   # puis renseigner au moins les variables Supabase
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Commande | Rôle |
+| --- | --- |
+| `npm run dev` | Serveur de développement |
+| `npm run build` / `npm start` | Build et serveur de production |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript (`tsc --noEmit`) |
+| `npm test` | Tests unitaires (Vitest) |
+| `npm run test:e2e` | Tests end-to-end (Playwright) |
+| `npm run seed:localites` | Charge les localités suisses (swisstopo) en base |
+| `npm run admin:delete-user` | Suppression d'un compte côté admin (`--dry-run` disponible) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+La CI GitHub (`.github/workflows/ci.yml`) exécute lint, typecheck, tests unitaires et
+build sur chaque PR et sur `main`.
 
-## Learn More
+## Variables d'environnement
 
-To learn more about Next.js, take a look at the following resources:
+La liste complète, commentée, est dans [`.env.example`](.env.example). Seules les
+variables Supabase sont indispensables ; sans Resend, Sentry ou Plausible, l'application
+fonctionne mais n'envoie pas d'emails, ne remonte pas d'erreurs ou ne mesure pas
+l'audience.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Déploiement
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Le projet Vercel **artisano** est relié à ce dépôt :
 
-## Deploy on Vercel
+- chaque push sur `main` déploie en production (https://artisano-one.vercel.app) ;
+- chaque PR obtient un déploiement de prévisualisation.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Les variables d'environnement se gèrent dans Vercel : Project Settings → Environment
+Variables.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Base de données
+
+Le schéma évolue uniquement par fichiers `supabase/migrations/NNNN_*.sql` idempotents.
+Les règles (rôles explicites dans les policies RLS, forme initplan, migrations déjà
+appliquées) sont détaillées dans [`AGENTS.md`](AGENTS.md).
