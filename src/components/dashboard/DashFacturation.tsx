@@ -610,7 +610,7 @@ export default function DashFacturation({ userId, profile }: Props) {
           </div>
         </div>
 
-        <div className="grid gap-5 max-[900px]:grid-cols-1" style={{ gridTemplateColumns: '1fr 320px' }}>
+        <div className="grid gap-5 grid-cols-[1fr_320px] max-[900px]:grid-cols-1">
           {/* Main column */}
           <div className="flex flex-col gap-4">
             {/* Client */}
@@ -656,13 +656,13 @@ export default function DashFacturation({ userId, profile }: Props) {
               </div>
 
               {/* Header row */}
-              <div className="grid gap-2 text-[10px] font-bold text-[var(--gray-500)] uppercase tracking-wider pb-2 border-b border-[var(--gray-100)] mb-2 max-[600px]:hidden" style={{ gridTemplateColumns: '1fr 60px 80px 80px 70px 32px' }}>
+              <div className="grid gap-2 grid-cols-[1fr_60px_80px_80px_70px_32px] text-[10px] font-bold text-[var(--gray-500)] uppercase tracking-wider pb-2 border-b border-[var(--gray-100)] mb-2 max-[600px]:hidden">
                 <span>Description</span><span>Qté</span><span>Unité</span><span>Prix unit.</span><span>Total</span><span></span>
               </div>
 
               {/* Lines */}
               {lineItems.map(l => (
-                <div key={l.id} className="grid gap-2 items-center py-2 border-b border-[var(--gray-100)] last:border-0 max-[600px]:grid-cols-2 max-[600px]:gap-1.5" style={{ gridTemplateColumns: '1fr 60px 80px 80px 70px 32px' }}>
+                <div key={l.id} className="grid gap-2 grid-cols-[1fr_60px_80px_80px_70px_32px] items-center py-2 border-b border-[var(--gray-100)] last:border-0 max-[600px]:grid-cols-2 max-[600px]:gap-1.5">
                   <input type="text" value={l.description} onChange={e => updateLine(l.id, 'description', e.target.value)} placeholder="Description"
                     className="py-1.5 px-2 border border-[var(--gray-200)] rounded text-sm outline-none focus:border-[var(--orange)] max-[600px]:col-span-2" />
                   <input type="number" value={l.quantite} onChange={e => updateLine(l.id, 'quantite', e.target.value)} min={0} step={0.5}
