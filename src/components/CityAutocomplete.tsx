@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useId } from 'react'
 
 /**
  * Autocomplétion de localité, alimentée par /api/localites (référentiel
@@ -49,6 +49,7 @@ export default function CityAutocomplete({ value, onChange }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const listboxId = useId()
 
   // Recherche serveur, débouncée et annulable
   useEffect(() => {
@@ -174,6 +175,8 @@ export default function CityAutocomplete({ value, onChange }: Props) {
           onKeyDown={handleKeyDown}
           autoComplete="off"
           role="combobox"
+          aria-label="Ville ou code postal"
+          aria-controls={listboxId}
           aria-expanded={open}
           aria-autocomplete="list"
           className="border-none outline-none text-base w-full bg-transparent text-[var(--dark)] placeholder:text-[var(--gray-500)]"
@@ -181,7 +184,7 @@ export default function CityAutocomplete({ value, onChange }: Props) {
 
         {/* Desktop dropdown */}
         {open && (
-          <div className="absolute top-[calc(100%+4px)] left-0 right-0 min-w-[280px] bg-white rounded-[var(--radius-sm)] shadow-[0_8px_40px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] max-h-60 overflow-y-auto z-[9999] p-1.5" role="listbox">
+          <div className="absolute top-[calc(100%+4px)] left-0 right-0 min-w-[280px] bg-white rounded-[var(--radius-sm)] shadow-[0_8px_40px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] max-h-60 overflow-y-auto z-[9999] p-1.5" role="listbox" id={listboxId}>
             {suggestions.length === 0 ? (
               <div className="p-3.5 text-sm text-[var(--gray-500)] text-center">{emptyLabel}</div>
             ) : (

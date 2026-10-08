@@ -5,9 +5,14 @@ import ScrollReveal from '@/components/ScrollReveal'
 import HeroSearch from '@/components/HeroSearch'
 import { createClient } from '@/lib/supabase/server'
 import { COVERAGE_BADGE } from '@/lib/site'
+import { METIERS } from '@/lib/metiers'
+import { normalizeText } from '@/lib/text'
 
 // Stats hero calculées dynamiquement à chaque rendu (cache 5 min)
 export const revalidate = 300
+
+/** Métiers mis en avant avec une carte ; les autres de METIERS sont listés en dessous. */
+const FEATURED_METIERS: readonly string[] = ['Plombier', 'Électricien', 'Serrurier', 'Chauffagiste']
 
 async function getHeroStats() {
   try {
@@ -22,10 +27,11 @@ async function getHeroStats() {
       ? (avisRows!.reduce((s, a) => s + (a.note || 0), 0) / avisCount).toFixed(1)
       : '—'
 
-    // Compteurs par métier (insensible à la casse)
+    // Compteurs par métier, clés normalisées comme la recherche
+    // (« Électricien » et « electricien » comptent ensemble)
     const metierCounts: Record<string, number> = {}
     ;(metierRows || []).forEach((r) => {
-      const m = (r.metier || '').toLowerCase().trim()
+      const m = normalizeText(r.metier)
       if (m) metierCounts[m] = (metierCounts[m] || 0) + 1
     })
 
@@ -102,12 +108,12 @@ export default async function Home() {
           </div>
           <div className="grid grid-cols-4 gap-5 max-[900px]:grid-cols-2 max-[900px]:gap-3 max-[400px]:grid-cols-1">
             {[
-              { name: 'Plombier', metierKey: 'plombier', href: '/recherche?metier=Plombier', icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" /></svg> },
-              { name: 'Électricien', metierKey: 'electricien', href: '/recherche?metier=Electricien', icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg> },
-              { name: 'Serrurier', metierKey: 'serrurier', href: '/recherche?metier=Serrurier', icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg> },
-              { name: 'Chauffagiste', metierKey: 'chauffagiste', href: '/recherche?metier=Chauffagiste', icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2c1 3 4 6 4 10a4 4 0 11-8 0c0-4 3-7 4-10z" /></svg> },
+              { name: 'Plombier', href: '/recherche?metier=Plombier', icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" /></svg> },
+              { name: 'Électricien', href: '/recherche?metier=%C3%89lectricien', icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg> },
+              { name: 'Serrurier', href: '/recherche?metier=Serrurier', icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg> },
+              { name: 'Chauffagiste', href: '/recherche?metier=Chauffagiste', icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2c1 3 4 6 4 10a4 4 0 11-8 0c0-4 3-7 4-10z" /></svg> },
             ].map((m) => {
-              const count = stats.metierCounts[m.metierKey] || 0
+              const count = stats.metierCounts[normalizeText(m.name)] || 0
               const countLabel = count === 0 ? 'Bientôt disponible' : count === 1 ? '1 pro disponible' : `${count} pros disponibles`
               return (
               <Link
@@ -122,6 +128,24 @@ export default async function Home() {
                 <h3 className="font-sora text-[17px] font-semibold mb-1.5">{m.name}</h3>
                 <p className="text-[13px] text-[var(--gray-500)]">{countLabel}</p>
               </Link>
+              )
+            })}
+          </div>
+
+          {/* Les autres métiers de la liste canonique */}
+          <div className="flex flex-wrap items-center gap-2 mt-6 max-[900px]:mt-4">
+            <span className="text-sm text-[var(--gray-500)] mr-1">Aussi sur Artisano :</span>
+            {METIERS.filter((m) => !FEATURED_METIERS.includes(m)).map((m) => {
+              const count = stats.metierCounts[normalizeText(m)] || 0
+              return (
+                <Link
+                  key={m}
+                  href={`/recherche?metier=${encodeURIComponent(m)}`}
+                  className="inline-flex items-center gap-1.5 bg-white border border-[var(--gray-200)] rounded-full py-2 px-4 text-sm font-medium text-[var(--gray-700)] no-underline transition-all hover:border-[var(--orange)] hover:text-[var(--orange)]"
+                >
+                  {m}
+                  {count > 0 && <span className="text-xs text-[var(--gray-500)]">{count}</span>}
+                </Link>
               )
             })}
           </div>

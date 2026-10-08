@@ -8,6 +8,8 @@ import ReportButton from '@/components/ReportButton'
 import AuthNavButton from '@/components/AuthNavButton'
 import { createClient } from '@/lib/supabase/client'
 import type { Artisan, Avis } from '@/lib/supabase/helpers'
+import { getMonday, formatDateStr, summarizeWeekAvailability, formatNextSlot, type DispoData, type WeekAvailability } from '@/lib/availability'
+import { telHref } from '@/lib/phone'
 
 type Props = {
   artisanId: string
@@ -31,27 +33,7 @@ function generateStars(score: number) {
   return s
 }
 
-function getMonday(d: Date) {
-  const day = d.getDay()
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
-  const monday = new Date(d)
-  monday.setDate(diff)
-  monday.setHours(0, 0, 0, 0)
-  return monday
-}
-
-function formatDateStr(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
 type BookedSlot = { creneau_date: string; creneau_heure: string }
-type DispoData = {
-  version?: number
-  slots?: Record<string, Record<string, string>>
-  week_start?: string
-  blocked_days?: string[]
-  intervention_types?: unknown[]
-}
 
 export default function ArtisanProfileClient({ artisanId, initialProfile, initialReviews }: Props) {
   const [profile] = useState<Artisan>(initialProfile)
@@ -60,6 +42,9 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
   const [activeTab, setActiveTab] = useState('presentation')
   const [weekOffset, setWeekOffset] = useState(0)
   const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([])
+  // Résumé « prochain créneau » : calculé après le montage, à l'heure locale du
+  // visiteur (le rendu serveur est en UTC → pas de décalage d'hydratation).
+  const [weekSummary, setWeekSummary] = useState<{ summary: WeekAvailability; now: Date } | null>(null)
 
   // Lightbox
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -81,6 +66,12 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
       if (data) setBookedSlots(data as BookedSlot[])
     })
   }, [artisanId])
+
+  useEffect(() => {
+    const now = new Date()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setWeekSummary({ summary: summarizeWeekAvailability(initialProfile.disponibilites, now), now })
+  }, [initialProfile.disponibilites])
 
   // Keyboard for lightbox
   useEffect(() => {
@@ -176,7 +167,9 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="hidden max-[960px]:block bg-none border-none cursor-pointer p-2 text-[var(--dark)]"
-          aria-label="Menu"
+          aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+          aria-expanded={menuOpen}
+          aria-controls="profil-menu"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18" /></svg>
         </button>
@@ -188,10 +181,10 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
           <AuthNavButton variant="dark" />
         </div>
         {menuOpen && (
-          <div className="hidden max-[960px]:flex fixed top-[60px] left-0 right-0 bg-white flex-col p-6 gap-4 shadow-[0_8px_32px_rgba(0,0,0,0.1)] border-b border-[var(--gray-200)] z-[99]">
+          <div id="profil-menu" className="hidden max-[960px]:flex fixed top-[60px] left-0 right-0 bg-white flex-col p-6 gap-4 shadow-[0_8px_32px_rgba(0,0,0,0.1)] border-b border-[var(--gray-200)] z-[99]">
             <Link href="/recherche" className="text-[var(--gray-700)] no-underline text-sm font-medium hover:text-[var(--dark)]">Retour aux résultats</Link>
             <Link href="/" className="text-[var(--gray-700)] no-underline text-sm font-medium hover:text-[var(--dark)]">Accueil</Link>
-            <Link href="/connexion" className="bg-[var(--dark)] text-white py-2 px-4.5 rounded-full font-semibold text-[13px] no-underline text-center transition-all hover:bg-[var(--orange)]">Connexion</Link>
+            <AuthNavButton variant="dark" />
           </div>
         )}
       </nav>
@@ -217,9 +210,9 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
               ) : (
                 <svg className="w-12 h-12 max-[960px]:w-8 max-[960px]:h-8 max-[500px]:w-[26px] max-[500px]:h-[26px]" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" /></svg>
               )}
-              <div className="absolute -bottom-1.5 -right-1.5 bg-[var(--green)] text-white w-8 h-8 rounded-full flex items-center justify-center border-[3px] border-white max-[960px]:w-[26px] max-[960px]:h-[26px] max-[960px]:-bottom-1 max-[960px]:-right-1 max-[500px]:w-[22px] max-[500px]:h-[22px]">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
-              </div>
+              {p.ide_verified && <div title="Entreprise vérifiée au registre IDE" className="absolute -bottom-1.5 -right-1.5 bg-[var(--green)] text-white w-8 h-8 rounded-full flex items-center justify-center border-[3px] border-white max-[960px]:w-[26px] max-[960px]:h-[26px] max-[960px]:-bottom-1 max-[960px]:-right-1 max-[500px]:w-[22px] max-[500px]:h-[22px]">
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
+              </div>}
             </div>
 
             {/* Header info */}
@@ -240,10 +233,12 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
                     {p.telephone}
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-[15px] text-[var(--green)] font-semibold max-[960px]:text-[13px] max-[500px]:text-xs max-[500px]:gap-1">
-                  <svg className="w-[18px] h-[18px] shrink-0 max-[500px]:w-3.5 max-[500px]:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
-                  Disponible cette semaine
-                </div>
+                {weekSummary?.summary.next && (
+                  <a href="#disponibilites" onClick={(e) => { e.preventDefault(); scrollToSection('disponibilites') }} className="flex items-center gap-2 text-[15px] text-[var(--green)] font-semibold no-underline hover:underline max-[960px]:text-[13px] max-[500px]:text-xs max-[500px]:gap-1">
+                    <svg aria-hidden="true" className="w-[18px] h-[18px] shrink-0 max-[500px]:w-3.5 max-[500px]:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+                    Prochain créneau : {formatNextSlot(weekSummary.summary.next, weekSummary.now)}
+                  </a>
+                )}
               </div>
 
               {/* Rating */}
@@ -272,7 +267,7 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
               </Link>
               {p.urgence && p.telephone && (
                 <a
-                  href={`tel:+41${p.telephone.replace(/\s/g, '')}`}
+                  href={telHref(p.telephone)}
                   className="inline-flex items-center gap-2 bg-gradient-to-br from-[#D32F2F] to-[#B71C1C] text-white py-2.5 px-5 rounded-full font-sora font-bold text-[13px] tracking-wider no-underline shadow-[0_2px_12px_rgba(211,47,47,0.25)] max-[960px]:justify-center max-[960px]:text-xs max-[960px]:py-2 max-[960px]:px-4"
                 >
                   <span className="w-2 h-2 bg-[#FF8A80] rounded-full animate-pulse" />
@@ -289,7 +284,7 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
           {[
             { id: 'presentation', label: 'Présentation' },
             { id: 'disponibilites', label: 'Disponibilités' },
-            { id: 'galerie', label: 'Galerie' },
+            ...(galleryUrls.length > 0 ? [{ id: 'galerie', label: 'Galerie' }] : []),
             { id: 'avis', label: `Avis (${reviews.length})` },
           ].map(tab => (
             <button
@@ -522,7 +517,7 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
             {p.telephone && (
               <div className="flex items-center gap-3 py-3 border-t border-[var(--gray-100)] first:border-t-0 text-sm text-[var(--gray-700)] max-[500px]:text-xs max-[500px]:gap-2 max-[500px]:py-2.5">
                 <svg className="w-[18px] h-[18px] text-[var(--gray-500)] shrink-0 max-[500px]:w-4 max-[500px]:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 013.12 4.18 2 2 0 015.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" /></svg>
-                <a href={`tel:+41${p.telephone.replace(/\s/g, '')}`} className="text-[var(--orange)] no-underline font-semibold hover:underline">{p.telephone}</a>
+                <a href={telHref(p.telephone)} className="text-[var(--orange)] no-underline font-semibold hover:underline">{p.telephone}</a>
               </div>
             )}
             {p.email && (
@@ -584,13 +579,13 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
           {/* Header */}
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between py-3.5 px-5 z-10">
             <span className="font-sora font-semibold text-[15px] text-white bg-white/15 py-1.5 px-4.5 rounded-full">{lightboxIdx + 1} / {galleryUrls.length}</span>
-            <button onClick={() => setLightboxOpen(false)} className="bg-white/15 border-none text-white w-11 h-11 rounded-full cursor-pointer text-2xl flex items-center justify-center">&times;</button>
+            <button onClick={() => setLightboxOpen(false)} aria-label="Fermer la galerie" className="bg-white/15 border-none text-white w-11 h-11 rounded-full cursor-pointer text-2xl flex items-center justify-center">&times;</button>
           </div>
           {/* Image */}
           <div className="flex-1 flex items-center justify-center relative min-h-0 pt-14 px-[70px] max-[960px]:px-4">
-            <button onClick={() => setLightboxIdx(i => (i - 1 + galleryUrls.length) % galleryUrls.length)} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white border-none text-[#1a1a2e] w-[52px] h-[52px] rounded-full cursor-pointer text-[26px] font-bold flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.5)] z-10 max-[960px]:w-10 max-[960px]:h-10 max-[960px]:text-xl">&lsaquo;</button>
+            <button onClick={() => setLightboxIdx(i => (i - 1 + galleryUrls.length) % galleryUrls.length)} aria-label="Photo précédente" className="absolute left-4 top-1/2 -translate-y-1/2 bg-white border-none text-[#1a1a2e] w-[52px] h-[52px] rounded-full cursor-pointer text-[26px] font-bold flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.5)] z-10 max-[960px]:w-10 max-[960px]:h-10 max-[960px]:text-xl">&lsaquo;</button>
             <Image src={galleryUrls[lightboxIdx]} alt="" width={1600} height={1200} sizes="100vw" className="max-w-full max-h-full w-auto h-auto object-contain rounded transition-opacity" />
-            <button onClick={() => setLightboxIdx(i => (i + 1) % galleryUrls.length)} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white border-none text-[#1a1a2e] w-[52px] h-[52px] rounded-full cursor-pointer text-[26px] font-bold flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.5)] z-10 max-[960px]:w-10 max-[960px]:h-10 max-[960px]:text-xl">&rsaquo;</button>
+            <button onClick={() => setLightboxIdx(i => (i + 1) % galleryUrls.length)} aria-label="Photo suivante" className="absolute right-4 top-1/2 -translate-y-1/2 bg-white border-none text-[#1a1a2e] w-[52px] h-[52px] rounded-full cursor-pointer text-[26px] font-bold flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.5)] z-10 max-[960px]:w-10 max-[960px]:h-10 max-[960px]:text-xl">&rsaquo;</button>
           </div>
           {/* Thumbnails */}
           <div className="flex gap-2 py-3 px-6 overflow-x-auto justify-center shrink-0">
