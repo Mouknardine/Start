@@ -10,6 +10,9 @@ import { suggestMetiers } from '@/lib/orientation'
 // « aucun métier reconnu ».
 const NO_MATCH_HINT_LENGTH = 12
 
+// Exemples cliquables sous le champ (comme les suggestions sous la recherche d'Airtasker)
+const EXEMPLES = ['Fuite sous l’évier', 'Porte claquée', 'Le disjoncteur saute', 'Chaudière en panne', 'Tailler la haie']
+
 export default function HeroSearch() {
   const router = useRouter()
   const [metier, setMetier] = useState('')
@@ -126,6 +129,21 @@ export default function HeroSearch() {
               placeholder="Ex. : fuite sous l’évier, le disjoncteur saute, porte claquée…"
               className="form-input resize-none"
             />
+            {!probleme.trim() && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-3">
+                <span className="text-[13px] text-[var(--gray-500)] mr-0.5">Exemples :</span>
+                {EXEMPLES.map((ex) => (
+                  <button
+                    key={ex}
+                    type="button"
+                    onClick={() => setProbleme(ex)}
+                    className="rounded-full px-3 py-1.5 text-[13px] font-medium cursor-pointer bg-[var(--gray-100)] text-[var(--gray-700)] border border-transparent hover:border-[var(--gray-300)] transition-colors"
+                  >
+                    {ex}
+                  </button>
+                ))}
+              </div>
+            )}
             <div aria-live="polite" className="mt-3 min-h-[44px]">
               {suggestions.length > 0 && (
                 <>

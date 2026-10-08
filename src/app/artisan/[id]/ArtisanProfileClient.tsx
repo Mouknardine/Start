@@ -45,6 +45,7 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
   // Résumé « prochain créneau » : calculé après le montage, à l'heure locale du
   // visiteur (le rendu serveur est en UTC → pas de décalage d'hydratation).
   const [weekSummary, setWeekSummary] = useState<{ summary: WeekAvailability; now: Date } | null>(null)
+  const [showAllReviews, setShowAllReviews] = useState(false)
 
   // Lightbox
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -57,6 +58,10 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
     ? Math.round(reviews.reduce((s, r) => s + (r.note || 0), 0) / reviews.length * 10) / 10
     : 0
   const starsDisplay = generateStars(avgRating)
+  // Répartition des notes 5 → 1 (histogramme du résumé des avis)
+  const ratingCounts = [5, 4, 3, 2, 1].map((n) => ({ n, count: reviews.filter((r) => Math.round(r.note || 0) === n).length }))
+  const REVIEWS_PREVIEW = 5
+  const visibleReviews = showAllReviews ? reviews : reviews.slice(0, REVIEWS_PREVIEW)
 
   // Charger les créneaux réservés côté client (données dynamiques en temps réel)
   useEffect(() => {
@@ -303,7 +308,7 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
       </section>
 
       {/* CONTENT */}
-      <div className="max-w-[1100px] mx-auto py-8 px-10 pb-20 grid grid-cols-[1fr_380px] gap-8 items-start max-[960px]:grid-cols-1 max-[960px]:gap-5 max-[960px]:px-4 max-[960px]:py-6 max-[960px]:pb-[120px] max-[500px]:px-3 max-[500px]:py-4 max-[500px]:pb-[130px] max-[500px]:gap-4 w-full">
+      <div className="max-w-[1100px] mx-auto py-8 px-10 pb-20 grid grid-cols-[1fr_380px] gap-8 items-start max-[960px]:grid-cols-1 max-[960px]:gap-5 max-[960px]:px-4 max-[960px]:py-6 max-[960px]:pb-[100px] max-[500px]:px-3 max-[500px]:py-4 max-[500px]:pb-[100px] max-[500px]:gap-4 w-full">
         {/* LEFT */}
         <div className="flex flex-col gap-8 max-[960px]:gap-5 max-[500px]:gap-4">
           {/* Description */}
@@ -393,17 +398,33 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
               </Link>
             </div>
 
-            {/* Summary */}
-            <div className="flex items-center gap-4 mb-6 max-[960px]:gap-3">
-              <div className="font-sora text-5xl font-extrabold text-[var(--dark)] leading-none max-[960px]:text-[40px] max-[500px]:text-4xl">{reviews.length > 0 ? avgRating.toFixed(1) : '\u2014'}</div>
-              <div className="flex flex-col gap-1">
-                <div className="flex gap-0.5 text-lg text-[#F0B429] max-[500px]:text-base">{starsDisplay}</div>
-                <div className="text-sm text-[var(--gray-500)] max-[500px]:text-xs">Basé sur {reviews.length} avis vérifiés</div>
+            {/* Summary — note moyenne + répartition (modèle bella / Seed, via Mobbin) */}
+            {reviews.length > 0 && (
+              <div className="grid grid-cols-[auto_1fr] gap-8 items-center mb-6 p-5 bg-[var(--gray-50)] border border-[var(--gray-100)] rounded-[var(--radius-sm)] max-[500px]:grid-cols-1 max-[500px]:gap-4 max-[500px]:p-4">
+                <div className="text-center min-w-[120px]">
+                  <div className="font-sora text-5xl font-extrabold text-[var(--dark)] leading-none max-[500px]:text-4xl">
+                    {avgRating.toFixed(1)}<span className="text-lg text-[var(--gray-500)] font-bold"> / 5</span>
+                  </div>
+                  <div aria-hidden="true" className="text-lg text-[#F0B429] mt-2 tracking-wider">{starsDisplay}</div>
+                  <div className="text-[13px] text-[var(--gray-500)] mt-1">Basé sur {reviews.length} avis vérifiés</div>
+                </div>
+                <ul aria-label="Répartition des notes" className="list-none p-0 m-0 flex flex-col gap-1.5">
+                  {ratingCounts.map(({ n, count }) => (
+                    <li key={n} className="flex items-center gap-2.5 text-[13px]">
+                      <span aria-hidden="true" className="w-7 shrink-0 font-semibold text-[var(--gray-700)]">{n} ★</span>
+                      <span aria-hidden="true" className="flex-1 h-2 rounded-full bg-[var(--gray-200)] overflow-hidden">
+                        <span className="block h-full rounded-full bg-[#F0B429]" style={{ width: `${Math.round((count / reviews.length) * 100)}%` }} />
+                      </span>
+                      <span aria-hidden="true" className="w-6 shrink-0 text-right text-[var(--gray-500)]">{count}</span>
+                      <span className="sr-only">{n} étoile{n > 1 ? 's' : ''} : {count} avis</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
+            )}
 
             {/* Review list */}
-            {reviews.map((r, i) => {
+            {visibleReviews.map((r, i) => {
               const d = r.created_at ? new Date(r.created_at) : null
               const dateStr = d ? `${d.getDate()} ${MOIS_FR[d.getMonth()]} ${d.getFullYear()}` : ''
               const reviewStars = generateStars(r.note || 5)
@@ -435,8 +456,24 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
               )
             })}
 
+            {reviews.length > REVIEWS_PREVIEW && (
+              <div className="pt-4 border-t border-[var(--gray-200)] flex items-center justify-between gap-3 max-[500px]:flex-col max-[500px]:items-stretch">
+                <span className="text-[13px] text-[var(--gray-500)]">{visibleReviews.length} avis affichés sur {reviews.length}</span>
+                <button
+                  type="button"
+                  onClick={() => setShowAllReviews((v) => !v)}
+                  className="py-2.5 px-5 rounded-full border border-[var(--gray-300)] bg-white text-[13px] font-semibold text-[var(--dark)] cursor-pointer transition-colors hover:border-[var(--dark)]"
+                >
+                  {showAllReviews ? 'Afficher moins' : `Voir les ${reviews.length - REVIEWS_PREVIEW} autres avis`}
+                </button>
+              </div>
+            )}
+
             {reviews.length === 0 && (
-              <p className="text-sm text-[var(--gray-500)] italic">Aucun avis pour le moment.</p>
+              <div className="text-center py-6 px-4 bg-[var(--gray-50)] rounded-[var(--radius-sm)]">
+                <div className="font-sora font-bold text-[15px] mb-1">Pas encore d’avis</div>
+                <p className="text-[13px] text-[var(--gray-500)]">Vous avez fait appel à {name}&nbsp;? Votre avis aidera les prochains clients.</p>
+              </div>
             )}
           </div>
         </div>
@@ -554,14 +591,31 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
         </div>
       </div>
 
-      {/* Floating CTA Mobile */}
-      <div className="hidden max-[960px]:flex fixed bottom-0 left-0 right-0 bg-white p-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] z-[90] flex-col gap-2 max-[500px]:p-3 max-[500px]:pb-[calc(10px+env(safe-area-inset-bottom,0px))] max-[500px]:gap-1.5">
+      {/* Barre d'action mobile : repères à gauche, action à droite (modèle Fresha / Mindtrip, via Mobbin) */}
+      <div className="hidden max-[960px]:flex fixed bottom-0 left-0 right-0 bg-white px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] z-[90] items-center gap-3 max-[500px]:px-3">
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-bold text-[var(--dark)]">
+            {reviews.length > 0 ? (
+              <>
+                <span aria-hidden="true" className="text-[#F0B429]">★</span> {avgRating.toFixed(1)}
+                <span className="font-normal text-[var(--gray-500)]"> · {reviews.length} avis</span>
+              </>
+            ) : (
+              <span className="font-semibold text-[var(--gray-700)]">Pas encore d’avis</span>
+            )}
+          </div>
+          <div className={`text-xs truncate ${weekSummary?.summary.next ? 'text-[var(--green)] font-semibold' : 'text-[var(--gray-500)]'}`}>
+            {weekSummary?.summary.next
+              ? `Prochain créneau : ${formatNextSlot(weekSummary.summary.next, weekSummary.now)}`
+              : 'Disponibilités sur demande'}
+          </div>
+        </div>
         <Link
           href={`/demande?artisan=${artisanId}`}
-          className="bg-[var(--orange)] text-white py-3.5 px-4 rounded-full font-sora font-bold text-sm border-none text-center no-underline flex items-center justify-center gap-2 transition-all hover:bg-[var(--orange-dark)] max-[500px]:py-[13px] max-[500px]:text-sm"
+          className="shrink-0 bg-[var(--orange)] text-white py-3 px-6 rounded-full font-sora font-bold text-sm no-underline flex items-center gap-2 transition-all hover:bg-[var(--orange-dark)] min-h-11"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></svg>
-          Contacter cet artisan
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></svg>
+          Contacter
         </Link>
       </div>
 

@@ -35,3 +35,11 @@ describe('suggestMetiers', () => {
     expect(suggestMetiers('bonjour, j’ai une question')).toEqual([])
   })
 })
+
+describe('exemples de la page d’accueil', () => {
+  it('chaque exemple proposé mène à un métier', () => {
+    for (const ex of ['Fuite sous l’évier', 'Porte claquée', 'Le disjoncteur saute', 'Chaudière en panne', 'Tailler la haie']) {
+      expect(suggestMetiers(ex).length, ex).toBeGreaterThan(0)
+    }
+  })
+})
