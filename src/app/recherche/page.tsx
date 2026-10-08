@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Logo from '@/components/Logo'
 import AuthNavButton from '@/components/AuthNavButton'
@@ -53,7 +53,6 @@ export default function RecherchePage() {
 
 function RechercheContent() {
   const searchParams = useSearchParams()
-  const router = useRouter()
 
   const metier = capitalize(searchParams.get('metier') || '')
   const ville = capitalize(searchParams.get('ville') || '')
@@ -150,12 +149,16 @@ function RechercheContent() {
     setActiveFilters(new Set())
   }, [])
 
+  // Même page, autres paramètres : History API native, synchronisée avec
+  // useSearchParams (docs Next « Linking and Navigating › Native History API »).
+  // router.push vers /recherche?… restait sans effet quand des cartes (liens
+  // vers /artisan/[id]) étaient affichées : le formulaire ne relançait rien.
   function goToSearch(m: string, v: string) {
     const params = new URLSearchParams()
     if (m.trim()) params.set('metier', m.trim())
     if (v.trim()) params.set('ville', v.trim())
     if (activeFilters.has('urgence')) params.set('urgence', '1')
-    router.push('/recherche' + (params.toString() ? '?' + params.toString() : ''))
+    window.history.pushState(null, '', '/recherche' + (params.toString() ? '?' + params.toString() : ''))
   }
 
   function handleNavSearch(e?: React.FormEvent) {
