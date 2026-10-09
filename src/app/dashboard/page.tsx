@@ -48,14 +48,19 @@ export default function DashboardPage() {
     window.scrollTo(0, 0)
   }, [])
 
-  const createDevisFromDemande = useCallback((d: Demande) => {
+  const createFromDemande = useCallback((d: Demande, type: 'devis' | 'facture') => {
     setDevisPrefill({
+      type,
       client_nom: d.client_nom || '',
       client_email: d.client_email || '',
       client_telephone: d.client_telephone || '',
       client_adresse: d.client_adresse || '',
       description: d.message || '',
     })
+    changeTab('facturation')
+  }, [changeTab])
+  const facturer = useCallback((p: DevisPrefill) => {
+    setDevisPrefill(p)
     changeTab('facturation')
   }, [changeTab])
   const clearPrefill = useCallback(() => setDevisPrefill(null), [])
@@ -261,14 +266,15 @@ export default function DashboardPage() {
             avis={avis}
             setAvis={setAvis}
             userId={userId}
-            onCreateDevis={createDevisFromDemande}
+            onCreateDevis={d => createFromDemande(d, 'devis')}
+            onCreateFacture={d => createFromDemande(d, 'facture')}
           />
         )}
         {tab === 'agenda' && (
-          <DashAgenda userId={userId} profile={profile} />
+          <DashAgenda userId={userId} profile={profile} onFacturer={facturer} />
         )}
         {tab === 'equipe' && (
-          <DashEquipe userId={userId} demandes={demandes} />
+          <DashEquipe userId={userId} demandes={demandes} onFacturer={facturer} />
         )}
         {tab === 'profil' && profile && (
           <DashProfil

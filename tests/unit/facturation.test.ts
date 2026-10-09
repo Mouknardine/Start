@@ -5,7 +5,7 @@ import {
   resumeFacturation, clientsRecents, emailValide, type DocResume,
   arrondi5, prixDepuisAchat, parseDuree, formatDuree, quantiteLisible, detailLigne,
   categorieLigne, regrouperLignes, normaliserReglages, formatNumeroTva, dateLongue,
-  localiteDepuisAdresse, REGLAGES_DEFAUT, formatPrixCourt, resumeLigne,
+  localiteDepuisAdresse, REGLAGES_DEFAUT, formatPrixCourt, resumeLigne, ibanValide, formatIban, dureeHeures,
 } from '@/lib/facturation'
 
 const doc = (p: Partial<DocResume>): DocResume => ({
@@ -224,5 +224,26 @@ describe('résumé de ligne', () => {
     expect(resumeLigne({ categorie: 'main_oeuvre', unite: 'heure', quantite: 8, prix_unitaire: 95, heures: 4, personnes: 2 })).toBe('2 pers. × 4 h × 95.–/h')
     expect(resumeLigne({ categorie: 'main_oeuvre', unite: 'heure', quantite: 1.5, prix_unitaire: 95 })).toBe('1 h 30 × 95.–/h')
     expect(resumeLigne({ categorie: 'materiel', unite: 'unite', quantite: 2, prix_unitaire: 14.8 })).toBe('2 pce × 14.80')
+  })
+})
+
+describe('IBAN', () => {
+  it('valide la clé de contrôle', () => {
+    expect(ibanValide('CH93 0076 2011 6238 5295 7')).toBe(true)
+    expect(ibanValide('ch9300762011623852957')).toBe(true)
+    expect(ibanValide('CH93 0076 2011 6238 5295 8')).toBe(false)
+    expect(ibanValide('DE89370400440532013000')).toBe(false)
+    expect(ibanValide('')).toBe(false)
+  })
+  it('met en forme par groupes de 4', () => {
+    expect(formatIban('ch9300762011623852957')).toBe('CH93 0076 2011 6238 5295 7')
+  })
+})
+
+describe('dureeHeures', () => {
+  it('calcule la durée d’une intervention au quart d’heure', () => {
+    expect(dureeHeures('08:00', '10:30')).toBe(2.5)
+    expect(dureeHeures('13:00:00', '16:20:00')).toBe(3.25)
+    expect(dureeHeures('10:00', '09:00')).toBe(0)
   })
 })

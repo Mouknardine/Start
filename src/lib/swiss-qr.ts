@@ -16,7 +16,7 @@ import type { InvoiceData } from '@/lib/invoice-pdf'
 type ParsedAddress = { street: string; zip: string; city: string }
 
 /** Extrait rue / NPA / localité d'une adresse suisse en texte libre. */
-function parseSwissAddress(raw: string | undefined | null): ParsedAddress | null {
+export function parseSwissAddress(raw: string | undefined | null): ParsedAddress | null {
   if (!raw) return null
   const text = String(raw).replace(/\r?\n/g, ', ').replace(/\s+/g, ' ').trim()
   // NPA suisse = 4 chiffres, suivi de la localité.
@@ -56,6 +56,17 @@ function buildQrReference(numero: string): string {
   const digits = (numero.replace(/\D/g, '') || '0').slice(-26)
   const base = digits.padStart(26, '0')
   return base + String(mod10Recursive(base))
+}
+
+/**
+ * Ce qui manque pour imprimer la QR-facture : 'iban' (absent ou invalide),
+ * 'adresse' (pas d'adresse suisse avec NPA), ou null si tout est prêt.
+ */
+export function qrFactureManque(profile: Pick<Artisan, 'bank_iban' | 'bank_adresse' | 'adresse'> | null): 'iban' | 'adresse' | null {
+  const account = cleanIban(profile?.bank_iban || '')
+  if (!/^(CH|LI)\d{19}$/.test(account)) return 'iban'
+  if (!parseSwissAddress(profile?.bank_adresse) && !parseSwissAddress(profile?.adresse)) return 'adresse'
+  return null
 }
 
 /**

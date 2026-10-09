@@ -9,6 +9,7 @@ import {
 import type { Employe, Affectation, Demande } from '@/lib/supabase/helpers'
 import { logger } from '@/lib/logger'
 import Dialog from '@/components/ui/Dialog'
+import { dureeHeures, type DevisPrefill } from '@/lib/facturation'
 
 // ===== Constants =====
 
@@ -82,11 +83,13 @@ const emptyAffData: AffPopupData = { titre: '', employe_id: '', date: '', heure_
 type Props = {
   userId: string
   demandes: Demande[]
+  /** Facturer une intervention (ouvre l'éditeur de facture pré-rempli) */
+  onFacturer?: (p: DevisPrefill) => void
 }
 
 // ===== Component =====
 
-export default function DashEquipe({ userId, demandes }: Props) {
+export default function DashEquipe({ userId, demandes, onFacturer }: Props) {
   const supabase = useMemo(() => createClient(), [])
 
   // Data
@@ -267,6 +270,23 @@ export default function DashEquipe({ userId, demandes }: Props) {
     setAffError('')
     setAffConfirmDelete(false)
   }
+
+  /** Intervention terminée → facture pré-remplie (client de la demande liée, heures de main d'œuvre). */
+  const facturerAff = () => {
+    const { titre, heure_debut, heure_fin, demande_id, adresse } = affPopup.data
+    const d = demandes.find(x => x.id === demande_id)
+    onFacturer?.({
+      type: 'facture',
+      client_nom: d?.client_nom || '',
+      client_email: d?.client_email || '',
+      client_telephone: d?.client_telephone || '',
+      client_adresse: d?.client_adresse || adresse || '',
+      description: '',
+      lignes: [{ categorie: 'main_oeuvre', description: titre ? `Main d’œuvre — ${titre}` : 'Main d’œuvre', heures: dureeHeures(heure_debut, heure_fin) || 1 }],
+    })
+    closePopup()
+  }
+
 
   const checkOverlap = (empId: string, date: string, debut: string, fin: string, excludeId?: string | null): Affectation | undefined => {
     return affectations.find(a => {
@@ -688,6 +708,13 @@ export default function DashEquipe({ userId, demandes }: Props) {
               ))}
             </select>
 
+            {affPopup.editId && onFacturer && (
+              <button type="button" onClick={facturerAff}
+                className="w-full flex items-center justify-center gap-2 h-12 mb-3 rounded-full bg-[var(--dark)] text-white font-bold text-[14px] border-none cursor-pointer hover:bg-[var(--dark-mid)]">
+                <svg aria-hidden="true" className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><path d="M9 8h6M9 12h6"/></svg>
+                Facturer cette intervention
+              </button>
+            )}
             {affError && <p role="alert" className="text-[13px] text-[var(--red)] font-semibold mb-2">{affError}</p>}
             <div className="flex justify-between gap-2 mt-2">
               {affPopup.editId ? (

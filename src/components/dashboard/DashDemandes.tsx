@@ -34,9 +34,11 @@ type Props = {
   userId: string
   /** Ouvre l'éditeur de devis pré-rempli avec le client de la demande */
   onCreateDevis?: (d: Demande) => void
+  /** Ouvre l'éditeur de facture pré-rempli (demande terminée) */
+  onCreateFacture?: (d: Demande) => void
 }
 
-export default function DashDemandes({ demandes, setDemandes, avis, setAvis, userId, onCreateDevis }: Props) {
+export default function DashDemandes({ demandes, setDemandes, avis, setAvis, userId, onCreateDevis, onCreateFacture }: Props) {
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
 
   // Detail modal
@@ -329,6 +331,9 @@ export default function DashDemandes({ demandes, setDemandes, avis, setAvis, use
                           <button onClick={() => setRefuseTarget({ id: d.id, name: d.client_nom || 'Client' })} className="text-xs font-bold py-2 px-3.5 rounded-lg bg-[var(--red-light)] text-[var(--red)] border-none cursor-pointer hover:bg-[rgba(211,47,47,0.12)] transition-colors max-[600px]:flex-1 max-[600px]:py-3 max-[600px]:text-[13px]">Refuser</button>
                         </>
                       )}
+                      {d.statut === 'terminee' && onCreateFacture && (
+                        <button onClick={() => onCreateFacture(d)} className="text-xs font-bold py-2 px-3.5 rounded-lg bg-[var(--orange)] text-white border-none cursor-pointer hover:bg-[var(--orange-dark)] transition-colors max-[600px]:flex-1 max-[600px]:py-3 max-[600px]:text-[13px]">Facturer</button>
+                      )}
                       {(d.statut === 'confirmee' || d.statut === 'acceptee') && (
                         <button onClick={() => completeDemande(d.id)} className="text-xs font-bold py-2 px-3.5 rounded-lg bg-[#2E7D32] text-white border-none cursor-pointer hover:brightness-110 transition-all max-[600px]:flex-1 max-[600px]:py-3 max-[600px]:text-[13px]">Terminer</button>
                       )}
@@ -507,6 +512,12 @@ export default function DashDemandes({ demandes, setDemandes, avis, setAvis, use
 
             {/* Modal footer */}
             <div className="p-4 border-t border-[var(--gray-200)] shrink-0 flex flex-wrap gap-2 justify-end">
+              {onCreateFacture && selectedDemande.statut === 'terminee' && (
+                <button onClick={() => { const d = selectedDemande; setSelectedDemande(null); onCreateFacture(d) }} className="inline-flex items-center justify-center gap-2 py-2.5 px-5 rounded-full text-sm font-bold bg-[var(--orange)] text-white border-none cursor-pointer hover:bg-[var(--orange-dark)] transition-colors max-[600px]:basis-full max-[600px]:py-3 min-[600px]:mr-auto">
+                  <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><path d="M9 8h6M9 12h6"/></svg>
+                  Faire la facture
+                </button>
+              )}
               {onCreateDevis && ['nouvelle', 'acceptee', 'confirmee'].includes(selectedDemande.statut) && (
                 <button onClick={() => { const d = selectedDemande; setSelectedDemande(null); onCreateDevis(d) }} className="inline-flex items-center justify-center gap-2 py-2.5 px-5 rounded-full text-sm font-semibold bg-[rgba(232,112,10,0.1)] text-[var(--orange-dark)] border-none cursor-pointer hover:bg-[rgba(232,112,10,0.18)] transition-colors max-[600px]:basis-full max-[600px]:py-3 min-[600px]:mr-auto">
                   <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>

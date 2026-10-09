@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode, type RefObject } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import {
   loadDocuments, saveDocument, deleteDocument,
@@ -10,6 +9,7 @@ import {
 } from '@/lib/supabase/helpers'
 import type { Document, Prestation, Artisan } from '@/lib/supabase/helpers'
 import { printInvoice, buildInvoiceHTML, type InvoiceData, type InvoiceLine } from '@/lib/invoice-pdf'
+import { qrFactureManque } from '@/lib/swiss-qr'
 import {
   calculerTotaux, totalLigne, formatCHF, formatDateCH, todayISO, addDaysISO,
   etatDocument, etapesDocument, estEnRetard, resumeFacturation, clientsRecents,
@@ -23,11 +23,12 @@ import DecimalInput from '@/components/ui/DecimalInput'
 import {
   TON_CLASSES, inputCls, INPUT, LABEL, CARD, btn, BTN_PRIMARY, BTN_SECONDARY, ICON_BTN, SUBBAR,
   Ico, IconPlus, IconBack, IconDots, IconEye, IconTrash, IconDoc, IconInvoice, IconBook,
-  IconDownload, IconCopy, IconCheck, IconSearch, IconSettings, IconChevron, DocTile, Segmented, CatTile, CatIcon,
+  IconDownload, IconCopy, IconCheck, IconSearch, IconSettings, IconChevron, IconQr, IconSend, DocTile, Segmented, CatTile, CatIcon,
 } from './facturation/ui'
 import { type LineItem, generateLineId, lineFromRaw, lineToRaw, nouvelleLigne } from './facturation/lignes'
 import LigneSheet from './facturation/LigneSheet'
 import ReglagesSheet from './facturation/ReglagesSheet'
+import EnvoyerSheet from './facturation/EnvoyerSheet'
 import DocumentPreview from './facturation/DocumentPreview'
 
 // ===== Types =====
@@ -154,8 +155,11 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
   const [ligneEdit, setLigneEdit] = useState<{ ligne: LineItem; isNew: boolean } | null>(null)
   const [reglages, setReglages] = useState<ReglagesFacturation>(REGLAGES_DEFAUT)
   const [showReglages, setShowReglages] = useState(false)
+  const [reglagesFocus, setReglagesFocus] = useState<'paiement' | undefined>(undefined)
   const [contexte, setContexte] = useState<DevisPrefill | null>(null)
   const [previewQr, setPreviewQr] = useState<string | null>(null)
+  const [envoi, setEnvoi] = useState<{ doc: Document; relance: boolean } | null>(null)
+  const envoiMarqueRef = useRef(false)
 
   // Catalogue
   const [catForm, setCatForm] = useState<{ id: string | null; nom: string; prix: number; unite: string; description: string; categorie: Categorie } | null>(null)
@@ -398,12 +402,22 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
         statut: 'brouillon', notes: r.conditions, devis_source_id: null, created_at: new Date().toISOString(),
       }
       const base = formFromDoc(newDoc)
+      const lignes: LineItem[] = (pre?.lignes || []).map(p => {
+        const l = nouvelleLigne(p.categorie, r)
+        l.description = p.description || l.description
+        if (p.categorie === 'main_oeuvre' && p.heures) {
+          l.heures = p.heures
+          l.personnes = p.personnes || 1
+          l.quantite = Math.round(p.heures * l.personnes * 100) / 100
+        }
+        return l
+      })
       const initial: EditorForm = pre
-        ? { ...base, client_nom: pre.client_nom, client_email: pre.client_email, client_telephone: pre.client_telephone, client_adresse: pre.client_adresse }
+        ? { ...base, client_nom: pre.client_nom, client_email: pre.client_email, client_telephone: pre.client_telephone, client_adresse: pre.client_adresse, lignes }
         : base
       openEditor(newDoc, initial)
-      // La demande d'origine reste affichée pendant la rédaction du devis
-      if (pre) setContexte(pre)
+      // La demande d'origine reste affichée pendant la rédaction
+      if (pre?.description) setContexte(pre)
     } catch (e) {
       showToast('error', 'Impossible de créer le document. ' + errMsg(e))
     }
@@ -415,7 +429,7 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
     onPrefillConsumed?.()
     // createNew ne touche à l'état qu'après l'appel réseau (numéro du devis)
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void createNew('devis', prefill)
+    void createNew(prefill.type ?? 'devis', prefill)
   }, [prefill, loading, onPrefillConsumed, createNew])
 
   // ===== Lignes =====
@@ -478,6 +492,31 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
     const saved = await persist({ overrides })
     if (saved) showToast('success', msg)
   }, [editingDoc, persist, showToast])
+
+  /** Envoi : on enregistre d'abord, puis on ouvre la feuille d'envoi. */
+  const envoyer = useCallback(async (relance = false) => {
+    const saved = editingDoc?.id && !dirty ? editingDoc : await persist()
+    if (!saved) return
+    envoiMarqueRef.current = false
+    setEnvoi({ doc: saved, relance })
+  }, [editingDoc, dirty, persist])
+
+  /** Le document est parti : il passe « envoyé » (une seule fois). */
+  const marquerEnvoye = useCallback(async (doc: Document) => {
+    if (envoiMarqueRef.current || doc.statut !== 'brouillon') return
+    envoiMarqueRef.current = true
+    const statut = doc.type === 'devis' ? 'envoye' : 'envoyee'
+    const enEdition = editingDoc ? editingDoc.id : ''
+    if (viewMode === 'editor' && enEdition === doc.id) {
+      await changeStatus(statut, doc.type === 'devis' ? 'Devis envoyé' : 'Facture envoyée')
+      return
+    }
+    try {
+      const saved = await saveDocument(createClient(), { id: doc.id, statut })
+      setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, ...saved } : d))
+      showToast('success', doc.type === 'devis' ? 'Devis envoyé' : 'Facture envoyée')
+    } catch { /* le statut se corrige à la main */ }
+  }, [viewMode, editingDoc, changeStatus, showToast])
 
   const convertToFacture = useCallback(async () => {
     if (!editingDoc?.id || editingDoc.type !== 'devis' || !form) return
@@ -699,6 +738,7 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
   // ===== VUE : ÉDITEUR =====
   if (viewMode === 'editor' && editingDoc && form && totaux) {
     const isDevis = editingDoc.type === 'devis'
+    const qrManque = isDevis ? null : qrFactureManque(profileForPdf)
     const docCourant = { ...editingDoc, date_echeance: form.date_echeance || null }
     const enRetard = estEnRetard(docCourant, today)
     const etat = editingDoc.id ? etatDocument(docCourant, today) : null
@@ -733,8 +773,10 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
       if (st === 'brouillon') {
         next = {
           titre: 'Prêt à envoyer ?',
-          texte: `Téléchargez le PDF, envoyez-le à votre client, puis indiquez ${isDevis ? 'que le devis est parti' : 'que la facture est partie'}.`,
-          actions: <>{pdfBtn}<button onClick={() => changeStatus(isDevis ? 'envoye' : 'envoyee', isDevis ? 'Devis marqué comme envoyé' : 'Facture marquée comme envoyée')} className={`${BTN_PRIMARY} flex-1`}>{isDevis ? 'Marquer envoyé' : 'Marquer envoyée'}</button></>,
+          texte: isDevis
+            ? 'Par WhatsApp, SMS ou e-mail : votre client ouvre le devis sur son téléphone et l’accepte en un clic.'
+            : `Par WhatsApp, SMS ou e-mail : votre client ouvre la facture${qrManque ? '' : ' et paie en scannant la QR-facture'}.`,
+          actions: <>{pdfBtn}<button onClick={() => envoyer()} className={`${BTN_PRIMARY} flex-1`}><IconSend className="w-[18px] h-[18px]" /> Envoyer au client</button></>,
         }
       } else if (isDevis && st === 'envoye') {
         next = {
@@ -764,7 +806,7 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
         next = {
           titre: enRetard ? 'Paiement en retard' : 'En attente du paiement',
           texte: form.date_echeance ? `Échéance le ${formatDateCH(form.date_echeance)}.` : 'Aucune échéance indiquée.',
-          actions: <>{enRetard ? pdfBtn : <button onClick={() => changeStatus('en_retard', 'Facture marquée en retard')} className={BTN_SECONDARY}>En retard</button>}<button onClick={() => changeStatus('payee', 'Paiement enregistré')} className={`${btn('success')} flex-1`}><IconCheck className="w-[18px] h-[18px]" /> Payée</button></>,
+          actions: <>{enRetard ? <button onClick={() => envoyer(true)} className={BTN_SECONDARY}>Relancer</button> : <button onClick={() => changeStatus('en_retard', 'Facture marquée en retard')} className={BTN_SECONDARY}>En retard</button>}<button onClick={() => changeStatus('payee', 'Paiement enregistré')} className={`${btn('success')} flex-1`}><IconCheck className="w-[18px] h-[18px]" /> Payée</button></>,
         }
       } else if (!isDevis && st === 'payee') {
         next = {
@@ -1027,16 +1069,29 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
               <span className="font-bold text-[16px]">Total{form.taux_tva > 0 ? ' TTC' : ''}</span>
               <span className="font-sora font-extrabold text-[22px]">{formatCHF(totaux.totalTtc)}</span>
             </div>
-            {!isDevis && !bank?.bank_iban && (
-              <p className="mt-4 p-3 rounded-xl bg-[var(--blue-light)] text-[13px] text-[var(--blue)]">
-                Ajoutez votre IBAN dans <Link href="/mon-profil" className="font-semibold underline">Mon profil</Link> : la QR-facture sera jointe au PDF.
+            {!isDevis && (qrManque ? (
+              <button type="button" onClick={() => { setReglagesFocus('paiement'); setShowReglages(true) }}
+                className="mt-4 w-full flex items-center gap-3 p-3 rounded-xl bg-[rgba(232,112,10,0.08)] border border-[rgba(232,112,10,0.25)] text-left cursor-pointer">
+                <span className="w-9 h-9 shrink-0 rounded-lg bg-[var(--orange)] text-white flex items-center justify-center"><IconQr className="w-5 h-5" /></span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[14px] font-semibold text-[var(--dark)]">{qrManque === 'iban' ? 'Ajoutez votre IBAN' : 'Adresse avec NPA manquante'}</span>
+                  <span className="block text-[12px] text-[var(--gray-700)]">Pour la QR-facture : le client paie en scannant.</span>
+                </span>
+                <IconChevron className="w-5 h-5 text-[var(--gray-500)] shrink-0" />
+              </button>
+            ) : (
+              <p className="mt-4 flex items-center gap-2 p-3 rounded-xl bg-[var(--green-light)] text-[13px] font-semibold text-[var(--green)]">
+                <IconQr className="w-5 h-5 shrink-0" /> QR-facture jointe : votre client paie en scannant.
               </p>
-            )}
+            ))}
             <button type="button" onClick={() => setShowReglages(true)} className="mt-4 flex items-center gap-2 text-[13px] font-semibold text-[var(--gray-700)] bg-transparent border-none cursor-pointer p-0">
               <IconSettings className="w-4 h-4" /> Tarifs, TVA et délais
             </button>
-            <div className="max-[900px]:hidden mt-5">
-              <button onClick={handleSave} disabled={saving} className={`${BTN_PRIMARY} w-full`}>Enregistrer</button>
+            <div className="max-[900px]:hidden mt-5 flex flex-col gap-2">
+              {editingDoc.statut === 'brouillon' && form.client_nom.trim() && form.lignes.length > 0 && (
+                <button onClick={() => envoyer()} disabled={saving} className={`${BTN_PRIMARY} w-full`}><IconSend className="w-[18px] h-[18px]" /> Envoyer au client</button>
+              )}
+              <button onClick={handleSave} disabled={saving} className={`${editingDoc.statut === 'brouillon' && form.client_nom.trim() && form.lignes.length > 0 ? BTN_SECONDARY : BTN_PRIMARY} w-full`}>Enregistrer</button>
               <p className="text-center text-[12px] text-[var(--gray-500)] mt-2" aria-live="polite">{saveLabel}</p>
             </div>
           </aside>
@@ -1049,9 +1104,20 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
               <div className="text-[12px] text-[var(--gray-500)] truncate" aria-live="polite">{saveLabel}</div>
               <div className="font-sora font-extrabold text-[20px] text-[var(--dark)] leading-tight truncate">{formatCHF(totaux.totalTtc)}</div>
             </div>
-            <button onClick={handleSave} disabled={saving} className={BTN_PRIMARY}>
-              Enregistrer
-            </button>
+            {editingDoc.statut === 'brouillon' && form.client_nom.trim() && form.lignes.length > 0 ? (
+              <>
+                <button onClick={handleSave} disabled={saving} aria-label="Enregistrer" className="w-12 h-12 shrink-0 rounded-full flex items-center justify-center bg-[var(--gray-100)] text-[var(--dark)] border-none cursor-pointer disabled:opacity-60">
+                  <Ico className="w-5 h-5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></Ico>
+                </button>
+                <button onClick={() => envoyer()} disabled={saving} className={BTN_PRIMARY}>
+                  <IconSend className="w-[18px] h-[18px]" /> Envoyer
+                </button>
+              </>
+            ) : (
+              <button onClick={handleSave} disabled={saving} className={BTN_PRIMARY}>
+                Enregistrer
+              </button>
+            )}
           </div>
         </div>
 
@@ -1122,8 +1188,9 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
           />
         )}
         {showReglages && (
-          <ReglagesSheet userId={userId} reglages={reglages} onClose={() => setShowReglages(false)}
-            onSaved={r => { setReglages(r); setShowReglages(false); showToast('success', 'Réglages enregistrés') }} />
+          <ReglagesSheet userId={userId} reglages={reglages} adresseEntreprise={profile?.adresse} focus={reglagesFocus}
+            onClose={() => { setShowReglages(false); setReglagesFocus(undefined) }}
+            onSaved={(r, b) => { setReglages(r); if (b) setBank(b); setShowReglages(false); setReglagesFocus(undefined); showToast('success', 'Réglages enregistrés') }} />
         )}
 
         {/* Quitter avec des modifications */}
@@ -1139,7 +1206,15 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
           </Dialog>
         )}
 
-        {menuDoc && <DocMenu doc={menuDoc} onClose={() => setMenuDoc(null)} onPdf={() => { setMenuDoc(null); pdfFromEditor() }} onDuplicate={() => duplicateDoc(menuDoc)} onDelete={() => { setDeleteTarget(menuDoc); setMenuDoc(null) }} />}
+        {menuDoc && <DocMenu doc={menuDoc} onClose={() => setMenuDoc(null)} onSend={() => { setMenuDoc(null); void envoyer(estEnRetard(menuDoc, today)) }} onPdf={() => { setMenuDoc(null); pdfFromEditor() }} onDuplicate={() => duplicateDoc(menuDoc)} onDelete={() => { setDeleteTarget(menuDoc); setMenuDoc(null) }} />}
+        {envoi && (
+        <EnvoyerSheet doc={envoi.doc} relance={envoi.relance}
+          entreprise={profile?.entreprise || `${profile?.prenom || ''} ${profile?.nom || ''}`.trim()}
+          onSent={() => void marquerEnvoye(envoi.doc)}
+          onPdf={() => { const d = envoi.doc; setEnvoi(null); if (viewMode === 'editor') pdfFromEditor(); else pdfFromDoc(d) }}
+          onClose={() => setEnvoi(null)} />
+      )}
+
         {deleteDialog}
         {toastEl}
       </div>
@@ -1290,6 +1365,18 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
         </button>
       )}
 
+      {reglages.tarif_horaire > 0 && qrFactureManque(profileForPdf) && (
+        <button type="button" onClick={() => { setReglagesFocus('paiement'); setShowReglages(true) }}
+          className="w-full flex items-center gap-3 p-4 mb-4 rounded-[20px] bg-[rgba(232,112,10,0.08)] border border-[rgba(232,112,10,0.25)] text-left cursor-pointer">
+          <span className="w-11 h-11 shrink-0 rounded-2xl bg-[var(--orange)] text-white flex items-center justify-center"><IconQr className="w-6 h-6" /></span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-semibold text-[15px] text-[var(--dark)]">Activez la QR-facture</span>
+            <span className="block text-[13px] text-[var(--gray-700)]">Ajoutez votre IBAN : vos clients paient en scannant.</span>
+          </span>
+          <IconChevron className="w-5 h-5 text-[var(--gray-500)] shrink-0" />
+        </button>
+      )}
+
       {documents.length === 0 ? (
         <div className={`${CARD} text-center py-12 px-6`}>
           <span className="w-16 h-16 mx-auto mb-4 rounded-3xl bg-[rgba(232,112,10,0.12)] text-[var(--orange)] flex items-center justify-center"><IconDoc className="w-8 h-8" /></span>
@@ -1434,10 +1521,19 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
       )}
 
       {showReglages && (
-        <ReglagesSheet userId={userId} reglages={reglages} onClose={() => setShowReglages(false)}
-          onSaved={r => { setReglages(r); setShowReglages(false); showToast('success', 'Réglages enregistrés') }} />
+        <ReglagesSheet userId={userId} reglages={reglages} adresseEntreprise={profile?.adresse} focus={reglagesFocus}
+          onClose={() => { setShowReglages(false); setReglagesFocus(undefined) }}
+          onSaved={(r, b) => { setReglages(r); if (b) setBank(b); setShowReglages(false); setReglagesFocus(undefined); showToast('success', 'Réglages enregistrés') }} />
       )}
-      {menuDoc && <DocMenu doc={menuDoc} onClose={() => setMenuDoc(null)} onOpen={() => { const d = menuDoc; setMenuDoc(null); openEditor(d) }} onPdf={() => pdfFromDoc(menuDoc)} onDuplicate={() => duplicateDoc(menuDoc)} onDelete={() => { setDeleteTarget(menuDoc); setMenuDoc(null) }} />}
+      {menuDoc && <DocMenu doc={menuDoc} onClose={() => setMenuDoc(null)} onOpen={() => { const d = menuDoc; setMenuDoc(null); openEditor(d) }} onSend={() => { const d = menuDoc; setMenuDoc(null); envoiMarqueRef.current = false; setEnvoi({ doc: d, relance: estEnRetard(d, today) }) }} onPdf={() => pdfFromDoc(menuDoc)} onDuplicate={() => duplicateDoc(menuDoc)} onDelete={() => { setDeleteTarget(menuDoc); setMenuDoc(null) }} />}
+      {envoi && (
+        <EnvoyerSheet doc={envoi.doc} relance={envoi.relance}
+          entreprise={profile?.entreprise || `${profile?.prenom || ''} ${profile?.nom || ''}`.trim()}
+          onSent={() => void marquerEnvoye(envoi.doc)}
+          onPdf={() => { const d = envoi.doc; setEnvoi(null); if (viewMode === 'editor') pdfFromEditor(); else pdfFromDoc(d) }}
+          onClose={() => setEnvoi(null)} />
+      )}
+
       {deleteDialog}
       {toastEl}
     </div>
@@ -1446,10 +1542,11 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
 
 // ===== Feuille d'actions d'un document =====
 
-function DocMenu({ doc, onClose, onOpen, onPdf, onDuplicate, onDelete }: {
+function DocMenu({ doc, onClose, onOpen, onSend, onPdf, onDuplicate, onDelete }: {
   doc: Document
   onClose: () => void
   onOpen?: () => void
+  onSend?: () => void
   onPdf: () => void
   onDuplicate: () => void
   onDelete: () => void
@@ -1470,6 +1567,9 @@ function DocMenu({ doc, onClose, onOpen, onPdf, onDuplicate, onDelete }: {
             <Ico className="w-5 h-5 text-[var(--gray-700)]"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></Ico>
             Ouvrir
           </button>
+        )}
+        {onSend && (
+          <button type="button" onClick={onSend} className={item}><IconSend className="w-5 h-5 text-[var(--gray-700)]" /> {doc.statut === 'brouillon' ? 'Envoyer au client' : 'Renvoyer le lien'}</button>
         )}
         <button type="button" onClick={onPdf} className={item}><IconDownload className="w-5 h-5 text-[var(--gray-700)]" /> Télécharger le PDF</button>
         <button type="button" onClick={onDuplicate} className={item}><IconCopy className="w-5 h-5 text-[var(--gray-700)]" /> Dupliquer</button>

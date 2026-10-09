@@ -1,17 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Dialog from '@/components/ui/Dialog'
 import DecimalInput from '@/components/ui/DecimalInput'
 import { createClient } from '@/lib/supabase/client'
 import { saveAgendaKey } from '@/lib/supabase/agenda'
-import { CLE_REGLAGES, formatNumeroTva, type ReglagesFacturation } from '@/lib/facturation'
+import { loadMyBankDetails, saveMyBankDetails } from '@/lib/supabase/helpers'
+import { CLE_REGLAGES, formatNumeroTva, ibanValide, formatIban, type ReglagesFacturation } from '@/lib/facturation'
+import { parseSwissAddress } from '@/lib/swiss-qr'
 import { btn, inputCls, LABEL, Segmented } from './ui'
+
+export type BankDetails = { bank_iban: string; bank_bic: string; bank_titulaire: string; bank_adresse: string }
 
 type Props = {
   userId: string
   reglages: ReglagesFacturation
-  onSaved: (r: ReglagesFacturation) => void
+  /** Adresse de l'entreprise (profil) : sert à la QR-facture si le titulaire n'en a pas */
+  adresseEntreprise?: string
+  /** Ouvre directement sur la section paiement (IBAN) */
+  focus?: 'paiement'
+  onSaved: (r: ReglagesFacturation, bank: BankDetails | null) => void
   onClose: () => void
 }
 
@@ -29,19 +37,50 @@ function Choix({ valeurs, valeur, onChange, suffixe, label }: { valeurs: number[
 }
 
 /** Réglages de facturation : tarifs habituels, TVA, délais, texte par défaut. */
-export default function ReglagesSheet({ userId, reglages, onSaved, onClose }: Props) {
+export default function ReglagesSheet({ userId, reglages, adresseEntreprise = '', focus, onSaved, onClose }: Props) {
   const [r, setR] = useState<ReglagesFacturation>(reglages)
+  const [bank, setBank] = useState<BankDetails>({ bank_iban: '', bank_bic: '', bank_titulaire: '', bank_adresse: '' })
+  const [bankInitial, setBankInitial] = useState('')
   const [saving, setSaving] = useState(false)
   const [erreur, setErreur] = useState('')
   const set = (p: Partial<ReglagesFacturation>) => setR(x => ({ ...x, ...p }))
+  const setB = (p: Partial<BankDetails>) => setBank(x => ({ ...x, ...p }))
+
+  // Coordonnées bancaires : privées, chargées à part (RPC sécurisée)
+  useEffect(() => {
+    loadMyBankDetails(createClient()).then(b => {
+      if (!b) return
+      setBank(b)
+      setBankInitial(JSON.stringify(b))
+    }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (focus === 'paiement') document.getElementById('reg-paiement')?.scrollIntoView({ block: 'start' })
+  }, [focus])
+
+  const ibanSaisi = bank.bank_iban.trim()
+  const ibanErreur = ibanSaisi && !ibanValide(ibanSaisi) ? 'IBAN invalide : vérifiez les chiffres (IBAN suisse, 21 caractères).' : ''
+  const adresseQr = parseSwissAddress(bank.bank_adresse) || parseSwissAddress(adresseEntreprise)
+  const qrPret = !!ibanSaisi && !ibanErreur && !!adresseQr
 
   async function save() {
+    if (ibanErreur) { setErreur(ibanErreur); document.getElementById('reg-iban')?.focus(); return }
     setSaving(true)
     setErreur('')
     const propre = { ...r, numero_tva: r.numero_tva ? formatNumeroTva(r.numero_tva) : '' }
+    const bankPropre: BankDetails = {
+      bank_iban: ibanSaisi ? formatIban(ibanSaisi) : '',
+      bank_bic: bank.bank_bic.trim(),
+      bank_titulaire: bank.bank_titulaire.trim(),
+      bank_adresse: bank.bank_adresse.trim(),
+    }
     try {
-      await saveAgendaKey(createClient(), userId, CLE_REGLAGES, propre)
-      onSaved(propre)
+      const supabase = createClient()
+      await saveAgendaKey(supabase, userId, CLE_REGLAGES, propre)
+      const bankChange = JSON.stringify(bankPropre) !== bankInitial && (bankInitial || ibanSaisi)
+      if (bankChange) await saveMyBankDetails(supabase, bankPropre)
+      onSaved(propre, bankChange ? bankPropre : null)
     } catch {
       setErreur('Enregistrement impossible. Vérifiez votre connexion et réessayez.')
     } finally {
@@ -100,6 +139,39 @@ export default function ReglagesSheet({ userId, reglages, onSaved, onClose }: Pr
               Vos documents porteront la mention « Non assujetti à la TVA » (chiffre d’affaires inférieur à 100 000 CHF).
             </p>
           )}
+        </section>
+
+        <section id="reg-paiement" aria-label="Paiement par QR-facture" className="flex flex-col gap-3 scroll-mt-4">
+          <h4 className="text-[13px] font-bold uppercase tracking-wider text-[var(--gray-500)]">Paiement · QR-facture</h4>
+          <div>
+            <label htmlFor="reg-iban" className={LABEL}>IBAN</label>
+            <input id="reg-iban" type="text" value={bank.bank_iban} onChange={e => setB({ bank_iban: e.target.value })}
+              onBlur={() => ibanSaisi && ibanValide(ibanSaisi) && setB({ bank_iban: formatIban(ibanSaisi) })}
+              placeholder="CH93 0076 2011 6238 5295 7" autoComplete="off" spellCheck={false} aria-invalid={!!ibanErreur || undefined}
+              className={inputCls({ invalid: !!ibanErreur, extra: 'uppercase placeholder:normal-case tracking-wide' })} />
+            {ibanErreur && <p className="text-[13px] text-[var(--red)] mt-1">{ibanErreur}</p>}
+          </div>
+          <div className="grid grid-cols-2 gap-3 [&>div]:min-w-0">
+            <div>
+              <label htmlFor="reg-titulaire" className={LABEL}>Titulaire du compte</label>
+              <input id="reg-titulaire" type="text" value={bank.bank_titulaire} onChange={e => setB({ bank_titulaire: e.target.value })} placeholder="Nom de l’entreprise" autoComplete="off" className={inputCls()} />
+            </div>
+            <div>
+              <label htmlFor="reg-bic" className={LABEL}>BIC (facultatif)</label>
+              <input id="reg-bic" type="text" value={bank.bank_bic} onChange={e => setB({ bank_bic: e.target.value })} autoComplete="off" className={inputCls({ extra: 'uppercase' })} />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="reg-adresse" className={LABEL}>Adresse du titulaire {parseSwissAddress(adresseEntreprise) ? '(si différente)' : ''}</label>
+            <input id="reg-adresse" type="text" value={bank.bank_adresse} onChange={e => setB({ bank_adresse: e.target.value })} placeholder={adresseEntreprise || 'Rue et n°, NPA Localité'} autoComplete="off" className={inputCls()} />
+          </div>
+          <p className={`text-[13px] p-3 rounded-xl ${qrPret ? 'bg-[var(--green-light)] text-[var(--green)]' : 'bg-[var(--gray-50)] text-[var(--gray-700)]'}`}>
+            {qrPret
+              ? '✓ Vos factures portent la QR-facture : votre client paie en scannant avec son app bancaire.'
+              : !ibanSaisi
+                ? 'Avec votre IBAN, chaque facture porte une QR-facture que le client scanne pour payer.'
+                : !adresseQr ? 'Indiquez une adresse avec NPA (ex. Rue du Lac 15, 1003 Lausanne) pour la QR-facture.' : ''}
+          </p>
         </section>
 
         <section aria-label="Délais" className="flex flex-col gap-3">

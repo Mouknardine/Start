@@ -6,13 +6,25 @@
 
 export type DocType = 'devis' | 'facture'
 
-/** Pré-remplissage d'un devis depuis une demande client. */
+/** Pré-remplissage d'un devis / d'une facture (depuis une demande ou une intervention). */
 export type DevisPrefill = {
+  /** devis par défaut */
+  type?: 'devis' | 'facture'
   client_nom: string
   client_email: string
   client_telephone: string
   client_adresse: string
+  /** Message de la demande, affiché pendant la rédaction */
   description: string
+  /** Lignes à créer d'office (ex. heures d'une intervention) */
+  lignes?: { categorie: 'main_oeuvre' | 'materiel' | 'deplacement' | 'forfait'; description: string; heures?: number; personnes?: number }[]
+}
+
+/** Durée en heures entre deux horaires « 08:00 » et « 10:30 » (0 si incohérent). */
+export function dureeHeures(debut: string, fin: string): number {
+  const m = (t: string) => { const [h, mi] = t.split(':').map(Number); return (h || 0) * 60 + (mi || 0) }
+  const d = m(fin.slice(0, 5)) - m(debut.slice(0, 5))
+  return d > 0 ? Math.round(d / 15) / 4 : 0
 }
 
 /** Sous-ensemble d'un document utile aux calculs de liste. */
@@ -295,6 +307,26 @@ export function formatNumeroTva(raw: string): string {
   const digits = raw.replace(/\D/g, '')
   if (digits.length !== 9) return raw.trim()
   return `CHE-${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)} TVA`
+}
+
+// ===== IBAN (QR-facture) =====
+
+/** IBAN suisse ou liechtensteinois valide (21 caractères, clé de contrôle mod 97). */
+export function ibanValide(raw: string | null | undefined): boolean {
+  const iban = (raw || '').replace(/\s+/g, '').toUpperCase()
+  if (!/^(CH|LI)\d{2}[0-9A-Z]{17}$/.test(iban)) return false
+  const re = iban.slice(4) + iban.slice(0, 4)
+  let reste = 0
+  for (const ch of re) {
+    const v = /\d/.test(ch) ? ch : String(ch.charCodeAt(0) - 55)
+    for (const d of v) reste = (reste * 10 + Number(d)) % 97
+  }
+  return reste === 1
+}
+
+/** « ch9300762011623852957 » → « CH93 0076 2011 6238 5295 7 ». */
+export function formatIban(raw: string): string {
+  return raw.replace(/\s+/g, '').toUpperCase().replace(/(.{4})(?=.)/g, '$1 ')
 }
 
 // ===== Textes du document =====

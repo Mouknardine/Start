@@ -30,7 +30,7 @@ type Etape = { key: string; label: string; ok: boolean; href?: string; action?: 
 export default function DashProfil({ userId, profile, avis, onOpenTab, onLogout }: Props) {
   const [reglages, setReglages] = useState<ReglagesFacturation>(REGLAGES_DEFAUT)
   const [hasIban, setHasIban] = useState<boolean | null>(null)
-  const [showReglages, setShowReglages] = useState(false)
+  const [showReglages, setShowReglages] = useState<false | 'reglages' | 'paiement'>(false)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
@@ -55,8 +55,8 @@ export default function DashProfil({ userId, profile, avis, onOpenTab, onLogout 
     { key: 'horaires', label: 'Renseigner vos horaires', ok: horairesOk, href: '/mon-profil#horaires' },
     { key: 'dispos', label: 'Publier vos disponibilités', ok: !!slots && Object.keys(slots).length > 0, action: () => onOpenTab('agenda') },
     { key: 'ide', label: 'Faire vérifier votre entreprise (IDE)', ok: !!profile.ide_verified, href: '/mon-profil#verification' },
-    { key: 'tarif', label: 'Indiquer votre tarif horaire', ok: reglages.tarif_horaire > 0, action: () => setShowReglages(true) },
-    { key: 'iban', label: 'Ajouter votre IBAN (QR-facture)', ok: hasIban !== false, href: '/mon-profil#banque' },
+    { key: 'tarif', label: 'Indiquer votre tarif horaire', ok: reglages.tarif_horaire > 0, action: () => setShowReglages('reglages') },
+    { key: 'iban', label: 'Ajouter votre IBAN (QR-facture)', ok: hasIban !== false, action: () => setShowReglages('paiement') },
   ]
   const faits = etapes.filter(e => e.ok).length
   const pct = Math.round((faits / etapes.length) * 100)
@@ -142,8 +142,8 @@ export default function DashProfil({ userId, profile, avis, onOpenTab, onLogout 
       </Group>
 
       <Group titre="Devis et factures">
-        <Row label="Tarifs, TVA et délais" detail={reglages.tarif_horaire ? `${formatPrixCourt(reglages.tarif_horaire)}/h` : 'À renseigner'} onClick={() => setShowReglages(true)} icon={<IconSettings className="w-5 h-5 text-[var(--gray-500)]" />} />
-        <Row label="Coordonnées bancaires" detail={hasIban === null ? '' : hasIban ? 'IBAN renseigné' : 'À renseigner'} href="/mon-profil#banque" />
+        <Row label="Tarifs, TVA et délais" detail={reglages.tarif_horaire ? `${formatPrixCourt(reglages.tarif_horaire)}/h` : 'À renseigner'} onClick={() => setShowReglages('reglages')} icon={<IconSettings className="w-5 h-5 text-[var(--gray-500)]" />} />
+        <Row label="IBAN et QR-facture" detail={hasIban === null ? '' : hasIban ? 'Activée' : 'À activer'} onClick={() => setShowReglages('paiement')} />
         <Row label="Catalogue de prestations" onClick={() => onOpenTab('facturation')} icon={<IconBook className="w-5 h-5 text-[var(--gray-500)]" />} />
       </Group>
 
@@ -159,8 +159,9 @@ export default function DashProfil({ userId, profile, avis, onOpenTab, onLogout 
       </Group>
 
       {showReglages && (
-        <ReglagesSheet userId={userId} reglages={reglages} onClose={() => setShowReglages(false)}
-          onSaved={r => { setReglages(r); setShowReglages(false) }} />
+        <ReglagesSheet userId={userId} reglages={reglages} adresseEntreprise={profile.adresse}
+          focus={showReglages === 'paiement' ? 'paiement' : undefined} onClose={() => setShowReglages(false)}
+          onSaved={(r, b) => { setReglages(r); if (b) setHasIban(!!b.bank_iban); setShowReglages(false) }} />
       )}
     </div>
   )

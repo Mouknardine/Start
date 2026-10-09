@@ -9,6 +9,7 @@ import {
 import { loadAgendaKey, loadAgendaKeyCached, saveAgendaKey, debounce } from '@/lib/supabase/agenda'
 import type { Affectation, Employe, Demande } from '@/lib/supabase/helpers'
 import { logger } from '@/lib/logger'
+import { dureeHeures } from '@/lib/facturation'
 import type {
   CellStatus, Slots, TitleEntry, Titles, Notes,
   RecDay, Recurrence, InterventionType, Feedback, AgendaProps,
@@ -24,7 +25,7 @@ import {
 
 // ===== COMPONENT =====
 
-export default function DashAgenda({ userId, profile }: AgendaProps) {
+export default function DashAgenda({ userId, profile, onFacturer }: AgendaProps) {
   const supabase = useMemo(() => createClient(), [])
 
   // Week / view state
@@ -269,6 +270,23 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
   )
 
   const closeAff = useCallback(() => setAffPopup({ open: false, editId: null, data: emptyAff }), [emptyAff])
+
+  /** Intervention terminée → facture pré-remplie (client de la demande liée, heures de main d'œuvre). */
+  const facturerAff = () => {
+    const { titre, heure_debut, heure_fin, demande_id, adresse } = affPopup.data
+    const d = demandes.find(x => x.id === demande_id)
+    onFacturer?.({
+      type: 'facture',
+      client_nom: d?.client_nom || '',
+      client_email: d?.client_email || '',
+      client_telephone: d?.client_telephone || '',
+      client_adresse: d?.client_adresse || adresse || '',
+      description: '',
+      lignes: [{ categorie: 'main_oeuvre', description: titre ? `Main d’œuvre — ${titre}` : 'Main d’œuvre', heures: dureeHeures(heure_debut, heure_fin) || 1 }],
+    })
+    closeAff()
+  }
+
 
   // Ouvre le popup « nouvelle affectation » pré-rempli depuis une cellule de la grille.
   const openNewAffect = useCallback((col: number, row: number) => {
@@ -1751,6 +1769,13 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
               ))}
             </select>
 
+            {affPopup.editId && onFacturer && (
+              <button type="button" onClick={facturerAff}
+                className="w-full flex items-center justify-center gap-2 h-12 mb-3 rounded-full bg-[var(--dark)] text-white font-bold text-[14px] border-none cursor-pointer hover:bg-[var(--dark-mid)]">
+                <svg aria-hidden="true" className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><path d="M9 8h6M9 12h6"/></svg>
+                Facturer cette intervention
+              </button>
+            )}
             <div className="flex justify-between mt-2">
               {affPopup.editId ? (
                 <button onClick={removeAff} className="bg-transparent border-none text-[var(--red)] py-2.5 px-0 font-bold text-[13px] cursor-pointer font-sora hover:underline">Supprimer</button>

@@ -45,6 +45,33 @@ export type InvoiceData = {
   notes?: string
 }
 
+/** Document enregistré (table documents) → données du document imprimable. */
+export function invoiceDataFromDocument(doc: {
+  type: 'devis' | 'facture'; numero: string; client_nom: string; client_email?: string | null; client_telephone?: string | null
+  client_adresse?: string | null; lignes: Record<string, unknown>[] | null; sous_total: number; taux_tva: number; montant_tva: number
+  montant_remise?: number | null; remise_type?: string | null; remise_valeur?: number | null; total_ttc: number
+  date_emission: string; date_echeance?: string | null; notes?: string | null
+}): InvoiceData {
+  const num = (v: unknown) => (v === undefined || v === null || v === '' ? undefined : Number(v))
+  return {
+    type: doc.type, numero: doc.numero, client_nom: doc.client_nom,
+    client_email: doc.client_email || undefined, client_telephone: doc.client_telephone || undefined,
+    client_adresse: doc.client_adresse || undefined,
+    lignes: (Array.isArray(doc.lignes) ? doc.lignes : []).map(l => {
+      const quantite = Number(l.quantite) || 0
+      const prix = Number(l.prix_unitaire) || 0
+      return {
+        description: String(l.description || ''), quantite, unite: String(l.unite || 'unite'), prix_unitaire: prix,
+        total: Number(l.total) || Math.round(quantite * prix * 100) / 100,
+        categorie: l.categorie ? String(l.categorie) : undefined, heures: num(l.heures), personnes: num(l.personnes),
+      }
+    }),
+    sous_total: Number(doc.sous_total) || 0, taux_tva: Number(doc.taux_tva) || 0, montant_tva: Number(doc.montant_tva) || 0,
+    montant_remise: doc.montant_remise, remise_type: doc.remise_type, remise_valeur: doc.remise_valeur,
+    total_ttc: Number(doc.total_ttc) || 0, date_emission: doc.date_emission, date_echeance: doc.date_echeance, notes: doc.notes || '',
+  }
+}
+
 /** Réglages de l'artisan utiles au document (TVA). */
 export type InvoiceOptions = {
   assujettiTva?: boolean
@@ -180,6 +207,21 @@ export function buildInvoiceHTML(doc: InvoiceData, profile: Artisan | null, qrSv
   const footer = [companyName, adresse.join(', '), profile?.telephone, profile?.email, numeroTva]
     .filter(Boolean).map(esc).join(' · ')
 
+  // QR-facture : en bas de la première page si tout y tient (usage suisse),
+  // sinon sur une page dédiée. Estimation prudente de la hauteur du contenu (mm).
+  const nbLignesNotes = doc.notes ? doc.notes.split(/\n/).reduce((n, l) => n + Math.max(1, Math.ceil(l.length / 95)), 0) : 0
+  const hauteur = 12 + 28 + 33 + 8 + 8 + 9 + 8
+    + doc.lignes.reduce((h, l) => h + 9 + (detailLigne(l) ? 4 : 0) + Math.max(0, Math.ceil((l.description || '').length / 60) - 1) * 4, 0)
+    + (plusieurs ? groupes.reduce((h, g) => h + 6 + (g.lignes.length > 1 ? 6 : 0), 0) : 0)
+    + 3 + 6 * (2 + (remise ? 1 : 0) + (doc.taux_tva > 0 ? 1 : 0)) + 14
+    + (mentions.length ? 4 + 5 * mentions.length : 0)
+    + (paymentBlock ? 24 : 0)
+    + (nbLignesNotes ? 3 + 5 * nbLignesNotes : 0)
+    + 15
+  // Mesuré : l'estimation dépasse le rendu réel de quelques mm (marge de sécurité)
+  const qrEnBas = !!qrSvg && hauteur <= 297 - 105 - 6
+  if (qrEnBas) mentions[mentions.length - 1] = 'Merci d’utiliser la QR-facture ci-dessous pour votre paiement.'
+
   const intro = isDevis
     ? 'Suite à votre demande, nous avons le plaisir de vous remettre notre offre pour les travaux suivants :'
     : 'Nous vous remercions de votre confiance et vous adressons notre facture pour les travaux suivants :'
@@ -205,7 +247,7 @@ export function buildInvoiceHTML(doc: InvoiceData, profile: Artisan | null, qrSv
   .kind { text-align: right; }
   .kind-label { font-size: 19pt; font-weight: 800; letter-spacing: .02em; color: #1A2744; line-height: 1; }
   .kind-bar { width: 14mm; height: 1.2mm; background: #E8700A; border-radius: 1mm; margin: 2.5mm 0 0 auto; }
-  .band { height: 37mm; padding-top: 4mm; }
+  .band { height: 33mm; padding-top: 3mm; }
   .meta { border-collapse: collapse; font-size: 8.5pt; }
   .meta th { text-align: left; font-weight: 600; color: #6B6A66; padding: .5mm 5mm .5mm 0; white-space: nowrap; vertical-align: top; }
   .meta td { padding: .5mm 0; }
@@ -240,6 +282,8 @@ export function buildInvoiceHTML(doc: InvoiceData, profile: Artisan | null, qrSv
   .sign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; font-size: 8pt; color: #6B6A66; }
   .sign-line { border-bottom: .3mm solid #1A2744; margin-bottom: 1mm; height: 5mm; }
   .footer { position: absolute; left: 18mm; right: 15mm; bottom: 8mm; padding-top: 2mm; border-top: .2mm solid #E5E3DE; font-size: 7.5pt; color: #8A8680; text-align: center; }
+  .qr-inline { position: absolute; left: 0; bottom: 0; width: 210mm; height: 105mm; }
+  .qr-inline svg { width: 210mm; height: 105mm; display: block; }
   .qr-page { break-before: page; page-break-before: always; width: 210mm; height: 297mm; display: flex; flex-direction: column; justify-content: flex-end; background: #fff; }
   .qr-page svg { width: 210mm; height: 105mm; display: block; }
   @media screen {
@@ -291,9 +335,10 @@ export function buildInvoiceHTML(doc: InvoiceData, profile: Artisan | null, qrSv
   <div class="closing">Avec nos meilleures salutations.<br><strong>${esc(companyName)}</strong></div>
   ${signature}
 
-  <div class="footer">${footer}</div>
+  ${qrEnBas ? '' : `<div class="footer">${footer}</div>`}
+  ${qrEnBas ? `<div id="qr-facture" class="qr-inline">${qrSvg}</div>` : ''}
 </div>
-${qrSvg ? `<div class="qr-page">${qrSvg}</div>` : ''}
+${qrSvg && !qrEnBas ? `<div id="qr-facture" class="qr-page">${qrSvg}</div>` : ''}
 </body>
 </html>`
 }

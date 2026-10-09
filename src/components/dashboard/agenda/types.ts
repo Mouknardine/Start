@@ -1,3 +1,4 @@
+import type { DevisPrefill } from '@/lib/facturation'
 import type { Artisan } from '@/lib/supabase/helpers'
 
 export type CellStatus = 'available' | 'unavailable'
@@ -10,4 +11,9 @@ export type Recurrence = Record<number, RecDay>
 export type InterventionType = { id: string; name: string; duration: number; color: string }
 export type Feedback = { type: 'success' | 'error'; msg: string } | null
 
-export type AgendaProps = { userId: string; profile: Artisan | null }
+export type AgendaProps = {
+  userId: string
+  profile: Artisan | null
+  /** Facturer une intervention planifiée (ouvre l'éditeur de facture pré-rempli) */
+  onFacturer?: (p: DevisPrefill) => void
+}
