@@ -13,3 +13,11 @@ export function telHref(phone: string | null | undefined): string {
   if (digits.startsWith('0')) return `tel:+41${digits.slice(1)}`
   return `tel:+41${digits}`
 }
+
+/**
+ * Numéro au format WhatsApp (chiffres seuls, indicatif sans « + ») :
+ * « 079 123 45 67 » → « 41791234567 ». Vide si aucun chiffre.
+ */
+export function numeroWhatsApp(phone: string | null | undefined): string {
+  return telHref(phone).replace(/^tel:\+/, '')
+}

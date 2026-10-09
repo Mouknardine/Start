@@ -8,6 +8,8 @@ import {
 } from '@/lib/supabase/helpers'
 import type { Employe, Affectation, Demande } from '@/lib/supabase/helpers'
 import { logger } from '@/lib/logger'
+import Dialog from '@/components/ui/Dialog'
+import { dureeHeures, type DevisPrefill } from '@/lib/facturation'
 
 // ===== Constants =====
 
@@ -81,11 +83,13 @@ const emptyAffData: AffPopupData = { titre: '', employe_id: '', date: '', heure_
 type Props = {
   userId: string
   demandes: Demande[]
+  /** Facturer une intervention (ouvre l'éditeur de facture pré-rempli) */
+  onFacturer?: (p: DevisPrefill) => void
 }
 
 // ===== Component =====
 
-export default function DashEquipe({ userId, demandes }: Props) {
+export default function DashEquipe({ userId, demandes, onFacturer }: Props) {
   const supabase = useMemo(() => createClient(), [])
 
   // Data
@@ -101,6 +105,12 @@ export default function DashEquipe({ userId, demandes }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [editingEmpId, setEditingEmpId] = useState<string | null>(null)
   const [formData, setFormData] = useState<EmpFormData>(emptyEmpForm)
+
+  // Erreurs affichées dans les formulaires (au lieu des alert() natifs)
+  const [empError, setEmpError] = useState('')
+  const [affError, setAffError] = useState('')
+  const [affConfirmDelete, setAffConfirmDelete] = useState(false)
+  const [empToDelete, setEmpToDelete] = useState<Employe | null>(null)
 
   // Affectation popup
   const [affPopup, setAffPopup] = useState<{ open: boolean; editId: string | null; data: AffPopupData }>({ open: false, editId: null, data: emptyAffData })
@@ -169,7 +179,8 @@ export default function DashEquipe({ userId, demandes }: Props) {
   }
 
   const saveEmployee = async () => {
-    if (!formData.prenom.trim()) { alert('Le prénom est requis.'); return }
+    if (!formData.prenom.trim()) { setEmpError('Le prénom est requis.'); return }
+    setEmpError('')
     const payload: Partial<Employe> = {
       prenom: formData.prenom.trim(),
       nom: formData.nom.trim(),
@@ -188,17 +199,18 @@ export default function DashEquipe({ userId, demandes }: Props) {
       setEditingEmpId(null)
       await loadData()
     } catch (e: unknown) {
-      alert('Erreur: ' + (e instanceof Error ? e.message : e))
+      setEmpError('Enregistrement impossible : ' + (e instanceof Error ? e.message : 'réessayez.'))
     }
   }
 
   const removeEmployee = async (id: string) => {
-    if (!confirm('Supprimer cet employé ? Ses affectations futures seront aussi supprimées.')) return
     try {
       await deleteEmploye(supabase, id)
+      setEmpToDelete(null)
       await loadData()
     } catch (e: unknown) {
-      alert('Erreur: ' + (e instanceof Error ? e.message : e))
+      setEmpToDelete(null)
+      setEmpError('Suppression impossible : ' + (e instanceof Error ? e.message : 'réessayez.'))
     }
   }
 
@@ -253,7 +265,28 @@ export default function DashEquipe({ userId, demandes }: Props) {
     })
   }
 
-  const closePopup = () => setAffPopup({ open: false, editId: null, data: emptyAffData })
+  const closePopup = () => {
+    setAffPopup({ open: false, editId: null, data: emptyAffData })
+    setAffError('')
+    setAffConfirmDelete(false)
+  }
+
+  /** Intervention terminée → facture pré-remplie (client de la demande liée, heures de main d'œuvre). */
+  const facturerAff = () => {
+    const { titre, heure_debut, heure_fin, demande_id, adresse } = affPopup.data
+    const d = demandes.find(x => x.id === demande_id)
+    onFacturer?.({
+      type: 'facture',
+      client_nom: d?.client_nom || '',
+      client_email: d?.client_email || '',
+      client_telephone: d?.client_telephone || '',
+      client_adresse: d?.client_adresse || adresse || '',
+      description: '',
+      lignes: [{ categorie: 'main_oeuvre', description: titre ? `Main d’œuvre — ${titre}` : 'Main d’œuvre', heures: dureeHeures(heure_debut, heure_fin) || 1 }],
+    })
+    closePopup()
+  }
+
 
   const checkOverlap = (empId: string, date: string, debut: string, fin: string, excludeId?: string | null): Affectation | undefined => {
     return affectations.find(a => {
@@ -268,15 +301,15 @@ export default function DashEquipe({ userId, demandes }: Props) {
 
   const saveAffectation = async () => {
     const { titre, employe_id, date, heure_debut, heure_fin, adresse, notes, demande_id } = affPopup.data
-    if (!titre.trim()) { alert('Le titre est requis.'); return }
-    if (!employe_id) { alert('Sélectionnez un employé.'); return }
-    if (!date) { alert('La date est requise.'); return }
-    if (!heure_debut || !heure_fin) { alert('Les heures de début et fin sont requises.'); return }
-    if (heure_fin <= heure_debut) { alert("L'heure de fin doit être après l'heure de début."); return }
+    if (!titre.trim()) { setAffError('Le titre est requis.'); return }
+    if (!employe_id) { setAffError('Sélectionnez un employé.'); return }
+    if (!date) { setAffError('La date est requise.'); return }
+    if (!heure_debut || !heure_fin) { setAffError('Les heures de début et fin sont requises.'); return }
+    if (heure_fin <= heure_debut) { setAffError("L'heure de fin doit être après l'heure de début."); return }
 
     const overlap = checkOverlap(employe_id, date, heure_debut, heure_fin, affPopup.editId)
     if (overlap) {
-      alert('Conflit : ' + (overlap.titre || 'une affectation') + ' occupe déjà ce créneau pour cet employé.')
+      setAffError('Conflit : ' + (overlap.titre || 'une affectation') + ' occupe déjà ce créneau pour cet employé.')
       return
     }
 
@@ -300,19 +333,19 @@ export default function DashEquipe({ userId, demandes }: Props) {
       closePopup()
       await reloadAffectations()
     } catch (e: unknown) {
-      alert('Erreur: ' + (e instanceof Error ? e.message : e))
+      setAffError('Enregistrement impossible : ' + (e instanceof Error ? e.message : 'réessayez.'))
     }
   }
 
   const removeAffectation = async () => {
     if (!affPopup.editId) return
-    if (!confirm('Supprimer cette affectation ?')) return
+    if (!affConfirmDelete) { setAffConfirmDelete(true); return }
     try {
       await deleteAffectation(supabase, affPopup.editId)
       closePopup()
       await reloadAffectations()
     } catch (e: unknown) {
-      alert('Erreur: ' + (e instanceof Error ? e.message : e))
+      setAffError('Suppression impossible : ' + (e instanceof Error ? e.message : 'réessayez.'))
     }
   }
 
@@ -337,7 +370,7 @@ export default function DashEquipe({ userId, demandes }: Props) {
   return (
     <div className="grid grid-cols-[280px_1fr] gap-6 max-[900px]:grid-cols-1">
       {/* ===== SIDEBAR ===== */}
-      <div className="bg-white rounded-[var(--radius)] border border-[var(--gray-200)] p-5 h-fit max-[900px]:order-1">
+      <div className="bg-white rounded-[var(--radius)] border border-[var(--gray-200)] p-5 h-fit max-[900px]:order-2">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <span className="font-sora text-base font-bold">Mon équipe</span>
@@ -379,10 +412,11 @@ export default function DashEquipe({ userId, demandes }: Props) {
                 </div>
                 {emp.poste && <div className="text-[11px] text-[var(--gray-500)]">{emp.poste}</div>}
               </div>
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity max-[900px]:opacity-100">
                 <button
                   onClick={(e) => { e.stopPropagation(); openEditForm(emp) }}
-                  className="bg-transparent border-none cursor-pointer p-1 rounded-md text-[var(--gray-500)] transition-all hover:bg-[var(--gray-200)] hover:text-[var(--dark)]"
+                  aria-label={`Modifier ${emp.prenom}`}
+                  className="bg-transparent border-none cursor-pointer p-1 max-[900px]:p-2.5 rounded-md text-[var(--gray-500)] transition-all hover:bg-[var(--gray-200)] hover:text-[var(--dark)]"
                   title="Modifier"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -391,8 +425,9 @@ export default function DashEquipe({ userId, demandes }: Props) {
                   </svg>
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); removeEmployee(emp.id) }}
-                  className="bg-transparent border-none cursor-pointer p-1 rounded-md text-[var(--gray-500)] transition-all hover:bg-[rgba(211,47,47,0.08)] hover:text-[var(--red)]"
+                  onClick={(e) => { e.stopPropagation(); setEmpToDelete(emp) }}
+                  aria-label={`Supprimer ${emp.prenom}`}
+                  className="bg-transparent border-none cursor-pointer p-1 max-[900px]:p-2.5 rounded-md text-[var(--gray-500)] transition-all hover:bg-[rgba(211,47,47,0.08)] hover:text-[var(--red)]"
                   title="Supprimer"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -413,35 +448,35 @@ export default function DashEquipe({ userId, demandes }: Props) {
               placeholder="Prénom *"
               value={formData.prenom}
               onChange={e => setFormData(f => ({ ...f, prenom: e.target.value }))}
-              className="w-full px-3 py-2 border border-[var(--gray-200)] rounded-lg text-[13px] mb-2 bg-white focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
+              className="w-full px-3 py-2 border border-[var(--gray-200)] rounded-lg text-[13px] max-[600px]:text-base mb-2 bg-white focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
             />
             <input
               type="text"
               placeholder="Nom"
               value={formData.nom}
               onChange={e => setFormData(f => ({ ...f, nom: e.target.value }))}
-              className="w-full px-3 py-2 border border-[var(--gray-200)] rounded-lg text-[13px] mb-2 bg-white focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
+              className="w-full px-3 py-2 border border-[var(--gray-200)] rounded-lg text-[13px] max-[600px]:text-base mb-2 bg-white focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
             />
             <input
               type="text"
               placeholder="Poste (ex: Apprenti, Chef)"
               value={formData.poste}
               onChange={e => setFormData(f => ({ ...f, poste: e.target.value }))}
-              className="w-full px-3 py-2 border border-[var(--gray-200)] rounded-lg text-[13px] mb-2 bg-white focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
+              className="w-full px-3 py-2 border border-[var(--gray-200)] rounded-lg text-[13px] max-[600px]:text-base mb-2 bg-white focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
             />
             <input
               type="tel"
               placeholder="Téléphone"
               value={formData.telephone}
               onChange={e => setFormData(f => ({ ...f, telephone: e.target.value }))}
-              className="w-full px-3 py-2 border border-[var(--gray-200)] rounded-lg text-[13px] mb-2 bg-white focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
+              className="w-full px-3 py-2 border border-[var(--gray-200)] rounded-lg text-[13px] max-[600px]:text-base mb-2 bg-white focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
             />
             <input
               type="email"
               placeholder="Email"
               value={formData.email}
               onChange={e => setFormData(f => ({ ...f, email: e.target.value }))}
-              className="w-full px-3 py-2 border border-[var(--gray-200)] rounded-lg text-[13px] mb-2 bg-white focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
+              className="w-full px-3 py-2 border border-[var(--gray-200)] rounded-lg text-[13px] max-[600px]:text-base mb-2 bg-white focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
             />
             {/* Color picker */}
             <div className="flex gap-1.5 mb-3 flex-wrap">
@@ -458,9 +493,10 @@ export default function DashEquipe({ userId, demandes }: Props) {
                 />
               ))}
             </div>
+            {empError && <p role="alert" className="text-[13px] text-[var(--red)] font-semibold mb-2">{empError}</p>}
             <div className="flex gap-2 justify-end">
               <button
-                onClick={() => { setShowForm(false); setEditingEmpId(null) }}
+                onClick={() => { setShowForm(false); setEditingEmpId(null); setEmpError('') }}
                 className="px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer border-none bg-[var(--gray-200)] text-[var(--gray-700)] transition-all"
               >
                 Annuler
@@ -477,30 +513,33 @@ export default function DashEquipe({ userId, demandes }: Props) {
       </div>
 
       {/* ===== TIMELINE ===== */}
-      <div className="bg-white rounded-[var(--radius)] border border-[var(--gray-200)] overflow-hidden max-[900px]:order-2">
+      <div className="bg-white rounded-[var(--radius)] border border-[var(--gray-200)] overflow-hidden max-[900px]:order-1">
         {/* Timeline header */}
         <div className="px-5 py-4 flex justify-between items-center border-b border-[var(--gray-100)] max-[600px]:flex-col max-[600px]:gap-3">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 max-[600px]:w-full max-[600px]:justify-between">
             <button
               onClick={() => navigateDate(-1)}
+              aria-label={view === 'day' ? 'Jour précédent' : 'Semaine précédente'}
               className="w-8 h-8 rounded-lg border border-[var(--gray-200)] bg-white cursor-pointer flex items-center justify-center transition-all hover:bg-[var(--gray-100)]"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
             </button>
-            <span className="font-sora text-sm font-bold min-w-[200px] text-center">{getDateLabel(currentDate, view)}</span>
+            <span className="font-sora text-sm font-bold min-w-[200px] text-center max-[600px]:min-w-0 max-[600px]:flex-1 max-[600px]:truncate">{getDateLabel(currentDate, view)}</span>
             <button
               onClick={() => navigateDate(1)}
+              aria-label={view === 'day' ? 'Jour suivant' : 'Semaine suivante'}
               className="w-8 h-8 rounded-lg border border-[var(--gray-200)] bg-white cursor-pointer flex items-center justify-center transition-all hover:bg-[var(--gray-100)]"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
             </button>
-            <button
-              onClick={goToday}
-              className="px-3.5 py-1.5 rounded-full border border-[var(--gray-200)] bg-white text-xs font-semibold cursor-pointer transition-all hover:bg-[var(--gray-100)]"
-            >
-              Aujourd&apos;hui
-            </button>
           </div>
+          <div className="flex items-center gap-2">
+          <button
+            onClick={goToday}
+            className="px-3.5 py-1.5 rounded-full border border-[var(--gray-200)] bg-white text-xs font-semibold cursor-pointer transition-all hover:bg-[var(--gray-100)] max-[600px]:py-2"
+          >
+            Aujourd&apos;hui
+          </button>
           <div className="flex gap-0.5 bg-[var(--gray-200)] p-[3px] rounded-lg">
             <button
               onClick={() => switchView('day')}
@@ -519,10 +558,25 @@ export default function DashEquipe({ userId, demandes }: Props) {
               Semaine
             </button>
           </div>
+          </div>
         </div>
 
+        {/* Mobile : liste des affectations, plus lisible qu'une frise horaire */}
+        {employees.length > 0 && (
+          <div className="hidden max-[600px]:block">
+            <MobileList
+              employees={employees}
+              affectations={affectations}
+              dates={view === 'day' ? [todayStr] : weekDates(currentDate)}
+              todayStr={formatDateISO(new Date())}
+              onAdd={(date) => openNewAffect(employees[0].id, date, 8)}
+              onClickBlock={openEditAffect}
+            />
+          </div>
+        )}
+
         {/* Timeline body */}
-        <div className="overflow-x-auto">
+        <div className={`overflow-x-auto ${employees.length > 0 ? 'max-[600px]:hidden' : ''}`}>
           {employees.length === 0 ? (
             <div className="text-center py-15 px-5 text-[var(--gray-500)]">
               <svg className="w-12 h-12 text-[var(--gray-300)] mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -556,10 +610,10 @@ export default function DashEquipe({ userId, demandes }: Props) {
       {/* ===== AFFECTATION POPUP ===== */}
       {affPopup.open && (
         <div
-          className="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center"
+          className="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center max-[600px]:items-end"
           onMouseDown={e => { if (e.target === e.currentTarget) closePopup() }}
         >
-          <div className="bg-white rounded-2xl p-7 w-[440px] max-w-[90vw] max-h-[85vh] overflow-y-auto shadow-[0_20px_60px_rgba(0,0,0,0.15)] max-[600px]:p-5 max-[600px]:w-[95vw]">
+          <div role="dialog" aria-modal="true" aria-label={affPopup.editId ? "Modifier l'affectation" : 'Nouvelle affectation'} className="dialog-sheet bg-white rounded-2xl p-7 w-[440px] max-w-[90vw] max-h-[85vh] overflow-y-auto shadow-[0_20px_60px_rgba(0,0,0,0.15)] max-[600px]:p-5 max-[600px]:w-full max-[600px]:max-w-none max-[600px]:rounded-b-none max-[600px]:max-h-[92dvh] max-[600px]:pb-[calc(20px+env(safe-area-inset-bottom))]">
             <div className="font-sora text-lg font-bold mb-5 flex items-center gap-2.5">
               <svg className="w-5 h-5 text-[var(--orange)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -576,14 +630,14 @@ export default function DashEquipe({ userId, demandes }: Props) {
               placeholder="Ex: Rénovation salle de bain"
               value={affPopup.data.titre}
               onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, titre: e.target.value } }))}
-              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 font-[DM_Sans,sans-serif] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 font-[DM_Sans,sans-serif] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
             />
 
             <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Employé *</label>
             <select
               value={affPopup.data.employe_id}
               onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, employe_id: e.target.value } }))}
-              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 font-[DM_Sans,sans-serif] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 font-[DM_Sans,sans-serif] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
             >
               <option value="">Sélectionner un employé</option>
               {employees.map(emp => (
@@ -598,7 +652,7 @@ export default function DashEquipe({ userId, demandes }: Props) {
                   type="date"
                   value={affPopup.data.date}
                   onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, date: e.target.value } }))}
-                  className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 font-[DM_Sans,sans-serif] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
+                  className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 font-[DM_Sans,sans-serif] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -608,7 +662,7 @@ export default function DashEquipe({ userId, demandes }: Props) {
                     type="time"
                     value={affPopup.data.heure_debut}
                     onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, heure_debut: e.target.value } }))}
-                    className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 font-[DM_Sans,sans-serif] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
+                    className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 font-[DM_Sans,sans-serif] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
                   />
                 </div>
                 <div>
@@ -617,7 +671,7 @@ export default function DashEquipe({ userId, demandes }: Props) {
                     type="time"
                     value={affPopup.data.heure_fin}
                     onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, heure_fin: e.target.value } }))}
-                    className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 font-[DM_Sans,sans-serif] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
+                    className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 font-[DM_Sans,sans-serif] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
                   />
                 </div>
               </div>
@@ -629,7 +683,7 @@ export default function DashEquipe({ userId, demandes }: Props) {
               placeholder="Rue, ville (optionnel)"
               value={affPopup.data.adresse}
               onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, adresse: e.target.value } }))}
-              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 font-[DM_Sans,sans-serif] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 font-[DM_Sans,sans-serif] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
             />
 
             <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Notes</label>
@@ -637,14 +691,14 @@ export default function DashEquipe({ userId, demandes }: Props) {
               placeholder="Instructions, matériel nécessaire..."
               value={affPopup.data.notes}
               onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, notes: e.target.value } }))}
-              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 font-[DM_Sans,sans-serif] resize-y min-h-[60px] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 font-[DM_Sans,sans-serif] resize-y min-h-[60px] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
             />
 
             <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Lier à une demande</label>
             <select
               value={affPopup.data.demande_id}
               onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, demande_id: e.target.value } }))}
-              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 font-[DM_Sans,sans-serif] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 font-[DM_Sans,sans-serif] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]"
             >
               <option value="">Aucune demande liée</option>
               {activeDemandes.map(d => (
@@ -654,13 +708,21 @@ export default function DashEquipe({ userId, demandes }: Props) {
               ))}
             </select>
 
-            <div className="flex justify-between mt-2">
+            {affPopup.editId && onFacturer && (
+              <button type="button" onClick={facturerAff}
+                className="w-full flex items-center justify-center gap-2 h-12 mb-3 rounded-full bg-[var(--dark)] text-white font-bold text-[14px] border-none cursor-pointer hover:bg-[var(--dark-mid)]">
+                <svg aria-hidden="true" className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><path d="M9 8h6M9 12h6"/></svg>
+                Facturer cette intervention
+              </button>
+            )}
+            {affError && <p role="alert" className="text-[13px] text-[var(--red)] font-semibold mb-2">{affError}</p>}
+            <div className="flex justify-between gap-2 mt-2">
               {affPopup.editId ? (
                 <button
                   onClick={removeAffectation}
                   className="bg-transparent border-none text-[var(--red)] py-2.5 px-0 font-bold text-[13px] cursor-pointer font-sora hover:underline"
                 >
-                  Supprimer
+                  {affConfirmDelete ? 'Confirmer ?' : 'Supprimer'}
                 </button>
               ) : (
                 <div />
@@ -683,6 +745,102 @@ export default function DashEquipe({ userId, demandes }: Props) {
           </div>
         </div>
       )}
+
+      {empToDelete && (
+        <Dialog onClose={() => setEmpToDelete(null)} labelledBy="emp-suppr-titre" variant="sheet" className="max-w-[420px] p-6">
+          <h3 id="emp-suppr-titre" className="font-sora font-bold text-lg mb-2">Supprimer {empToDelete.prenom} ?</h3>
+          <p className="text-[15px] text-[var(--gray-500)] mb-6">Ses affectations à venir seront aussi supprimées.</p>
+          <div className="flex flex-col-reverse gap-2 min-[600px]:flex-row min-[600px]:justify-end">
+            <button onClick={() => setEmpToDelete(null)} className="h-12 px-5 rounded-full text-[15px] font-semibold bg-[var(--gray-100)] text-[var(--dark)] border-none cursor-pointer">Annuler</button>
+            <button onClick={() => removeEmployee(empToDelete.id)} className="h-12 px-5 rounded-full text-[15px] font-bold bg-[var(--red)] text-white border-none cursor-pointer">Supprimer</button>
+          </div>
+        </Dialog>
+      )}
+    </div>
+  )
+}
+
+// ===== Mobile : liste par jour =====
+
+function weekDates(d: Date): string[] {
+  const monday = getMonday(new Date(d))
+  return Array.from({ length: 7 }, (_, i) => {
+    const x = new Date(monday)
+    x.setDate(monday.getDate() + i)
+    return formatDateISO(x)
+  })
+}
+
+function MobileList({
+  employees,
+  affectations,
+  dates,
+  todayStr,
+  onAdd,
+  onClickBlock,
+}: {
+  employees: Employe[]
+  affectations: Affectation[]
+  dates: string[]
+  todayStr: string
+  onAdd: (date: string) => void
+  onClickBlock: (aff: Affectation) => void
+}) {
+  return (
+    <div className="flex flex-col">
+      {dates.map(date => {
+        const d = new Date(date + 'T00:00:00')
+        const items = affectations
+          .filter(a => a.date_debut === date)
+          .sort((a, b) => a.heure_debut.localeCompare(b.heure_debut))
+        return (
+          <section key={date} className="px-4 py-3 border-b border-[var(--gray-100)] last:border-0" aria-label={`${JOUR_NOMS[d.getDay()]} ${d.getDate()} ${MOIS_NOMS[d.getMonth()]}`}>
+            {dates.length > 1 && (
+              <div className={`text-[13px] font-bold mb-2 ${date === todayStr ? 'text-[var(--orange)]' : 'text-[var(--gray-500)]'}`}>
+                {JOUR_NOMS[d.getDay()]} {d.getDate()} {MOIS_NOMS[d.getMonth()]}{date === todayStr ? ' · aujourd’hui' : ''}
+              </div>
+            )}
+            <ul className="flex flex-col gap-2">
+              {items.map(a => {
+                const emp = employees.find(e => e.id === a.employe_id)
+                const color = emp?.couleur || a.employes?.couleur || 'var(--gray-500)'
+                return (
+                  <li key={a.id}>
+                    <button
+                      type="button"
+                      onClick={() => onClickBlock(a)}
+                      className="w-full flex items-stretch gap-3 p-3 rounded-2xl bg-[var(--gray-50)] border-none text-left cursor-pointer"
+                    >
+                      <span aria-hidden="true" className="w-1 rounded-full shrink-0" style={{ background: color }} />
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-[13px] font-semibold text-[var(--gray-500)]">{a.heure_debut.substring(0, 5)} – {a.heure_fin.substring(0, 5)}</span>
+                        <span className="block font-semibold text-[15px] text-[var(--dark)] truncate">{a.titre}</span>
+                        {a.adresse && <span className="block text-[13px] text-[var(--gray-500)] truncate">{a.adresse}</span>}
+                      </span>
+                      <span className="self-center flex items-center gap-1.5 shrink-0 text-[13px] font-semibold text-[var(--dark)]">
+                        <span className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold" style={{ background: color }}>
+                          {emp ? getInitials(emp.prenom, emp.nom) : '?'}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+              {items.length === 0 && dates.length === 1 && (
+                <li className="text-center text-[14px] text-[var(--gray-500)] py-4">Aucune affectation ce jour-là.</li>
+              )}
+            </ul>
+            <button
+              type="button"
+              onClick={() => onAdd(date)}
+              className={`flex items-center gap-1.5 text-[14px] font-semibold text-[var(--orange)] bg-transparent border-none cursor-pointer p-0 ${items.length > 0 || dates.length === 1 ? 'mt-3' : ''}`}
+            >
+              <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
+              Affecter quelqu’un
+            </button>
+          </section>
+        )
+      })}
     </div>
   )
 }

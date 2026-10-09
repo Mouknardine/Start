@@ -10,31 +10,11 @@ import { loadClientDemandes, loadClientAvis, deleteClientDemande, loadMessages, 
 import type { Demande, Avis, Message } from '@/lib/supabase/helpers'
 import { useRealtimeMessages, useRealtimeIncomingMessages } from '@/lib/hooks/useRealtimeMessages'
 import { useRealtimeClientDemandes } from '@/lib/hooks/useRealtimeDemandes'
+import { couleurStatut, ilYA, libelleStatut, libelleType } from '@/lib/demandes'
+import Dialog from '@/components/ui/Dialog'
+import RequestProgress from '@/components/demandes/RequestProgress'
 
-function timeAgo(dateStr: string): string {
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
-  if (diff < 60) return "À l'instant"
-  if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`
-  if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)}h`
-  if (diff < 172800) return 'Hier'
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('fr-CH', { day: 'numeric', month: 'short', year: 'numeric' })
-}
-
-function statusLabel(s: string): string {
-  const map: Record<string, string> = { nouvelle: 'En attente', confirmee: 'Confirmée', acceptee: 'Acceptée', refusee: 'Refusée', terminee: 'Terminée' }
-  return map[s] || s || 'En attente'
-}
-
-function statusColor(s: string): string {
-  const map: Record<string, string> = {
-    nouvelle: 'bg-[rgba(232,112,10,0.1)] text-[var(--orange)]',
-    confirmee: 'bg-[var(--green-light)] text-[var(--green)]', acceptee: 'bg-[var(--green-light)] text-[var(--green)]',
-    refusee: 'bg-[var(--red-light)] text-[var(--red)]',
-    terminee: 'bg-[rgba(46,125,50,0.1)] text-[#2E7D32]',
-  }
-  return map[s] || 'bg-[var(--gray-100)] text-[var(--gray-500)]'
-}
+const errMsg = (e: unknown) => (e instanceof Error && e.message ? e.message : 'réessayez dans un instant')
 
 export default function ClientPage() {
   const router = useRouter()
@@ -48,6 +28,14 @@ export default function ClientPage() {
   const [loadingDem, setLoadingDem] = useState(true)
   const [loadingAvis, setLoadingAvis] = useState(true)
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
+
+  const [erreur, setErreur] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<Demande | null>(null)
+  // Suppression du compte : fenêtre avec mot de passe (au lieu de confirm/prompt)
+  const [accountDialog, setAccountDialog] = useState(false)
+  const [accountPassword, setAccountPassword] = useState('')
+  const [accountError, setAccountError] = useState('')
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   // Detail modal
   const [selectedDemande, setSelectedDemande] = useState<Demande | null>(null)
@@ -126,6 +114,17 @@ export default function ClientPage() {
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
   }
 
+  // Lien direct depuis les emails : /client?demande=<id> ouvre la demande
+  const deepLinkDone = useRef(false)
+  useEffect(() => {
+    if (deepLinkDone.current || loadingDem) return
+    deepLinkDone.current = true
+    const id = new URLSearchParams(window.location.search).get('demande')
+    const d = id ? demandes.find((x) => x.id === id) : undefined
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (d) openDetail(d)
+  }, [loadingDem, demandes])
+
   // Realtime : nouveaux messages dans la demande ouverte
   const handleRealtimeMessage = useCallback((msg: Message) => {
     setChatMessages(prev => {
@@ -168,34 +167,37 @@ export default function ClientPage() {
       setChatMessages(msgs)
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
     } catch (e) {
-      alert('Erreur envoi: ' + (e instanceof Error ? e.message : ''))
+      setChatInput(text)
+      setErreur(`Le message n’a pas pu être envoyé : ${errMsg(e)}`)
     }
   }
 
   async function handleDeleteDemande(demandeId: string) {
-    if (!confirm('Voulez-vous vraiment supprimer cette demande ?')) return
     const supabase = createClient()
     try {
       await deleteClientDemande(supabase, demandeId, email)
       setDemandes(prev => prev.filter(d => d.id !== demandeId))
     } catch (e) {
-      alert('Erreur: ' + (e instanceof Error ? e.message : ''))
+      setErreur(`La demande n’a pas pu être supprimée : ${errMsg(e)}`)
+    } finally {
+      setDeleteTarget(null)
     }
   }
 
-  async function handleDeleteAccount() {
-    if (!confirm('Voulez-vous vraiment supprimer votre compte ? Cette action est irréversible.')) return
-    if (!confirm('Dernière confirmation : toutes vos demandes et avis seront supprimés définitivement.')) return
-    // R5 (audit 22/05/2026) : confirmation explicite par mot de passe
-    const password = prompt('Pour confirmer la suppression, entrez votre mot de passe :')
-    if (!password) return
+  // R5 (audit 22/05/2026) : confirmation explicite par mot de passe
+  async function handleDeleteAccount(e: React.FormEvent) {
+    e.preventDefault()
+    if (!accountPassword) return
+    setDeletingAccount(true)
+    setAccountError('')
     const supabase = createClient()
     try {
-      await deleteClientAccount(supabase, email, password)
+      await deleteClientAccount(supabase, email, accountPassword)
       localStorage.removeItem('artisano-client')
       router.push('/connexion')
-    } catch (e) {
-      alert('Erreur: ' + (e instanceof Error ? e.message : ''))
+    } catch (err) {
+      setAccountError(`Suppression impossible : ${errMsg(err)}`)
+      setDeletingAccount(false)
     }
   }
 
@@ -231,10 +233,19 @@ export default function ClientPage() {
         </h1>
         <p className="text-[15px] text-[var(--gray-500)] mb-6 max-[600px]:text-sm">Retrouvez vos demandes et avis</p>
 
+        {erreur && (
+          <div role="alert" className="mb-4 flex items-start gap-3 bg-[var(--red-light)] text-[var(--red)] rounded-[var(--radius-sm)] p-3.5 text-sm font-semibold">
+            <span className="flex-1">{erreur}</span>
+            <button onClick={() => setErreur('')} aria-label="Fermer le message d’erreur" className="shrink-0 bg-transparent border-none cursor-pointer text-[var(--red)] p-0.5">
+              <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+            </button>
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="flex gap-2 mb-6 max-[600px]:mb-4">
           {(['demandes', 'avis', 'compte'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} className={`py-2.5 px-5 rounded-full text-sm font-semibold transition-all max-[600px]:py-2 max-[600px]:px-4 max-[600px]:text-[13px] ${
+            <button key={t} onClick={() => setTab(t)} aria-pressed={tab === t} className={`py-2.5 px-5 rounded-full text-sm font-semibold transition-all max-[600px]:py-2 max-[600px]:px-4 max-[600px]:text-[13px] ${
               tab === t ? 'bg-[var(--dark)] text-white' : 'bg-[var(--gray-100)] text-[var(--gray-500)] hover:bg-[var(--gray-200)]'
             }`}>
               {t === 'demandes' ? 'Mes demandes' : t === 'avis' ? 'Mes avis' : 'Mon compte'}
@@ -261,7 +272,7 @@ export default function ClientPage() {
               <div className="text-center py-12 text-[var(--gray-500)]">Chargement...</div>
             ) : demandes.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-4xl mb-4">📭</div>
+                <svg aria-hidden="true" className="w-11 h-11 mx-auto mb-4 text-[var(--gray-300)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" /></svg>
                 <div className="font-sora font-bold text-lg mb-2">Aucune demande</div>
                 <div className="text-sm text-[var(--gray-500)] mb-6">Vous n&apos;avez pas encore envoyé de demande.</div>
                 <Link href="/recherche" className="inline-flex bg-[var(--orange)] text-white py-3 px-6 rounded-full font-sora font-bold text-sm hover:bg-[var(--orange-dark)] transition-all">Trouver un artisan</Link>
@@ -285,19 +296,21 @@ export default function ClientPage() {
                           {d.artisans?.metier && <span className="text-xs text-[var(--gray-500)]">{d.artisans.metier}</span>}
                         </div>
                       </div>
-                      <span className={`inline-block py-1 px-2.5 rounded-full text-[11px] font-bold ${statusColor(d.statut)}`}>{statusLabel(d.statut)}</span>
+                      <span className={`inline-block py-1 px-2.5 rounded-full text-[11px] font-bold ${couleurStatut(d.statut)}`}>{libelleStatut(d.statut, 'client')}</span>
                     </div>
+                    {/* Suivi en étapes (modèle « Track Order » de Fiverr, via Mobbin) */}
+                    <RequestProgress statut={d.statut} className="mb-4 max-w-[340px]" />
                     {/* Message preview */}
                     <div className="text-sm text-[var(--gray-700)] mb-3 leading-relaxed">{(d.message || '(pas de message)').substring(0, 120)}{(d.message?.length || 0) > 120 ? '...' : ''}</div>
                     {/* Meta */}
                     <div className="flex gap-4 text-xs text-[var(--gray-500)] mb-3 flex-wrap">
                       <span className="flex items-center gap-1">
                         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                        {timeAgo(d.created_at)}
+                        {ilYA(d.created_at)}
                       </span>
                       <span className="flex items-center gap-1">
                         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        {d.type === 'devis' ? 'Demande de devis' : d.type === 'message' ? 'Message' : 'Demande'}
+                        {libelleType(d.type)}
                       </span>
                       {d.date_souhaitee && (
                         <span className="flex items-center gap-1">
@@ -308,16 +321,16 @@ export default function ClientPage() {
                     </div>
                     {/* Actions */}
                     <div className="flex gap-2 items-center flex-wrap">
-                      <button onClick={() => openDetail(d)} className="text-xs font-semibold py-1.5 px-3 rounded-md bg-[var(--gray-100)] text-[var(--gray-700)] hover:bg-[var(--gray-200)] transition-colors">Voir le détail</button>
-                      {unreadCounts[d.id] && (
-                        <button onClick={() => openDetail(d)} className="text-xs font-bold py-1.5 px-3 rounded-md bg-[var(--orange)] text-white animate-pulse">
-                          {unreadCounts[d.id]} nouveau{unreadCounts[d.id] > 1 ? 'x' : ''}
+                      <button onClick={() => openDetail(d)} className="text-xs font-semibold py-2 px-3.5 rounded-md bg-[var(--gray-100)] text-[var(--gray-700)] hover:bg-[var(--gray-200)] transition-colors">Voir la conversation</button>
+                      {unreadCounts[d.id] > 0 && (
+                        <button onClick={() => openDetail(d)} className="text-xs font-bold py-2 px-3.5 rounded-md bg-[var(--orange)] text-white">
+                          {unreadCounts[d.id]} nouveau{unreadCounts[d.id] > 1 ? 'x' : ''} message{unreadCounts[d.id] > 1 ? 's' : ''}
                         </button>
                       )}
                       {d.statut === 'terminee' && (
-                        <Link href={`/avis?artisan=${d.artisan_id}`} className="text-xs font-semibold py-1.5 px-3 rounded-md bg-[rgba(232,112,10,0.1)] text-[var(--orange)] no-underline text-center hover:bg-[rgba(232,112,10,0.15)] transition-colors">Laisser un avis</Link>
+                        <Link href={`/avis?artisan=${d.artisan_id}`} className="text-xs font-semibold py-2 px-3.5 rounded-md bg-[rgba(232,112,10,0.1)] text-[var(--orange)] no-underline text-center hover:bg-[rgba(232,112,10,0.15)] transition-colors">Laisser un avis</Link>
                       )}
-                      <button onClick={() => handleDeleteDemande(d.id)} className="text-xs font-semibold py-1.5 px-3 rounded-md bg-[var(--red-light)] text-[var(--red)] hover:bg-[rgba(211,47,47,0.12)] transition-colors">Supprimer</button>
+                      <button onClick={() => setDeleteTarget(d)} className="text-xs font-semibold py-2 px-3.5 rounded-md bg-transparent text-[var(--gray-500)] hover:text-[var(--red)] transition-colors ml-auto">Supprimer</button>
                     </div>
                   </div>
                 ))}
@@ -333,7 +346,7 @@ export default function ClientPage() {
               <div className="text-center py-12 text-[var(--gray-500)]">Chargement...</div>
             ) : avisList.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-4xl mb-4">⭐</div>
+                <svg aria-hidden="true" className="w-11 h-11 mx-auto mb-4 text-[var(--gray-300)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
                 <div className="font-sora font-bold text-lg mb-2">Aucun avis</div>
                 <div className="text-sm text-[var(--gray-500)]">Vous n&apos;avez pas encore laissé d&apos;avis. Après une intervention, pensez à noter votre artisan !</div>
               </div>
@@ -349,7 +362,7 @@ export default function ClientPage() {
                         <span className="text-[var(--yellow)] text-base">{'★'.repeat(a.note)}{'☆'.repeat(5 - a.note)}</span>
                       </div>
                       {a.commentaire && <div className="text-sm text-[var(--gray-700)] mb-2 leading-relaxed">{a.commentaire}</div>}
-                      <div className="text-xs text-[var(--gray-500)]">{timeAgo(a.created_at)}</div>
+                      <div className="text-xs text-[var(--gray-500)]">{ilYA(a.created_at)}</div>
                     </div>
                   )
                 })}
@@ -393,7 +406,7 @@ export default function ClientPage() {
             <div className="bg-white rounded-[var(--radius)] border border-[var(--red-light)] p-6 max-[600px]:p-4">
               <h3 className="font-sora font-bold text-base mb-2 text-[var(--red)]">Zone de danger</h3>
               <p className="text-sm text-[var(--gray-500)] mb-4">La suppression du compte est irréversible. Toutes vos demandes et avis seront supprimés.</p>
-              <button onClick={handleDeleteAccount} className="text-sm font-semibold py-2.5 px-5 rounded-full border-2 border-[var(--red)] text-[var(--red)] transition-all hover:bg-[var(--red)] hover:text-white">
+              <button onClick={() => { setAccountDialog(true); setAccountPassword(''); setAccountError('') }} className="text-sm font-semibold py-2.5 px-5 rounded-full border-2 border-[var(--red)] text-[var(--red)] transition-all hover:bg-[var(--red)] hover:text-white">
                 Supprimer mon compte
               </button>
             </div>
@@ -403,22 +416,22 @@ export default function ClientPage() {
 
       {/* Detail Modal */}
       {selectedDemande && (
-        <div className="fixed inset-0 z-[200] bg-black/50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setSelectedDemande(null) }}>
-          <div className="bg-white rounded-[var(--radius)] w-full max-w-[560px] max-h-[85vh] flex flex-col overflow-hidden max-[600px]:max-h-[92vh] max-[600px]:m-2">
+        <Dialog onClose={() => setSelectedDemande(null)} labelledBy="client-demande-titre" className="max-w-[560px] max-h-[85vh] flex flex-col overflow-hidden max-[600px]:max-h-[92vh] max-[600px]:m-2">
             {/* Modal header */}
             <div className="p-6 border-b border-[var(--gray-200)] shrink-0 max-[600px]:p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-sora font-bold text-lg">{artisanNameFor(selectedDemande)}</h3>
-                <button onClick={() => setSelectedDemande(null)} className="w-8 h-8 rounded-lg bg-[var(--gray-100)] flex items-center justify-center text-[var(--gray-500)] hover:bg-[var(--gray-200)] transition-colors">
+                <h3 id="client-demande-titre" className="font-sora font-bold text-lg">{artisanNameFor(selectedDemande)}</h3>
+                <button onClick={() => setSelectedDemande(null)} aria-label="Fermer" className="w-8 h-8 rounded-lg bg-[var(--gray-100)] flex items-center justify-center text-[var(--gray-500)] hover:bg-[var(--gray-200)] transition-colors">
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
               </div>
               <div className="flex gap-2 flex-wrap">
-                <span className={`inline-block py-1 px-2.5 rounded-full text-[11px] font-bold ${statusColor(selectedDemande.statut)}`}>{statusLabel(selectedDemande.statut)}</span>
+                <span className={`inline-block py-1 px-2.5 rounded-full text-[11px] font-bold ${couleurStatut(selectedDemande.statut)}`}>{libelleStatut(selectedDemande.statut, 'client')}</span>
                 <span className="inline-block py-1 px-2.5 rounded-full text-[11px] font-bold bg-[var(--gray-100)] text-[var(--gray-500)]">
-                  {selectedDemande.type === 'devis' ? 'Demande de devis' : selectedDemande.type === 'message' ? 'Message' : 'Demande'}
+                  {libelleType(selectedDemande.type)}
                 </span>
               </div>
+              <RequestProgress statut={selectedDemande.statut} className="mt-4 max-w-[340px]" />
             </div>
 
             {/* Modal body */}
@@ -430,7 +443,20 @@ export default function ClientPage() {
                   {selectedDemande.moment_journee && <div>Moment : {selectedDemande.moment_journee}</div>}
                 </div>
               )}
-              <div className="text-xs text-[var(--gray-500)] mb-4">Envoyée {timeAgo(selectedDemande.created_at)}</div>
+              <div className="text-xs text-[var(--gray-500)] mb-4">Envoyée {ilYA(selectedDemande.created_at).toLowerCase()}</div>
+
+              {selectedDemande.statut === 'refusee' && (
+                <div className="mb-4 rounded-[var(--radius-sm)] bg-[var(--red-light)] p-4 text-sm">
+                  <div className="font-semibold text-[var(--red)] mb-1">L’artisan a décliné cette demande</div>
+                  <p className="text-[var(--gray-700)] mb-3">Le motif, s’il l’a indiqué, figure dans les messages ci-dessous.</p>
+                  <Link
+                    href={`/recherche${selectedDemande.artisans?.metier ? `?metier=${encodeURIComponent(selectedDemande.artisans.metier)}` : ''}`}
+                    className="inline-block text-[13px] font-semibold py-2 px-4 rounded-full bg-[var(--dark)] text-white no-underline hover:bg-[var(--orange)] transition-colors"
+                  >
+                    Trouver un autre {selectedDemande.artisans?.metier?.toLowerCase() || 'artisan'}
+                  </Link>
+                </div>
+              )}
 
               {/* Message */}
               <div className="bg-[var(--gray-100)] p-4 rounded-[var(--radius-sm)] mb-6 text-sm leading-relaxed">
@@ -456,7 +482,7 @@ export default function ClientPage() {
                           {m.sender_type === 'artisan' && selectedDemande.artisans && (
                             <div className="text-xs font-bold text-[var(--orange)] mb-1">{artisanNameFor(selectedDemande)}</div>
                           )}
-                          {m.content}
+                          <span className="whitespace-pre-line">{m.content}</span>
                           <div className={`text-[10px] mt-1.5 ${m.sender_type === 'client' ? 'text-white/60' : 'text-[var(--gray-500)]'}`}>{timeStr}</div>
                         </div>
                       )
@@ -471,25 +497,78 @@ export default function ClientPage() {
                 <input
                   type="text"
                   placeholder="Écrire un message..."
+                  aria-label="Votre message à l’artisan"
                   value={chatInput}
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleSendMessage() }}
                   className="flex-1 py-2.5 px-3.5 border-2 border-[var(--gray-200)] rounded-[var(--radius-sm)] text-sm outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.1)]"
                 />
-                <button onClick={handleSendMessage} className="bg-[var(--orange)] text-white py-2.5 px-4 rounded-[var(--radius-sm)] font-semibold text-sm transition-all hover:bg-[var(--orange-dark)]">
+                <button onClick={handleSendMessage} aria-label="Envoyer le message" className="bg-[var(--orange)] text-white py-2.5 px-4 rounded-[var(--radius-sm)] font-semibold text-sm transition-all hover:bg-[var(--orange-dark)]">
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 </button>
               </div>
             </div>
 
             {/* Modal footer */}
-            <div className="p-4 border-t border-[var(--gray-200)] shrink-0">
-              <button onClick={() => setSelectedDemande(null)} className="w-full py-2.5 rounded-full text-sm font-semibold text-[var(--gray-500)] bg-[var(--gray-100)] hover:bg-[var(--gray-200)] transition-colors">
+            <div className="p-4 border-t border-[var(--gray-200)] shrink-0 flex gap-2">
+              {selectedDemande.statut === 'terminee' && (
+                <Link href={`/avis?artisan=${selectedDemande.artisan_id}`} className="flex-1 text-center py-2.5 rounded-full text-sm font-semibold bg-[var(--orange)] text-white no-underline hover:bg-[var(--orange-dark)] transition-colors">
+                  Laisser un avis
+                </Link>
+              )}
+              <button onClick={() => setSelectedDemande(null)} className="flex-1 py-2.5 rounded-full text-sm font-semibold text-[var(--gray-500)] bg-[var(--gray-100)] hover:bg-[var(--gray-200)] transition-colors">
                 Fermer
               </button>
             </div>
+        </Dialog>
+      )}
+
+      {/* Suppression d'une demande */}
+      {deleteTarget && (
+        <Dialog onClose={() => setDeleteTarget(null)} labelledBy="client-suppr-titre" className="max-w-[420px] p-6 max-[600px]:p-5">
+          <h3 id="client-suppr-titre" className="font-sora font-bold text-lg mb-1">Supprimer cette demande&nbsp;?</h3>
+          <p className="text-sm text-[var(--gray-500)] mb-5">
+            Votre demande à <strong>{artisanNameFor(deleteTarget)}</strong> et sa conversation seront supprimées. Cette action est définitive.
+          </p>
+          <div className="flex gap-3 justify-end">
+            <button onClick={() => setDeleteTarget(null)} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--gray-100)] text-[var(--gray-500)]">Annuler</button>
+            <button onClick={() => handleDeleteDemande(deleteTarget.id)} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--red)] text-white hover:brightness-110">Supprimer</button>
           </div>
-        </div>
+        </Dialog>
+      )}
+
+      {/* Suppression du compte : avertissement + mot de passe dans une seule fenêtre */}
+      {accountDialog && (
+        <Dialog onClose={() => { if (!deletingAccount) setAccountDialog(false) }} labelledBy="compte-suppr-titre" className="max-w-[440px] p-6 max-[600px]:p-5">
+          <form onSubmit={handleDeleteAccount}>
+            <h3 id="compte-suppr-titre" className="font-sora font-bold text-lg mb-1 text-[var(--red)]">Supprimer mon compte</h3>
+            <p className="text-sm text-[var(--gray-700)] mb-1">Seront supprimés définitivement :</p>
+            <ul className="text-sm text-[var(--gray-700)] mb-4 pl-5 list-disc">
+              <li>vos {demandes.length} demande{demandes.length > 1 ? 's' : ''} et leurs conversations ;</li>
+              <li>vos {avisList.length} avis ;</li>
+              <li>votre compte ({email}).</li>
+            </ul>
+            <p className="text-[13px] text-[var(--gray-500)] mb-4">
+              Pensez à <a href="/api/account/export" download className="text-[var(--orange)] font-semibold">télécharger vos données</a> avant.
+            </p>
+            <label htmlFor="compte-mdp" className="block text-sm font-semibold mb-1.5">Mot de passe, pour confirmer</label>
+            <input
+              id="compte-mdp"
+              type="password"
+              autoComplete="current-password"
+              value={accountPassword}
+              onChange={(e) => setAccountPassword(e.target.value)}
+              className="form-input mb-3"
+            />
+            {accountError && <div role="alert" className="text-sm font-semibold text-[var(--red)] mb-3">{accountError}</div>}
+            <div className="flex gap-3 justify-end mt-2">
+              <button type="button" onClick={() => setAccountDialog(false)} disabled={deletingAccount} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--gray-100)] text-[var(--gray-500)]">Annuler</button>
+              <button type="submit" disabled={!accountPassword || deletingAccount} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--red)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed">
+                {deletingAccount ? 'Suppression…' : 'Supprimer définitivement'}
+              </button>
+            </div>
+          </form>
+        </Dialog>
       )}
     </div>
   )

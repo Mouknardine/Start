@@ -186,6 +186,28 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Feuille du bas (Dialog variant="sheet") : monte du bas sur mobile */
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@layer components {
+  .dialog-sheet {
+    animation: sheetUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @media (min-width: 600px) {
+    .dialog-sheet {
+      animation: fadeIn 0.2s ease-out both;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dialog-sheet {
+      animation: none;
+    }
+  }
+}
+
 /* Card entrance animation */
 @keyframes cardIn {
   from { opacity: 0; transform: translateY(16px); }

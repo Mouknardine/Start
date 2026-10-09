@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { DM_Sans, Sora } from 'next/font/google'
 import Script from 'next/script'
 import CookieConsent from '@/components/CookieConsent'
@@ -38,10 +38,18 @@ export const metadata: Metadata = {
     apple: '/icon.svg',
   },
   other: {
-    'theme-color': '#E8700A',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'default',
   },
+}
+
+// viewport-fit=cover : les barres fixées en bas (tableau de bord) peuvent
+// réserver la zone de l'indicateur d'accueil via env(safe-area-inset-bottom).
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#E8700A',
 }
 
 export default function RootLayout({

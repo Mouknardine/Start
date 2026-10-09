@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode, type RefObject } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   loadDocuments, saveDocument, deleteDocument,
@@ -8,1017 +8,1573 @@ import {
   getNextDocNumber, loadMyBankDetails,
 } from '@/lib/supabase/helpers'
 import type { Document, Prestation, Artisan } from '@/lib/supabase/helpers'
-import { printInvoice, type InvoiceData, type InvoiceLine } from '@/lib/invoice-pdf'
+import { printInvoice, buildInvoiceHTML, type InvoiceData, type InvoiceLine } from '@/lib/invoice-pdf'
+import { qrFactureManque } from '@/lib/swiss-qr'
+import {
+  calculerTotaux, totalLigne, formatCHF, formatDateCH, todayISO, addDaysISO,
+  etatDocument, etapesDocument, estEnRetard, resumeFacturation, clientsRecents,
+  emailValide, GROUPES_DOC, CATEGORIES, UNITES, uniteCourte, categorieLigne, resumeLigne,
+  formatPrixCourt, normaliserReglages, CLE_REGLAGES, REGLAGES_DEFAUT,
+  type DevisPrefill, type Remise, type GroupeDoc, type Categorie, type ReglagesFacturation,
+} from '@/lib/facturation'
+import { loadAgendaKey, saveAgendaKey } from '@/lib/supabase/agenda'
+import Dialog from '@/components/ui/Dialog'
+import DecimalInput from '@/components/ui/DecimalInput'
+import {
+  TON_CLASSES, inputCls, INPUT, LABEL, CARD, btn, BTN_PRIMARY, BTN_SECONDARY, ICON_BTN, SUBBAR,
+  Ico, IconPlus, IconBack, IconDots, IconEye, IconTrash, IconDoc, IconInvoice, IconBook,
+  IconDownload, IconCopy, IconCheck, IconSearch, IconSettings, IconChevron, IconQr, IconSend, DocTile, Segmented, CatTile, CatIcon,
+} from './facturation/ui'
+import { type LineItem, generateLineId, lineFromRaw, lineToRaw, nouvelleLigne } from './facturation/lignes'
+import LigneSheet from './facturation/LigneSheet'
+import ReglagesSheet from './facturation/ReglagesSheet'
+import EnvoyerSheet from './facturation/EnvoyerSheet'
+import DocumentPreview from './facturation/DocumentPreview'
 
 // ===== Types =====
 
-type LineItem = {
-  id: string
-  description: string
-  quantite: number
-  unite: string
-  prix_unitaire: number
-  total: number
+type EditorForm = {
+  client_nom: string
+  client_email: string
+  client_telephone: string
+  client_adresse: string
+  notes: string
+  date_emission: string
+  date_echeance: string
+  taux_tva: number
+  remise_type: Remise
+  remise_valeur: number
+  lignes: LineItem[]
 }
+
+type BankDetails = { bank_iban: string; bank_bic: string; bank_titulaire: string; bank_adresse: string }
 
 type Toast = { type: 'success' | 'error'; msg: string } | null
 
-type Props = { userId: string; profile: Artisan | null }
+type Filtre = 'tout' | 'devis' | 'facture' | 'a_encaisser'
+
+type Props = {
+  userId: string
+  profile: Artisan | null
+  /** Devis à créer depuis une demande (onglet Demandes → « Faire un devis ») */
+  prefill?: DevisPrefill | null
+  onPrefillConsumed?: () => void
+  /** Éditeur ou catalogue ouvert : le tableau de bord masque sa navigation */
+  onImmersiveChange?: (on: boolean) => void
+}
+
+// ===== Constantes =====
+
+// Taux suisses en vigueur depuis 2024 ; un ancien document à 7.7 % garde son taux.
+const TVA_RATES = [
+  { value: 0, label: 'Sans TVA' },
+  { value: 2.6, label: '2.6 %' },
+  { value: 8.1, label: '8.1 %' },
+]
 
 // ===== Helpers =====
 
-function formatCHF(n: number): string {
-  const fixed = Math.abs(n).toFixed(2)
-  const [int, dec] = fixed.split('.')
-  const formatted = int.replace(/\B(?=(\d{3})+(?!\d))/g, "'")
-  return `${n < 0 ? '-' : ''}${formatted}.${dec} CHF`
-}
-
-function formatDate(dateStr: string): string {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`
-}
-
-function statusLabel(s: string): string {
-  const map: Record<string, string> = {
-    brouillon: 'Brouillon', envoye: 'Envoyé', envoyee: 'Envoyée',
-    accepte: 'Accepté', refuse: 'Refusé', payee: 'Payée',
-    en_retard: 'En retard', converti: 'Converti',
+function formFromDoc(doc: Document): EditorForm {
+  return {
+    client_nom: doc.client_nom || '',
+    client_email: doc.client_email || '',
+    client_telephone: doc.client_telephone || '',
+    client_adresse: doc.client_adresse || '',
+    notes: doc.notes || '',
+    date_emission: doc.date_emission || todayISO(),
+    date_echeance: doc.date_echeance || '',
+    taux_tva: doc.taux_tva ?? 8.1,
+    remise_type: (doc.remise_type as Remise) || 'aucune',
+    remise_valeur: doc.remise_valeur || 0,
+    lignes: (Array.isArray(doc.lignes) ? doc.lignes : []).map(lineFromRaw),
   }
-  return map[s] || s || 'Brouillon'
 }
 
-function statusStyle(s: string): string {
-  const map: Record<string, string> = {
-    brouillon: 'bg-[var(--gray-100)] text-[var(--gray-500)]',
-    envoye: 'bg-[var(--blue-light)] text-[var(--blue)]',
-    envoyee: 'bg-[var(--blue-light)] text-[var(--blue)]',
-    accepte: 'bg-[var(--green-light)] text-[var(--green)]',
-    payee: 'bg-[rgba(46,125,50,0.15)] text-[#1B5E20]',
-    refuse: 'bg-[var(--red-light)] text-[var(--red)]',
-    en_retard: 'bg-[rgba(211,47,47,0.12)] text-[var(--red)]',
-    converti: 'bg-[rgba(232,112,10,0.1)] text-[var(--orange)]',
+function errMsg(e: unknown): string {
+  if (e && typeof e === 'object' && 'message' in e) return String((e as { message: unknown }).message)
+  return ''
+}
+
+function toInvoiceLine(l: LineItem): InvoiceLine {
+  return {
+    description: l.description, quantite: l.quantite, unite: l.unite, prix_unitaire: l.prix_unitaire,
+    total: totalLigne(l.quantite, l.prix_unitaire), categorie: l.categorie, heures: l.heures, personnes: l.personnes,
   }
-  return map[s] || 'bg-[var(--gray-100)] text-[var(--gray-500)]'
 }
 
-const UNITES = [
-  { value: 'heure', label: 'heure' },
-  { value: 'forfait', label: 'forfait' },
-  { value: 'm2', label: 'm²' },
-  { value: 'ml', label: 'ml' },
-  { value: 'unite', label: 'unité' },
-  { value: 'lot', label: 'lot' },
-]
-
-const TVA_RATES = [
-  { value: 0, label: '0%' },
-  { value: 7.7, label: '7.7%' },
-  { value: 8.1, label: '8.1%' },
-]
-
-function generateLineId(): string {
-  return 'l_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)
+function initiales(nom: string): string {
+  return nom.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]!.toUpperCase()).join('') || '?'
 }
 
-function todayISO(): string {
-  return new Date().toISOString().split('T')[0]
+// ===== URL : ?tab=facturation&doc=<id> ou &catalogue=1 =====
+// Chaque sous-écran ajoute une entrée d'historique : le bouton « retour »
+// du téléphone ramène à la liste au lieu de quitter le tableau de bord.
+
+function viewUrl(param: 'doc' | 'catalogue' | null, value = ''): string {
+  const url = new URL(window.location.href)
+  url.searchParams.set('tab', 'facturation')
+  url.searchParams.delete('doc')
+  url.searchParams.delete('catalogue')
+  if (param) url.searchParams.set(param, value)
+  return url.pathname + url.search
 }
 
-// ===== Component =====
+function enterView(pushedRef: RefObject<boolean>, param: 'doc' | 'catalogue', value: string) {
+  if (pushedRef.current) {
+    window.history.replaceState(window.history.state, '', viewUrl(param, value))
+  } else {
+    window.history.pushState(window.history.state, '', viewUrl(param, value))
+    pushedRef.current = true
+  }
+}
 
-export default function DashFacturation({ userId, profile }: Props) {
+// ===== Composant =====
+
+export default function DashFacturation({ userId, profile, prefill, onPrefillConsumed, onImmersiveChange }: Props) {
   const [viewMode, setViewMode] = useState<'list' | 'editor' | 'catalogue'>('list')
   const [documents, setDocuments] = useState<Document[]>([])
   const [prestations, setPrestations] = useState<Prestation[]>([])
-  const [filterType, setFilterType] = useState<'all' | 'devis' | 'facture'>('all')
-  const [filterStatus, setFilterStatus] = useState('all')
+  const [bank, setBank] = useState<BankDetails | null>(null)
+  const [filtre, setFiltre] = useState<Filtre>('tout')
   const [search, setSearch] = useState('')
+  const [showAllClos, setShowAllClos] = useState(false)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<Toast>(null)
 
-  // Editor state
+  // Éditeur
   const [editingDoc, setEditingDoc] = useState<Document | null>(null)
-  const [lineItems, setLineItems] = useState<LineItem[]>([])
-  const [clientNom, setClientNom] = useState('')
-  const [clientEmail, setClientEmail] = useState('')
-  const [clientTelephone, setClientTelephone] = useState('')
-  const [clientAdresse, setClientAdresse] = useState('')
-  const [notes, setNotes] = useState('')
-  const [dateEmission, setDateEmission] = useState(todayISO())
-  const [dateEcheance, setDateEcheance] = useState('')
-  const [tauxTva, setTauxTva] = useState(8.1)
-  const [remiseType, setRemiseType] = useState('aucune')
-  const [remiseValeur, setRemiseValeur] = useState(0)
+  const [form, setForm] = useState<EditorForm | null>(null)
+  const [savedSnapshot, setSavedSnapshot] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [savedAt, setSavedAt] = useState<Date | null>(null)
+  const [notesOpen, setNotesOpen] = useState(false)
+  const [flashLine, setFlashLine] = useState<string | null>(null)
+  const [triedSave, setTriedSave] = useState(false)
 
-  // Catalogue state
-  const [catFormOpen, setCatFormOpen] = useState(false)
-  const [catEditId, setCatEditId] = useState<string | null>(null)
-  const [catNom, setCatNom] = useState('')
-  const [catPrix, setCatPrix] = useState('')
-  const [catUnite, setCatUnite] = useState('heure')
-  const [catDesc, setCatDesc] = useState('')
+  // Saisie d'une ligne, réglages, contexte de la demande d'origine
+  const [ligneEdit, setLigneEdit] = useState<{ ligne: LineItem; isNew: boolean } | null>(null)
+  const [reglages, setReglages] = useState<ReglagesFacturation>(REGLAGES_DEFAUT)
+  const [showReglages, setShowReglages] = useState(false)
+  const [reglagesFocus, setReglagesFocus] = useState<'paiement' | undefined>(undefined)
+  const [contexte, setContexte] = useState<DevisPrefill | null>(null)
+  const [previewQr, setPreviewQr] = useState<string | null>(null)
+  const [envoi, setEnvoi] = useState<{ doc: Document; relance: boolean } | null>(null)
+  const envoiMarqueRef = useRef(false)
 
-  // Modals
+  // Catalogue
+  const [catForm, setCatForm] = useState<{ id: string | null; nom: string; prix: number; unite: string; description: string; categorie: Categorie } | null>(null)
+  const [catConfirmDelete, setCatConfirmDelete] = useState(false)
+
+  // Fenêtres
+  const [showCreate, setShowCreate] = useState(false)
+  const [menuDoc, setMenuDoc] = useState<Document | null>(null)
   const [showPreview, setShowPreview] = useState(false)
   const [showPicker, setShowPicker] = useState(false)
-  const [pickerSelected, setPickerSelected] = useState<Set<string>>(new Set())
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [pickerAdded, setPickerAdded] = useState<Record<string, number>>({})
+  const [deleteTarget, setDeleteTarget] = useState<Document | null>(null)
+  const [leaveAsk, setLeaveAsk] = useState(false)
 
-  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Historique du navigateur
+  const pushedRef = useRef(false)
+  const ignorePopRef = useRef(false)
+  const stateRef = useRef({ viewMode: 'list', dirty: false, docId: '' })
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // ===== Load data =====
+  const today = todayISO()
+
+  // ===== Navigation entre les vues =====
+  const openEditor = useCallback((doc: Document, initial?: EditorForm) => {
+    const base = formFromDoc(doc)
+    setEditingDoc(doc)
+    setForm(initial ?? base)
+    setSavedSnapshot(JSON.stringify(base))
+    setSavedAt(null)
+    setTriedSave(false)
+    setNotesOpen(!!doc.notes)
+    setContexte(null)
+    setViewMode('editor')
+    enterView(pushedRef, 'doc', doc.id || 'nouveau')
+    window.scrollTo(0, 0)
+  }, [])
+
+  /** Revient à la liste sans confirmation. */
+  const backToList = useCallback(() => {
+    setViewMode('list')
+    setEditingDoc(null)
+    setForm(null)
+    setSavedSnapshot('')
+    setShowPreview(false)
+    setShowPicker(false)
+    setLeaveAsk(false)
+    setCatForm(null)
+    if (pushedRef.current) {
+      pushedRef.current = false
+      ignorePopRef.current = true
+      window.history.back()
+    } else {
+      window.history.replaceState(window.history.state, '', viewUrl(null))
+    }
+    window.scrollTo(0, 0)
+  }, [])
+
+  // ===== Chargement =====
   useEffect(() => {
     const supabase = createClient()
     Promise.all([
       loadDocuments(supabase, userId),
       loadPrestations(supabase, userId),
-    ]).then(([docs, prests]) => {
+      loadMyBankDetails(supabase).catch(() => null),
+      loadAgendaKey<unknown>(supabase, userId, CLE_REGLAGES, null),
+    ]).then(([docs, prests, bankDetails, regl]) => {
       setDocuments(docs)
       setPrestations(prests)
+      setBank(bankDetails)
+      setReglages(normaliserReglages(regl))
       setLoading(false)
+      // Lien direct ?doc=<id> (page rechargée, lien partagé)
+      const params = new URLSearchParams(window.location.search)
+      const id = params.get('doc')
+      const found = id && docs.find(d => d.id === id)
+      if (found) openEditor(found)
+      else if (params.get('catalogue')) setViewMode('catalogue')
+      else if (id) window.history.replaceState(window.history.state, '', viewUrl(null))
     }).catch(() => setLoading(false))
-  }, [userId])
+  }, [userId, openEditor])
 
   // ===== Toast =====
   const showToast = useCallback((type: 'success' | 'error', msg: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current)
     setToast({ type, msg })
-    setTimeout(() => setToast(null), 4000)
+    toastTimer.current = setTimeout(() => setToast(null), 2600)
   }, [])
 
-  // ===== Calculations =====
-  const sousTotal = lineItems.reduce((s, l) => s + l.total, 0)
-  const montantRemise = remiseType === 'pourcentage'
-    ? Math.round(sousTotal * (remiseValeur / 100) * 100) / 100
-    : remiseType === 'montant'
-      ? Math.round(Math.min(remiseValeur, sousTotal) * 100) / 100
-      : 0
-  const afterDiscount = sousTotal - montantRemise
-  const montantTva = Math.round(afterDiscount * (tauxTva / 100) * 100) / 100
-  const totalTtc = Math.round((afterDiscount + montantTva) * 100) / 100
+  // ===== Calculs =====
+  const totaux = useMemo(
+    () => form ? calculerTotaux(form.lignes, form.remise_type, form.remise_valeur, form.taux_tva) : null,
+    [form],
+  )
+  const snapshot = useMemo(() => form ? JSON.stringify(form) : '', [form])
+  const dirty = viewMode === 'editor' && !!form && snapshot !== savedSnapshot
 
-  // ===== Filter documents =====
-  const filteredDocs = documents
-    .filter(d => filterType === 'all' || d.type === filterType)
-    .filter(d => filterStatus === 'all' || d.statut === filterStatus)
-    .filter(d => {
-      if (!search) return true
-      const q = search.toLowerCase()
-      return (d.client_nom || '').toLowerCase().includes(q) || (d.numero || '').toLowerCase().includes(q)
-    })
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  useEffect(() => {
+    stateRef.current = { viewMode, dirty, docId: editingDoc?.id || 'nouveau' }
+  })
 
-  // ===== Editor helpers =====
-  const populateEditor = useCallback((doc: Document) => {
-    setEditingDoc(doc)
-    setClientNom(doc.client_nom || '')
-    setClientEmail(doc.client_email || '')
-    setClientTelephone(doc.client_telephone || '')
-    setClientAdresse(doc.client_adresse || '')
-    setNotes(doc.notes || '')
-    setDateEmission(doc.date_emission || todayISO())
-    setDateEcheance(doc.date_echeance || '')
-    setTauxTva(doc.taux_tva ?? 8.1)
-    setRemiseType(doc.remise_type || 'aucune')
-    setRemiseValeur(doc.remise_valeur || 0)
-    const lignes = Array.isArray(doc.lignes) ? doc.lignes : []
-    setLineItems(lignes.map(l => ({
-      id: (l as Record<string, unknown>).id as string || generateLineId(),
-      description: (l as Record<string, unknown>).description as string || '',
-      quantite: Number((l as Record<string, unknown>).quantite) || 1,
-      unite: (l as Record<string, unknown>).unite as string || 'heure',
-      prix_unitaire: Number((l as Record<string, unknown>).prix_unitaire) || 0,
-      total: Number((l as Record<string, unknown>).total) || 0,
-    })))
-    setViewMode('editor')
-  }, [])
-
-  const collectDocData = useCallback((): Partial<Document> => {
-    const lignes = lineItems.map(l => ({
-      id: l.id, description: l.description, quantite: l.quantite,
-      unite: l.unite, prix_unitaire: l.prix_unitaire, total: l.total,
-    }))
-    return {
-      ...(editingDoc?.id ? { id: editingDoc.id } : {}),
-      artisan_id: userId,
-      type: editingDoc?.type || 'devis',
-      numero: editingDoc?.numero || '',
-      client_nom: clientNom,
-      client_email: clientEmail,
-      client_telephone: clientTelephone,
-      client_adresse: clientAdresse,
-      lignes: lignes as Record<string, unknown>[],
-      sous_total: Math.round(sousTotal * 100) / 100,
-      taux_tva: tauxTva,
-      montant_tva: montantTva,
-      remise_type: remiseType === 'aucune' ? null : remiseType,
-      remise_valeur: remiseType === 'aucune' ? null : remiseValeur,
-      montant_remise: remiseType === 'aucune' ? null : montantRemise,
-      total_ttc: totalTtc,
-      date_emission: dateEmission,
-      date_echeance: dateEcheance || null,
-      statut: editingDoc?.statut || 'brouillon',
-      notes,
-      devis_source_id: editingDoc?.devis_source_id || null,
-    }
-  }, [editingDoc, userId, clientNom, clientEmail, clientTelephone, clientAdresse, lineItems, sousTotal, tauxTva, montantTva, remiseType, remiseValeur, montantRemise, totalTtc, dateEmission, dateEcheance, notes])
-
-  // ===== PDF =====
-  // Depuis un document enregistré (ligne de liste).
-  const pdfFromDoc = useCallback((doc: Document) => {
-    const lignes: InvoiceLine[] = (Array.isArray(doc.lignes) ? doc.lignes : []).map(l => ({
-      description: String((l as Record<string, unknown>).description || ''),
-      quantite: Number((l as Record<string, unknown>).quantite) || 0,
-      unite: String((l as Record<string, unknown>).unite || 'unite'),
-      prix_unitaire: Number((l as Record<string, unknown>).prix_unitaire) || 0,
-      total: Number((l as Record<string, unknown>).total) || 0,
-    }))
-    const data: InvoiceData = {
-      type: doc.type, numero: doc.numero, client_nom: doc.client_nom,
-      client_email: doc.client_email, client_telephone: doc.client_telephone, client_adresse: doc.client_adresse,
-      lignes, sous_total: doc.sous_total, taux_tva: doc.taux_tva, montant_tva: doc.montant_tva,
-      montant_remise: doc.montant_remise, total_ttc: doc.total_ttc,
-      date_emission: doc.date_emission, date_echeance: doc.date_echeance, notes: doc.notes,
-    }
-    printInvoice(data, profile).catch(() => showToast('error', 'Erreur lors de la génération du PDF.'))
-  }, [profile, showToast])
-
-  // Depuis l'état courant de l'éditeur (aperçu, même avant enregistrement).
-  const pdfFromEditor = useCallback(() => {
-    if (!editingDoc) return
-    const data: InvoiceData = {
-      type: editingDoc.type, numero: editingDoc.numero, client_nom: clientNom,
-      client_email: clientEmail, client_telephone: clientTelephone, client_adresse: clientAdresse,
-      lignes: lineItems.map(l => ({ description: l.description, quantite: l.quantite, unite: l.unite, prix_unitaire: l.prix_unitaire, total: l.total })),
-      sous_total: sousTotal, taux_tva: tauxTva, montant_tva: montantTva,
-      montant_remise: montantRemise, total_ttc: totalTtc,
-      date_emission: dateEmission, date_echeance: dateEcheance, notes,
-    }
-    printInvoice(data, profile).catch(() => showToast('error', 'Erreur lors de la génération du PDF.'))
-  }, [editingDoc, clientNom, clientEmail, clientTelephone, clientAdresse, lineItems, sousTotal, tauxTva, montantTva, montantRemise, totalTtc, dateEmission, dateEcheance, notes, profile, showToast])
-
-  // ===== Create new =====
-  const createNew = useCallback(async (type: 'devis' | 'facture') => {
-    const supabase = createClient()
-    try {
-      const numero = await getNextDocNumber(supabase, userId, type)
-      const newDoc: Document = {
-        id: '', artisan_id: userId, type, numero,
-        client_nom: '', client_email: '', client_telephone: '', client_adresse: '',
-        lignes: [], sous_total: 0, taux_tva: 8.1, montant_tva: 0,
-        remise_type: null, remise_valeur: null, montant_remise: null, total_ttc: 0,
-        date_emission: todayISO(), date_echeance: null, date_acceptation: null, date_paiement: null,
-        statut: 'brouillon', notes: '', devis_source_id: null, created_at: new Date().toISOString(),
+  // Bouton « retour » du téléphone ou du navigateur
+  useEffect(() => {
+    function onPop() {
+      if (ignorePopRef.current) { ignorePopRef.current = false; return }
+      const params = new URLSearchParams(window.location.search)
+      const { viewMode: vm, dirty: d, docId } = stateRef.current
+      if (vm === 'list' || params.get('doc') || params.get('catalogue')) return
+      pushedRef.current = false
+      if (vm === 'editor' && d) {
+        // On reste sur l'éditeur et on demande quoi faire des modifications
+        enterView(pushedRef, 'doc', docId)
+        setLeaveAsk(true)
+        return
       }
-      populateEditor(newDoc)
-    } catch (e) { showToast('error', 'Erreur: ' + (e instanceof Error ? e.message : '')) }
-  }, [userId, populateEditor, showToast])
+      setViewMode('list')
+      setEditingDoc(null)
+      setForm(null)
+      setCatForm(null)
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
 
-  // ===== Save document =====
-  const handleSave = useCallback(async () => {
-    if (!clientNom.trim()) { showToast('error', 'Veuillez renseigner le nom du client.'); return }
+  // Fermeture de l'onglet / rechargement avec des modifications en cours
+  useEffect(() => {
+    if (!dirty) return
+    const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', h)
+    return () => window.removeEventListener('beforeunload', h)
+  }, [dirty])
+
+  // Le tableau de bord masque sa navigation quand un sous-écran est ouvert
+  useEffect(() => { onImmersiveChange?.(viewMode !== 'list') }, [viewMode, onImmersiveChange])
+  useEffect(() => () => onImmersiveChange?.(false), [onImmersiveChange])
+
+  // ===== Éditeur =====
+  const patch = useCallback((p: Partial<EditorForm>) => {
+    setForm(f => f ? { ...f, ...p } : f)
+  }, [])
+
+  const buildData = useCallback((f: EditorForm, doc: Document, overrides: Partial<Document> = {}): Partial<Document> => {
+    const t = calculerTotaux(f.lignes, f.remise_type, f.remise_valeur, f.taux_tva)
+    const sansRemise = f.remise_type === 'aucune'
+    return {
+      ...(doc.id ? { id: doc.id } : {}),
+      artisan_id: userId,
+      type: doc.type,
+      numero: doc.numero,
+      client_nom: f.client_nom.trim(),
+      // Le schéma refuse une adresse vide : pas d'e-mail = null
+      client_email: (f.client_email.trim() || null) as string,
+      client_telephone: f.client_telephone.trim(),
+      client_adresse: f.client_adresse.trim(),
+      lignes: f.lignes.map(lineToRaw),
+      sous_total: t.sousTotal,
+      taux_tva: f.taux_tva,
+      montant_tva: t.montantTva,
+      remise_type: sansRemise ? null : f.remise_type,
+      remise_valeur: sansRemise ? null : f.remise_valeur,
+      montant_remise: sansRemise ? null : t.montantRemise,
+      total_ttc: t.totalTtc,
+      date_emission: f.date_emission,
+      date_echeance: f.date_echeance || null,
+      statut: doc.statut || 'brouillon',
+      notes: f.notes.trim(),
+      devis_source_id: doc.devis_source_id || null,
+      ...overrides,
+    }
+  }, [userId])
+
+  /** Enregistre l'éditeur (éventuellement avec un nouveau statut). */
+  const persist = useCallback(async (opts: { overrides?: Partial<Document>; silent?: boolean } = {}): Promise<Document | null> => {
+    if (!editingDoc || !form) return null
+    if (!form.client_nom.trim()) {
+      if (!opts.silent) {
+        setTriedSave(true)
+        showToast('error', 'Indiquez le nom du client.')
+        document.getElementById('fact-client-nom')?.focus()
+      }
+      return null
+    }
+    if (form.client_email.trim() && !emailValide(form.client_email)) {
+      if (!opts.silent) {
+        setTriedSave(true)
+        showToast('error', "L'adresse e-mail du client n'est pas valide.")
+      }
+      return null
+    }
     const supabase = createClient()
-    const data = collectDocData()
+    const f = form
+    setSaving(true)
     try {
-      const saved = await saveDocument(supabase, data)
+      // Nouveau document : numéro recalculé au moment de l'insertion
+      // (un autre brouillon a pu prendre le numéro affiché entre-temps).
+      const numero = editingDoc.id ? editingDoc.numero : await getNextDocNumber(supabase, userId, editingDoc.type)
+      const saved = await saveDocument(supabase, buildData(f, { ...editingDoc, numero }, opts.overrides))
       setEditingDoc(saved)
+      setSavedSnapshot(JSON.stringify(f))
+      setSavedAt(new Date())
       setDocuments(prev => {
         const idx = prev.findIndex(d => d.id === saved.id)
         if (idx !== -1) { const copy = [...prev]; copy[idx] = saved; return copy }
         return [saved, ...prev]
       })
-      showToast('success', data.type === 'devis' ? 'Devis enregistré' : 'Facture enregistrée')
-    } catch (e) { showToast('error', 'Erreur: ' + (e instanceof Error ? e.message : '')) }
-  }, [clientNom, collectDocData, showToast])
+      if (!editingDoc.id) enterView(pushedRef, 'doc', saved.id)
+      return saved
+    } catch (e) {
+      if (!opts.silent) showToast('error', 'Enregistrement impossible. ' + errMsg(e))
+      return null
+    } finally {
+      setSaving(false)
+    }
+  }, [editingDoc, form, userId, buildData, showToast])
 
-  // ===== Auto-save =====
-  const triggerAutoSave = useCallback(() => {
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
-    autoSaveTimer.current = setTimeout(async () => {
-      if (editingDoc?.id && editingDoc.statut === 'brouillon') {
-        const supabase = createClient()
-        const data = collectDocData()
-        try { await saveDocument(supabase, data) } catch { /* silent */ }
-      }
-    }, 3000)
-  }, [editingDoc, collectDocData])
+  // Enregistrement automatique des brouillons, 1,5 s après la dernière modification
+  useEffect(() => {
+    if (!dirty || saving || !editingDoc?.id || editingDoc.statut !== 'brouillon' || !form?.client_nom.trim()) return
+    const t = setTimeout(() => { void persist({ silent: true }) }, 1500)
+    return () => clearTimeout(t)
+  }, [dirty, saving, snapshot, editingDoc?.id, editingDoc?.statut, form?.client_nom, persist])
 
-  // ===== Line items =====
-  const addLine = useCallback((desc = '', qty = 1, unite = 'heure', prix = 0) => {
-    const newLine: LineItem = { id: generateLineId(), description: desc, quantite: qty, unite, prix_unitaire: prix, total: qty * prix }
-    setLineItems(prev => [...prev, newLine])
-    triggerAutoSave()
-  }, [triggerAutoSave])
+  const handleSave = useCallback(async () => {
+    const saved = await persist()
+    if (saved) showToast('success', saved.type === 'devis' ? 'Devis enregistré' : 'Facture enregistrée')
+  }, [persist, showToast])
 
-  const updateLine = useCallback((lineId: string, field: keyof LineItem, value: string | number) => {
-    setLineItems(prev => prev.map(l => {
-      if (l.id !== lineId) return l
-      const updated = { ...l, [field]: field === 'quantite' || field === 'prix_unitaire' ? (parseFloat(String(value)) || 0) : value }
-      if (field === 'quantite' || field === 'prix_unitaire') updated.total = updated.quantite * updated.prix_unitaire
-      return updated
-    }))
-    triggerAutoSave()
-  }, [triggerAutoSave])
-
-  const removeLine = useCallback((lineId: string) => {
-    setLineItems(prev => prev.filter(l => l.id !== lineId))
-    triggerAutoSave()
-  }, [triggerAutoSave])
-
-  // ===== Status workflow =====
-  const setStatus = useCallback(async (newStatus: string) => {
-    if (!editingDoc?.id) { showToast('error', "Enregistrez le document d'abord."); return }
+  const createNew = useCallback(async (type: 'devis' | 'facture', pre?: DevisPrefill | null) => {
     const supabase = createClient()
     try {
-      const updates: Partial<Document> = { id: editingDoc.id, statut: newStatus }
-      if (newStatus === 'payee') updates.date_paiement = todayISO()
-      if (newStatus === 'accepte') updates.date_acceptation = todayISO()
-      await saveDocument(supabase, updates)
-      setEditingDoc(prev => prev ? { ...prev, ...updates } : prev)
-      setDocuments(prev => prev.map(d => d.id === editingDoc.id ? { ...d, ...updates } : d))
-      showToast('success', 'Statut mis à jour')
-    } catch (e) { showToast('error', 'Erreur: ' + (e instanceof Error ? e.message : '')) }
-  }, [editingDoc, showToast])
+      const numero = await getNextDocNumber(supabase, userId, type)
+      const t = todayISO()
+      const r = reglages
+      const newDoc: Document = {
+        id: '', artisan_id: userId, type, numero,
+        client_nom: '', client_email: '', client_telephone: '', client_adresse: '',
+        lignes: [], sous_total: 0, taux_tva: r.assujetti_tva ? r.taux_tva : 0, montant_tva: 0,
+        remise_type: null, remise_valeur: null, montant_remise: null, total_ttc: 0,
+        date_emission: t, date_echeance: addDaysISO(t, type === 'facture' ? r.delai_paiement : r.validite_devis),
+        date_acceptation: null, date_paiement: null,
+        statut: 'brouillon', notes: r.conditions, devis_source_id: null, created_at: new Date().toISOString(),
+      }
+      const base = formFromDoc(newDoc)
+      const lignes: LineItem[] = (pre?.lignes || []).map(p => {
+        const l = nouvelleLigne(p.categorie, r)
+        l.description = p.description || l.description
+        if (p.categorie === 'main_oeuvre' && p.heures) {
+          l.heures = p.heures
+          l.personnes = p.personnes || 1
+          l.quantite = Math.round(p.heures * l.personnes * 100) / 100
+        }
+        return l
+      })
+      const initial: EditorForm = pre
+        ? { ...base, client_nom: pre.client_nom, client_email: pre.client_email, client_telephone: pre.client_telephone, client_adresse: pre.client_adresse, lignes }
+        : base
+      openEditor(newDoc, initial)
+      // La demande d'origine reste affichée pendant la rédaction
+      if (pre?.description) setContexte(pre)
+    } catch (e) {
+      showToast('error', 'Impossible de créer le document. ' + errMsg(e))
+    }
+  }, [userId, reglages, openEditor, showToast])
 
-  // ===== Convert devis → facture =====
+  // Devis demandé depuis l'onglet Demandes
+  useEffect(() => {
+    if (!prefill || loading) return
+    onPrefillConsumed?.()
+    // createNew ne touche à l'état qu'après l'appel réseau (numéro du devis)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void createNew(prefill.type ?? 'devis', prefill)
+  }, [prefill, loading, onPrefillConsumed, createNew])
+
+  // ===== Lignes =====
+  const saveReglages = useCallback(async (p: Partial<ReglagesFacturation>) => {
+    const next = { ...reglages, ...p }
+    setReglages(next)
+    try { await saveAgendaKey(createClient(), userId, CLE_REGLAGES, next) } catch { showToast('error', 'Le tarif n’a pas pu être mémorisé.') }
+  }, [reglages, userId, showToast])
+
+  const flash = (id: string) => {
+    setFlashLine(id)
+    setTimeout(() => setFlashLine(null), 900)
+  }
+
+  const saveLigne = useCallback((ligne: LineItem, memoriser: Partial<ReglagesFacturation> | null) => {
+    setForm(f => {
+      if (!f) return f
+      const exists = f.lignes.some(l => l.id === ligne.id)
+      return { ...f, lignes: exists ? f.lignes.map(l => l.id === ligne.id ? ligne : l) : [...f.lignes, ligne] }
+    })
+    setLigneEdit(null)
+    flash(ligne.id)
+    if (memoriser) void saveReglages(memoriser)
+  }, [saveReglages])
+
+  const removeLine = useCallback((lineId: string) => {
+    setForm(f => f ? { ...f, lignes: f.lignes.filter(l => l.id !== lineId) } : f)
+    setLigneEdit(null)
+  }, [])
+
+  /** Ajout depuis le catalogue : une 2e pression sur la même prestation augmente la quantité. */
+  const addFromCatalogue = useCallback((p: Prestation) => {
+    if (!form) return
+    const categorie = categorieLigne({ categorie: p.categorie, unite: p.unite })
+    const same = form.lignes.find(l => l.description === p.nom && l.unite === p.unite && l.prix_unitaire === p.prix)
+    const line: LineItem = categorie === 'main_oeuvre'
+      ? { id: generateLineId(), categorie, description: p.nom, heures: 1, personnes: 1, quantite: 1, unite: 'heure', prix_unitaire: p.prix }
+      : { id: generateLineId(), categorie, description: p.nom, quantite: 1, unite: p.unite, prix_unitaire: p.prix }
+    const lignes = same
+      ? form.lignes.map(l => {
+        if (l.id !== same.id) return l
+        if (l.categorie === 'main_oeuvre') {
+          const heures = (l.heures ?? l.quantite) + 1
+          return { ...l, heures, quantite: heures * (l.personnes ?? 1) }
+        }
+        return { ...l, quantite: l.quantite + 1 }
+      })
+      : [...form.lignes, line]
+    patch({ lignes })
+    setPickerAdded(prev => ({ ...prev, [p.id]: (prev[p.id] || 0) + 1 }))
+    flash(same ? same.id : line.id)
+  }, [form, patch])
+
+  // ===== Statuts =====
+  const changeStatus = useCallback(async (statut: string, msg: string) => {
+    if (!editingDoc) return
+    const overrides: Partial<Document> = { statut }
+    if (statut === 'payee') overrides.date_paiement = todayISO()
+    if (statut === 'accepte') overrides.date_acceptation = todayISO()
+    const saved = await persist({ overrides })
+    if (saved) showToast('success', msg)
+  }, [editingDoc, persist, showToast])
+
+  /** Envoi : on enregistre d'abord, puis on ouvre la feuille d'envoi. */
+  const envoyer = useCallback(async (relance = false) => {
+    const saved = editingDoc?.id && !dirty ? editingDoc : await persist()
+    if (!saved) return
+    envoiMarqueRef.current = false
+    setEnvoi({ doc: saved, relance })
+  }, [editingDoc, dirty, persist])
+
+  /** Le document est parti : il passe « envoyé » (une seule fois). */
+  const marquerEnvoye = useCallback(async (doc: Document) => {
+    if (envoiMarqueRef.current || doc.statut !== 'brouillon') return
+    envoiMarqueRef.current = true
+    const statut = doc.type === 'devis' ? 'envoye' : 'envoyee'
+    const enEdition = editingDoc ? editingDoc.id : ''
+    if (viewMode === 'editor' && enEdition === doc.id) {
+      await changeStatus(statut, doc.type === 'devis' ? 'Devis envoyé' : 'Facture envoyée')
+      return
+    }
+    try {
+      const saved = await saveDocument(createClient(), { id: doc.id, statut })
+      setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, ...saved } : d))
+      showToast('success', doc.type === 'devis' ? 'Devis envoyé' : 'Facture envoyée')
+    } catch { /* le statut se corrige à la main */ }
+  }, [viewMode, editingDoc, changeStatus, showToast])
+
   const convertToFacture = useCallback(async () => {
-    if (!editingDoc || editingDoc.type !== 'devis') return
+    if (!editingDoc?.id || editingDoc.type !== 'devis' || !form) return
     const supabase = createClient()
     try {
       const numero = await getNextDocNumber(supabase, userId, 'facture')
-      const data = collectDocData()
-      delete (data as Record<string, unknown>).id
-      data.type = 'facture'
-      data.numero = numero
-      data.statut = 'brouillon'
-      data.date_emission = todayISO()
-      data.date_echeance = null
-      data.devis_source_id = editingDoc.id
-      const saved = await saveDocument(supabase, data)
-      // Mark original devis as converti
-      await saveDocument(supabase, { id: editingDoc.id, statut: 'converti' })
-      setDocuments(prev => [saved, ...prev.map(d => d.id === editingDoc.id ? { ...d, statut: 'converti' } : d)])
-      showToast('success', `Facture ${numero} créée !`)
-      populateEditor(saved)
-    } catch (e) { showToast('error', 'Erreur: ' + (e instanceof Error ? e.message : '')) }
-  }, [editingDoc, userId, collectDocData, populateEditor, showToast])
+      const t = todayISO()
+      const facture = await saveDocument(supabase, buildData(form, {
+        ...editingDoc, id: '', type: 'facture', numero, statut: 'brouillon', devis_source_id: editingDoc.id,
+      }, { date_emission: t, date_echeance: addDaysISO(t, reglages.delai_paiement), date_acceptation: null, date_paiement: null }))
+      const devis = await saveDocument(supabase, buildData(form, editingDoc, { statut: 'converti' }))
+      setDocuments(prev => [facture, ...prev.map(d => d.id === devis.id ? devis : d)])
+      showToast('success', `Facture ${numero} créée`)
+      openEditor(facture)
+    } catch (e) {
+      showToast('error', 'Conversion impossible. ' + errMsg(e))
+    }
+  }, [editingDoc, form, userId, reglages, buildData, openEditor, showToast])
 
-  // ===== Delete document =====
+  // ===== Actions sur un document =====
   const confirmDelete = useCallback(async () => {
     if (!deleteTarget) return
+    const target = deleteTarget
     const supabase = createClient()
     try {
-      await deleteDocument(supabase, deleteTarget)
-      setDocuments(prev => prev.filter(d => d.id !== deleteTarget))
+      if (target.id) await deleteDocument(supabase, target.id)
+      setDocuments(prev => prev.filter(d => d.id !== target.id))
       setDeleteTarget(null)
-      showToast('success', 'Document supprimé')
-    } catch (e) { showToast('error', 'Erreur: ' + (e instanceof Error ? e.message : '')) }
-  }, [deleteTarget, showToast])
+      showToast('success', target.type === 'devis' ? 'Devis supprimé' : 'Facture supprimée')
+      if (viewMode === 'editor') backToList()
+    } catch (e) {
+      showToast('error', 'Suppression impossible. ' + errMsg(e))
+    }
+  }, [deleteTarget, viewMode, backToList, showToast])
 
-  // ===== Duplicate =====
-  const duplicateDoc = useCallback(async (docId: string) => {
-    const doc = documents.find(d => d.id === docId)
-    if (!doc) return
+  const duplicateDoc = useCallback(async (doc: Document) => {
+    setMenuDoc(null)
     const supabase = createClient()
     try {
       const numero = await getNextDocNumber(supabase, userId, doc.type)
-      const data: Partial<Document> = {
+      const t = todayISO()
+      const saved = await saveDocument(supabase, {
         artisan_id: userId, type: doc.type, numero,
-        client_nom: doc.client_nom, client_email: doc.client_email,
+        client_nom: doc.client_nom, client_email: (doc.client_email || null) as string,
         client_telephone: doc.client_telephone, client_adresse: doc.client_adresse,
         lignes: doc.lignes, sous_total: doc.sous_total, taux_tva: doc.taux_tva,
         montant_tva: doc.montant_tva, remise_type: doc.remise_type,
         remise_valeur: doc.remise_valeur, montant_remise: doc.montant_remise,
-        total_ttc: doc.total_ttc, date_emission: todayISO(), date_echeance: null,
+        total_ttc: doc.total_ttc, date_emission: t, date_echeance: addDaysISO(t, doc.type === 'facture' ? reglages.delai_paiement : reglages.validite_devis),
         statut: 'brouillon', notes: doc.notes, devis_source_id: null,
-      }
-      const saved = await saveDocument(supabase, data)
+      })
       setDocuments(prev => [saved, ...prev])
-      showToast('success', `${doc.type === 'devis' ? 'Devis' : 'Facture'} dupliqué(e)`)
-    } catch (e) { showToast('error', 'Erreur: ' + (e instanceof Error ? e.message : '')) }
-  }, [documents, userId, showToast])
+      showToast('success', `Copie créée : ${numero}`)
+      openEditor(saved)
+    } catch (e) {
+      showToast('error', 'Duplication impossible. ' + errMsg(e))
+    }
+  }, [userId, reglages, openEditor, showToast])
+
+  // ===== PDF =====
+  // Les coordonnées bancaires sont privées (hors profil public) : on les
+  // ajoute ici pour que la facture porte l'IBAN et la QR-facture.
+  const profileForPdf = useMemo(() => profile ? { ...profile, ...(bank || {}) } as Artisan : null, [profile, bank])
+
+  const pdfOptions = useMemo(() => ({ assujettiTva: reglages.assujetti_tva, numeroTva: reglages.numero_tva }), [reglages])
+
+  const printData = useCallback((data: InvoiceData) => {
+    printInvoice(data, profileForPdf, pdfOptions).catch(() => showToast('error', 'Erreur lors de la génération du PDF.'))
+  }, [profileForPdf, pdfOptions, showToast])
+
+  const pdfFromDoc = useCallback((doc: Document) => {
+    setMenuDoc(null)
+    printData({
+      type: doc.type, numero: doc.numero, client_nom: doc.client_nom,
+      client_email: doc.client_email, client_telephone: doc.client_telephone, client_adresse: doc.client_adresse,
+      lignes: formFromDoc(doc).lignes.map(toInvoiceLine),
+      sous_total: doc.sous_total, taux_tva: doc.taux_tva, montant_tva: doc.montant_tva,
+      montant_remise: doc.montant_remise, remise_type: doc.remise_type, remise_valeur: doc.remise_valeur, total_ttc: doc.total_ttc,
+      date_emission: doc.date_emission, date_echeance: doc.date_echeance, notes: doc.notes,
+    })
+  }, [printData])
+
+  /** Données du document tel qu'il est à l'écran (même avant enregistrement). */
+  const dataFromEditor = useCallback((): InvoiceData => {
+    const f = form!
+    const t = calculerTotaux(f.lignes, f.remise_type, f.remise_valeur, f.taux_tva)
+    return {
+      type: editingDoc!.type, numero: editingDoc!.numero, client_nom: f.client_nom,
+      client_email: f.client_email, client_telephone: f.client_telephone, client_adresse: f.client_adresse,
+      lignes: f.lignes.map(toInvoiceLine),
+      sous_total: t.sousTotal, taux_tva: f.taux_tva, montant_tva: t.montantTva,
+      montant_remise: t.montantRemise, remise_type: f.remise_type, remise_valeur: f.remise_valeur, total_ttc: t.totalTtc,
+      date_emission: f.date_emission, date_echeance: f.date_echeance || null, notes: f.notes,
+    }
+  }, [editingDoc, form])
+
+  const pdfFromEditor = useCallback(() => {
+    if (!editingDoc || !form) return
+    printData(dataFromEditor())
+  }, [editingDoc, form, dataFromEditor, printData])
+
+  const openPreview = useCallback(() => {
+    if (!editingDoc || !form) return
+    setPreviewQr(null)
+    setShowPreview(true)
+    if (editingDoc.type === 'facture') {
+      const data = dataFromEditor()
+      import('@/lib/swiss-qr')
+        .then(m => m.buildQrBillSvg(data, profileForPdf))
+        .then(svg => setPreviewQr(svg))
+        .catch(() => setPreviewQr(null))
+    }
+  }, [editingDoc, form, dataFromEditor, profileForPdf])
 
   // ===== Catalogue =====
-  const openCatForm = useCallback((prest?: Prestation) => {
-    setCatFormOpen(true)
-    if (prest) {
-      setCatEditId(prest.id)
-      setCatNom(prest.nom)
-      setCatPrix(String(prest.prix))
-      setCatUnite(prest.unite)
-      setCatDesc(prest.description || '')
-    } else {
-      setCatEditId(null)
-      setCatNom('')
-      setCatPrix('')
-      setCatUnite('heure')
-      setCatDesc('')
-    }
+  const openCatalogue = useCallback(() => {
+    setShowCreate(false)
+    setViewMode('catalogue')
+    enterView(pushedRef, 'catalogue', '1')
+    window.scrollTo(0, 0)
   }, [])
 
   const saveCatForm = useCallback(async () => {
-    if (!catNom.trim() || !catPrix) { showToast('error', 'Nom et prix requis.'); return }
+    if (!catForm) return
+    if (!catForm.nom.trim()) { showToast('error', 'Donnez un nom à la prestation.'); return }
     const supabase = createClient()
     try {
       const data: Partial<Prestation> = {
-        artisan_id: userId, nom: catNom.trim(), prix: parseFloat(catPrix),
-        unite: catUnite, description: catDesc.trim(), ordre: prestations.length,
+        artisan_id: userId, nom: catForm.nom.trim(), prix: catForm.prix,
+        unite: catForm.unite, description: catForm.description.trim(), categorie: catForm.categorie,
+        ordre: catForm.id ? (prestations.find(p => p.id === catForm.id)?.ordre ?? 0) : prestations.length,
       }
-      if (catEditId) data.id = catEditId
+      if (catForm.id) data.id = catForm.id
       const saved = await savePrestation(supabase, data)
-      setPrestations(prev => {
-        if (catEditId) return prev.map(p => p.id === catEditId ? saved : p)
-        return [...prev, saved]
-      })
-      setCatFormOpen(false)
+      setPrestations(prev => catForm.id ? prev.map(p => p.id === catForm.id ? saved : p) : [...prev, saved])
+      setCatForm(null)
       showToast('success', 'Prestation enregistrée')
-    } catch (e) { showToast('error', 'Erreur: ' + (e instanceof Error ? e.message : '')) }
-  }, [catNom, catPrix, catUnite, catDesc, catEditId, userId, prestations.length, showToast])
+    } catch (e) {
+      showToast('error', 'Enregistrement impossible. ' + errMsg(e))
+    }
+  }, [catForm, userId, prestations, showToast])
 
-  const deletePrest = useCallback(async (id: string) => {
-    if (!confirm('Supprimer cette prestation ?')) return
+  const confirmDeletePrest = useCallback(async () => {
+    if (!catForm?.id) return
+    const id = catForm.id
     const supabase = createClient()
     try {
       await deletePrestation(supabase, id)
       setPrestations(prev => prev.filter(p => p.id !== id))
+      setCatForm(null)
+      setCatConfirmDelete(false)
       showToast('success', 'Prestation supprimée')
-    } catch (e) { showToast('error', 'Erreur: ' + (e instanceof Error ? e.message : '')) }
-  }, [showToast])
+    } catch (e) {
+      showToast('error', 'Suppression impossible. ' + errMsg(e))
+    }
+  }, [catForm, showToast])
 
-  // ===== Picker =====
-  const confirmPicker = useCallback(() => {
-    pickerSelected.forEach(id => {
-      const p = prestations.find(x => x.id === id)
-      if (p) addLine(p.nom, 1, p.unite, p.prix)
-    })
-    setShowPicker(false)
-    setPickerSelected(new Set())
-  }, [pickerSelected, prestations, addLine])
+  // ===== Liste =====
+  const resume = useMemo(() => resumeFacturation(documents, today), [documents, today])
+  const recents = useMemo(() => clientsRecents(documents), [documents])
+  const counts = useMemo(() => ({
+    tout: documents.length,
+    devis: documents.filter(d => d.type === 'devis').length,
+    facture: documents.filter(d => d.type === 'facture').length,
+    a_encaisser: resume.nbAEncaisser,
+  }), [documents, resume])
 
-  // ===== Loading =====
+  const groupes = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const docs = documents
+      .filter(d => filtre === 'tout' || filtre === 'a_encaisser' || d.type === filtre)
+      .filter(d => filtre !== 'a_encaisser' || (d.type === 'facture' && (d.statut === 'envoyee' || d.statut === 'en_retard')))
+      .filter(d => !q || (d.client_nom || '').toLowerCase().includes(q) || (d.numero || '').toLowerCase().includes(q))
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    const map: Record<GroupeDoc, Document[]> = { a_traiter: [], brouillons: [], en_attente: [], clotures: [] }
+    for (const d of docs) map[etatDocument(d, today).groupe].push(d)
+    return { map, total: docs.length }
+  }, [documents, filtre, search, today])
+
+  const toastEl = toast && (
+    <div
+      role="status"
+      className={`fixed left-1/2 -translate-x-1/2 z-[300] flex items-center gap-2 py-3 px-5 rounded-full text-sm font-semibold text-white shadow-lg w-max max-w-[calc(100vw-32px)] bottom-[calc(96px+env(safe-area-inset-bottom))] min-[900px]:bottom-6 ${toast.type === 'success' ? 'bg-[var(--dark)]' : 'bg-[var(--red)]'}`}
+      style={{ animation: 'fadeIn 0.2s ease-out both' }}
+    >
+      {toast.type === 'success' ? <IconCheck className="w-4 h-4 shrink-0 text-[#7BE08A]" /> : <Ico className="w-4 h-4 shrink-0"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></Ico>}
+      <span>{toast.msg}</span>
+    </div>
+  )
+
+  const deleteDialog = deleteTarget && (
+    <Dialog onClose={() => setDeleteTarget(null)} labelledBy="fact-delete-title" variant="sheet" className="max-w-[420px] p-6">
+      <h3 id="fact-delete-title" className="font-sora font-bold text-lg mb-2">
+        Supprimer {deleteTarget.type === 'devis' ? 'le devis' : 'la facture'} {deleteTarget.numero} ?
+      </h3>
+      <p className="text-[15px] text-[var(--gray-500)] mb-6">Cette action est définitive.</p>
+      <div className="flex flex-col-reverse gap-2 min-[600px]:flex-row min-[600px]:justify-end">
+        <button onClick={() => setDeleteTarget(null)} className={BTN_SECONDARY}>Annuler</button>
+        <button onClick={confirmDelete} className={btn('danger')}>Supprimer</button>
+      </div>
+    </Dialog>
+  )
+
+  // ===== Chargement =====
   if (loading) {
-    return <div className="text-center py-12 text-[var(--gray-500)] text-sm">Chargement de la facturation...</div>
+    return (
+      <div aria-busy="true" aria-label="Chargement de la facturation" className="flex flex-col gap-3">
+        <div className="skeleton h-8 w-48" />
+        <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-3">
+          <div className="skeleton h-24 col-span-2 min-[900px]:col-span-1 rounded-[20px]" />
+          <div className="skeleton h-24 rounded-[20px]" />
+          <div className="skeleton h-24 rounded-[20px]" />
+        </div>
+        {[0, 1, 2].map(i => <div key={i} className="skeleton h-[72px] rounded-[20px]" />)}
+      </div>
+    )
   }
 
-  // ===== VIEW: LIST =====
-  if (viewMode === 'list') {
+  // ===== VUE : ÉDITEUR =====
+  if (viewMode === 'editor' && editingDoc && form && totaux) {
+    const isDevis = editingDoc.type === 'devis'
+    const qrManque = isDevis ? null : qrFactureManque(profileForPdf)
+    const docCourant = { ...editingDoc, date_echeance: form.date_echeance || null }
+    const enRetard = estEnRetard(docCourant, today)
+    const etat = editingDoc.id ? etatDocument(docCourant, today) : null
+    const etapes = etapesDocument(editingDoc.type, editingDoc.statut, enRetard)
+    const factureLiee = isDevis ? documents.find(d => d.devis_source_id === editingDoc.id) : undefined
+    const quick = prestations.slice(0, 6)
+    const nomManquant = triedSave && !form.client_nom.trim()
+    const emailInvalide = triedSave && !!form.client_email.trim() && !emailValide(form.client_email)
+    const tvaOptions = TVA_RATES.some(r => r.value === form.taux_tva)
+      ? TVA_RATES
+      : [...TVA_RATES, { value: form.taux_tva, label: `${form.taux_tva} %` }]
+    const saveLabel = saving
+      ? 'Enregistrement…'
+      : !editingDoc.id
+        ? 'Pas encore enregistré'
+        : dirty
+          ? (editingDoc.statut === 'brouillon' && form.client_nom.trim() ? 'Enregistrement auto…' : 'Modifications non enregistrées')
+          : savedAt
+            ? `Enregistré à ${String(savedAt.getHours()).padStart(2, '0')}:${String(savedAt.getMinutes()).padStart(2, '0')}`
+            : 'Tout est enregistré'
+    const requestBack = () => { if (dirty) setLeaveAsk(true); else backToList() }
+
+    // Prochaine étape : une action principale, au plus une secondaire
+    let next: { titre: string; texte: string; actions: ReactNode } | null = null
+    if (editingDoc.id) {
+      const pdfBtn = (
+        <button onClick={pdfFromEditor} className={BTN_SECONDARY}>
+          <IconDownload className="w-[18px] h-[18px]" /> PDF
+        </button>
+      )
+      const st = editingDoc.statut
+      if (st === 'brouillon') {
+        next = {
+          titre: 'Prêt à envoyer ?',
+          texte: isDevis
+            ? 'Par WhatsApp, SMS ou e-mail : votre client ouvre le devis sur son téléphone et l’accepte en un clic.'
+            : `Par WhatsApp, SMS ou e-mail : votre client ouvre la facture${qrManque ? '' : ' et paie en scannant la QR-facture'}.`,
+          actions: <>{pdfBtn}<button onClick={() => envoyer()} className={`${BTN_PRIMARY} flex-1`}><IconSend className="w-[18px] h-[18px]" /> Envoyer au client</button></>,
+        }
+      } else if (isDevis && st === 'envoye') {
+        next = {
+          titre: 'Le client a répondu ?',
+          texte: 'Indiquez sa réponse pour garder votre suivi à jour.',
+          actions: <><button onClick={() => changeStatus('refuse', 'Devis marqué comme refusé')} className={BTN_SECONDARY}>Refusé</button><button onClick={() => changeStatus('accepte', 'Bravo, devis accepté !')} className={`${btn('success')} flex-1`}><IconCheck className="w-[18px] h-[18px]" /> Accepté</button></>,
+        }
+      } else if (isDevis && st === 'accepte') {
+        next = {
+          titre: 'Devis accepté',
+          texte: 'Créez la facture en un geste : client et prestations sont repris.',
+          actions: <button onClick={convertToFacture} className={`${BTN_PRIMARY} flex-1`}><IconInvoice className="w-[18px] h-[18px]" /> Créer la facture</button>,
+        }
+      } else if (isDevis && st === 'converti') {
+        next = {
+          titre: 'Devis facturé',
+          texte: factureLiee ? `Facture ${factureLiee.numero} : ${etatDocument(factureLiee, today).libelle.toLowerCase()}.` : 'La facture a été créée à partir de ce devis.',
+          actions: factureLiee ? <button onClick={() => openEditor(factureLiee)} className={`${BTN_SECONDARY} flex-1`}>Voir la facture</button> : null,
+        }
+      } else if (isDevis && st === 'refuse') {
+        next = {
+          titre: 'Devis refusé',
+          texte: 'Repartez de ce devis pour faire une nouvelle offre.',
+          actions: <button onClick={() => duplicateDoc(editingDoc)} className={`${BTN_SECONDARY} flex-1`}><IconCopy className="w-[18px] h-[18px]" /> Dupliquer</button>,
+        }
+      } else if (!isDevis && (st === 'envoyee' || st === 'en_retard')) {
+        next = {
+          titre: enRetard ? 'Paiement en retard' : 'En attente du paiement',
+          texte: form.date_echeance ? `Échéance le ${formatDateCH(form.date_echeance)}.` : 'Aucune échéance indiquée.',
+          actions: <>{enRetard ? <button onClick={() => envoyer(true)} className={BTN_SECONDARY}>Relancer</button> : <button onClick={() => changeStatus('en_retard', 'Facture marquée en retard')} className={BTN_SECONDARY}>En retard</button>}<button onClick={() => changeStatus('payee', 'Paiement enregistré')} className={`${btn('success')} flex-1`}><IconCheck className="w-[18px] h-[18px]" /> Payée</button></>,
+        }
+      } else if (!isDevis && st === 'payee') {
+        next = {
+          titre: 'Facture payée',
+          texte: editingDoc.date_paiement ? `Paiement reçu le ${formatDateCH(editingDoc.date_paiement)}.` : 'Paiement reçu.',
+          actions: null,
+        }
+      }
+    }
+
     return (
-      <>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5 max-[600px]:flex-col max-[600px]:gap-3 max-[600px]:items-stretch">
-          <h2 className="font-sora text-[22px] font-extrabold text-[var(--dark)]">Facturation</h2>
-          <div className="flex gap-2 max-[600px]:w-full">
-            <button onClick={() => createNew('devis')} className="flex items-center gap-1.5 py-2.5 px-4 rounded-full text-sm font-bold bg-[var(--orange)] text-white border-none cursor-pointer hover:bg-[var(--orange-dark)] transition-colors max-[600px]:flex-1 max-[600px]:justify-center">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Nouveau devis
+      <div className="pb-[calc(104px+env(safe-area-inset-bottom))] min-[900px]:pb-0">
+        {/* Barre du haut */}
+        <div className={SUBBAR}>
+          <button onClick={requestBack} className={`${ICON_BTN} text-[var(--dark)]`} aria-label="Retour à la liste">
+            <IconBack />
+          </button>
+          <div className="flex-1 min-w-0 px-1">
+            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--gray-500)]">
+              <span className="uppercase tracking-wide">{isDevis ? 'Devis' : 'Facture'}</span>
+              {etat && <span className={`py-0.5 px-2 rounded-full text-[11px] font-bold truncate ${TON_CLASSES[etat.ton]}`}>{etat.libelle}</span>}
+            </div>
+            <h2 className="font-sora font-extrabold text-[17px] text-[var(--dark)] truncate leading-tight">{editingDoc.numero}</h2>
+          </div>
+          <button onClick={openPreview} className={`${ICON_BTN} text-[var(--dark)]`} aria-label="Aperçu du document">
+            <IconEye />
+          </button>
+          {editingDoc.id && (
+            <button onClick={() => setMenuDoc(editingDoc)} className={`${ICON_BTN} text-[var(--dark)]`} aria-label="Plus d'actions">
+              <IconDots />
             </button>
-            <button onClick={() => createNew('facture')} className="flex items-center gap-1.5 py-2.5 px-4 rounded-full text-sm font-bold bg-[var(--dark)] text-white border-none cursor-pointer hover:bg-[var(--dark-mid)] transition-colors max-[600px]:flex-1 max-[600px]:justify-center">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Nouvelle facture
+          )}
+        </div>
+
+        {/* Frise */}
+        <ol aria-label="Avancement" className="flex mb-4">
+          {etapes.map((e, i) => (
+            <li key={e.label} className="relative flex-1 min-w-0 flex flex-col items-center gap-1" aria-current={e.etat === 'actuel' ? 'step' : undefined}>
+              {i > 0 && <span aria-hidden="true" className={`absolute top-3 right-1/2 w-full h-0.5 z-0 ${etapes[i - 1].etat === 'fait' ? 'bg-[var(--green)]' : 'bg-[var(--gray-200)]'}`} />}
+              <span className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
+                e.alerte ? 'bg-[var(--red)] text-white'
+                  : e.etat === 'fait' ? 'bg-[var(--green)] text-white'
+                    : e.etat === 'actuel' ? 'bg-[var(--orange)] text-white ring-4 ring-[rgba(232,112,10,0.18)]'
+                      : 'bg-[var(--gray-200)] text-[var(--gray-500)]'}`}>
+                {e.etat === 'fait' ? <IconCheck className="w-3.5 h-3.5" /> : i + 1}
+              </span>
+              <span className={`text-[12px] text-center truncate max-w-full ${e.alerte ? 'font-semibold text-[var(--red)]' : e.etat === 'a_venir' ? 'text-[var(--gray-500)]' : 'font-semibold text-[var(--dark)]'}`}>{e.label}</span>
+            </li>
+          ))}
+        </ol>
+
+        {/* Prochaine étape */}
+        {next && (
+          <div className="rounded-[20px] p-4 mb-4 bg-[var(--dark)] text-white">
+            <div className="font-sora font-bold text-[16px]">{next.titre}</div>
+            <p className="text-[14px] text-white/75 mt-0.5">{next.texte}</p>
+            {next.actions && <div className="flex gap-2 mt-3 [&>button:not(.flex-1)]:bg-white/15 [&>button:not(.flex-1)]:text-white">{next.actions}</div>}
+          </div>
+        )}
+
+        <div className="grid gap-4 grid-cols-[1fr_340px] items-start max-[900px]:grid-cols-1">
+          <div className="flex flex-col gap-4 min-w-0">
+            {contexte && (
+              <div className="rounded-[20px] p-4 bg-[rgba(232,112,10,0.08)] border border-[rgba(232,112,10,0.25)]">
+                <div className="text-[12px] font-bold uppercase tracking-wider text-[var(--orange-dark)] mb-1">Demande de {contexte.client_nom || 'votre client'}</div>
+                <p className="text-[14px] text-[var(--dark)] whitespace-pre-line">« {contexte.description || 'Pas de message'} »</p>
+              </div>
+            )}
+            {/* Client */}
+            <section className={CARD} aria-labelledby="fact-client-title">
+              <h3 id="fact-client-title" className="font-sora font-bold text-[16px] mb-3">Client</h3>
+              {recents.length > 0 && !form.client_nom.trim() && (
+                <div className="mb-4">
+                  <div className="text-[13px] text-[var(--gray-500)] mb-2">Clients récents</div>
+                  <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1 [scrollbar-width:none]">
+                    {recents.map(c => (
+                      <button
+                        key={c.nom}
+                        type="button"
+                        onClick={() => patch({ client_nom: c.nom, client_email: c.email, client_telephone: c.telephone, client_adresse: c.adresse })}
+                        className="flex items-center gap-2 shrink-0 h-10 pl-1 pr-3.5 rounded-full border border-[var(--gray-200)] bg-white text-sm font-semibold text-[var(--dark)] cursor-pointer hover:border-[var(--orange)]"
+                      >
+                        <span className="w-8 h-8 rounded-full bg-[var(--gray-100)] text-[11px] font-bold flex items-center justify-center">{initiales(c.nom)}</span>
+                        {c.nom}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
+                <div className="col-span-2 max-[600px]:col-span-1">
+                  <label htmlFor="fact-client-nom" className={LABEL}>Nom ou entreprise *</label>
+                  <input id="fact-client-nom" type="text" value={form.client_nom} onChange={e => patch({ client_nom: e.target.value })}
+                    placeholder="Ex. Sophie Martin" autoComplete="off" enterKeyHint="next" aria-invalid={nomManquant || undefined}
+                    className={inputCls({ invalid: nomManquant })} />
+                  {nomManquant && <p className="text-[13px] text-[var(--red)] mt-1">Le nom du client est nécessaire pour enregistrer.</p>}
+                </div>
+                <div>
+                  <label htmlFor="fact-client-email" className={LABEL}>E-mail</label>
+                  <input id="fact-client-email" type="email" inputMode="email" value={form.client_email} onChange={e => patch({ client_email: e.target.value })}
+                    placeholder="sophie@exemple.ch" autoComplete="off" aria-invalid={emailInvalide || undefined}
+                    className={inputCls({ invalid: emailInvalide })} />
+                  {emailInvalide && <p className="text-[13px] text-[var(--red)] mt-1">Adresse e-mail invalide.</p>}
+                </div>
+                <div>
+                  <label htmlFor="fact-client-tel" className={LABEL}>Téléphone</label>
+                  <input id="fact-client-tel" type="tel" inputMode="tel" value={form.client_telephone} onChange={e => patch({ client_telephone: e.target.value })}
+                    placeholder="079 000 00 00" autoComplete="off" className={INPUT} />
+                </div>
+                <div className="col-span-2 max-[600px]:col-span-1">
+                  <label htmlFor="fact-client-adresse" className={LABEL}>Adresse</label>
+                  <textarea id="fact-client-adresse" value={form.client_adresse} onChange={e => patch({ client_adresse: e.target.value })}
+                    placeholder={'Rue et numéro\nNPA Localité'} rows={2} className={inputCls({ h: 'h-auto py-3', extra: 'resize-none' })} />
+                </div>
+              </div>
+            </section>
+
+            {/* Dates */}
+            <section className={`${CARD} flex flex-col gap-3`} aria-label="Dates">
+              <div className="flex items-center justify-between gap-3">
+                <label htmlFor="fact-date" className="text-[15px] font-semibold text-[var(--dark)]">{isDevis ? 'Date du devis' : 'Date de la facture'}</label>
+                <input id="fact-date" type="date" value={form.date_emission} onChange={e => patch({ date_emission: e.target.value })} className={inputCls({ px: 'px-3', extra: 'max-w-[180px]' })} />
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <label htmlFor="fact-echeance" className="text-[15px] font-semibold text-[var(--dark)]">{isDevis ? 'Valable jusqu’au' : 'À payer jusqu’au'}</label>
+                <input id="fact-echeance" type="date" value={form.date_echeance} onChange={e => patch({ date_echeance: e.target.value })} className={inputCls({ px: 'px-3', extra: 'max-w-[180px]' })} />
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[13px] text-[var(--gray-500)]">{isDevis ? 'Validité' : 'Payable sous'}</span>
+                {(isDevis ? [15, 30, 60] : [10, 20, 30, 60]).map(j => {
+                  const val = addDaysISO(form.date_emission || today, j)
+                  const on = form.date_echeance === val
+                  return (
+                    <button key={j} type="button" onClick={() => patch({ date_echeance: val })} aria-pressed={on}
+                      className={`h-9 px-3.5 rounded-full text-[13px] font-semibold border cursor-pointer transition-colors ${on ? 'bg-[var(--dark)] border-[var(--dark)] text-white' : 'bg-white border-[var(--gray-200)] text-[var(--dark)] hover:border-[var(--dark)]'}`}>
+                      {j} jours
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+
+            {/* Prestations */}
+            <section className={CARD} aria-labelledby="fact-lines-title">
+              <div className="flex items-center justify-between mb-3">
+                <h3 id="fact-lines-title" className="font-sora font-bold text-[16px]">Prestations</h3>
+                {form.lignes.length > 0 && <span className="text-[13px] text-[var(--gray-500)]">{form.lignes.length} ligne{form.lignes.length > 1 ? 's' : ''}</span>}
+              </div>
+
+              {form.lignes.length > 0 ? (
+                <ul className="flex flex-col gap-2 mb-4">
+                  {form.lignes.map(l => {
+                    return (
+                      <li key={l.id}>
+                        <button type="button" onClick={() => setLigneEdit({ ligne: l, isNew: false })}
+                          className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left border cursor-pointer transition-colors ${flashLine === l.id ? 'border-[var(--orange)] bg-[rgba(232,112,10,0.06)]' : 'border-transparent bg-[var(--gray-50)] hover:bg-[var(--gray-100)]'}`}>
+                          <CatTile categorie={l.categorie} />
+                          <span className="flex-1 min-w-0">
+                            <span className="block font-semibold text-[15px] text-[var(--dark)] truncate">{l.description || 'Sans description'}</span>
+                            <span className="block text-[13px] text-[var(--gray-500)] truncate">{resumeLigne(l)}</span>
+                          </span>
+                          <span className="font-sora font-bold text-[15px] text-[var(--dark)] shrink-0">{formatCHF(totalLigne(l.quantite, l.prix_unitaire))}</span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              ) : (
+                <p className="text-[14px] text-[var(--gray-500)] mb-3">Qu’allez-vous facturer ?</p>
+              )}
+
+              <div className="grid grid-cols-2 gap-2 min-[600px]:grid-cols-4">
+                {CATEGORIES.map(c => (
+                  <button key={c.key} type="button" onClick={() => setLigneEdit({ ligne: nouvelleLigne(c.key, reglages), isNew: true })}
+                    className="flex items-center gap-2.5 h-14 px-2.5 rounded-2xl border border-[var(--gray-200)] bg-white text-left cursor-pointer hover:border-[var(--orange)] active:scale-[0.98] transition-transform">
+                    <CatTile categorie={c.key} className="w-9 h-9" />
+                    <span className="text-[14px] font-semibold text-[var(--dark)] leading-tight">{c.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Ajout rapide */}
+              {quick.length > 0 && (
+                <div className="mt-4">
+                  <div className="text-[13px] text-[var(--gray-500)] mb-2">Depuis votre catalogue</div>
+                  <div className="flex flex-wrap gap-2">
+                    {quick.map(p => (
+                      <button key={p.id} type="button" onClick={() => addFromCatalogue(p)}
+                        className="flex items-center gap-1.5 h-10 pl-2.5 pr-3.5 max-w-full rounded-full border border-[var(--gray-200)] bg-white text-sm cursor-pointer hover:border-[var(--orange)] active:scale-95 transition-transform">
+                        <IconPlus className="w-4 h-4 shrink-0 text-[var(--orange)]" />
+                        <span className="font-semibold text-[var(--dark)] truncate">{p.nom}</span>
+                        <span className="text-[var(--gray-500)] shrink-0">{formatPrixCourt(p.prix)}/{uniteCourte(p.unite)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {prestations.length > quick.length && (
+                <button type="button" onClick={() => { setPickerAdded({}); setShowPicker(true) }} className="mt-3 flex items-center gap-2 h-10 text-[14px] font-semibold text-[var(--gray-700)] bg-transparent border-none cursor-pointer p-0">
+                  <IconBook className="w-4 h-4" /> Tout le catalogue ({prestations.length})
+                </button>
+              )}
+            </section>
+
+            {/* Notes */}
+            <section className={CARD} aria-label="Notes">
+              {notesOpen ? (
+                <>
+                  <label htmlFor="fact-notes" className="font-sora font-bold text-[16px] block mb-1">Notes et conditions</label>
+                  <p className="text-[13px] text-[var(--gray-500)] mb-2">Visibles sur le document.</p>
+                  <textarea id="fact-notes" value={form.notes} onChange={e => patch({ notes: e.target.value })} rows={3}
+                    placeholder="Ex. Matériel fourni par le client. Devis valable 30 jours."
+                    className={inputCls({ h: 'h-auto py-3', extra: 'resize-y' })} />
+                </>
+              ) : (
+                <button type="button" onClick={() => { setNotesOpen(true); setTimeout(() => document.getElementById('fact-notes')?.focus(), 0) }}
+                  className="w-full flex items-center gap-2 text-[15px] font-semibold text-[var(--orange)] bg-transparent border-none cursor-pointer p-0">
+                  <IconPlus className="w-[18px] h-[18px]" /> Ajouter une note ou des conditions
+                </button>
+              )}
+            </section>
+          </div>
+
+          {/* Récapitulatif */}
+          <aside className={`${CARD} min-[900px]:sticky min-[900px]:top-[84px]`} aria-labelledby="fact-recap-title">
+            <h3 id="fact-recap-title" className="font-sora font-bold text-[16px] mb-3">Récapitulatif</h3>
+            <div className="flex justify-between items-center py-2 text-[15px]">
+              <span className="text-[var(--gray-500)]">Sous-total</span>
+              <span className="font-semibold">{formatCHF(totaux.sousTotal)}</span>
+            </div>
+            <div className="py-3 border-t border-[var(--gray-100)]">
+              <div className="flex justify-between items-center mb-2 text-[15px]">
+                <span className="text-[var(--gray-500)]">Remise</span>
+                {form.remise_type !== 'aucune' && <span className="font-semibold text-[var(--red)]">−{formatCHF(totaux.montantRemise)}</span>}
+              </div>
+              <Segmented<Remise> label="Type de remise" value={form.remise_type} onChange={v => patch({ remise_type: v })}
+                options={[{ value: 'aucune', label: 'Aucune' }, { value: 'pourcentage', label: '%' }, { value: 'montant', label: 'CHF' }]} />
+              {form.remise_type !== 'aucune' && (
+                <DecimalInput value={form.remise_valeur} onValue={n => patch({ remise_valeur: n })}
+                  aria-label={form.remise_type === 'pourcentage' ? 'Remise en pourcentage' : 'Remise en francs'}
+                  placeholder={form.remise_type === 'pourcentage' ? '10' : '50.00'} className={`${INPUT} mt-2 text-right`} />
+              )}
+            </div>
+            <div className="py-3 border-t border-[var(--gray-100)]">
+              <div className="flex justify-between items-center mb-2 text-[15px]">
+                <span className="text-[var(--gray-500)]">TVA{form.taux_tva > 0 ? ` ${form.taux_tva} %` : ''}</span>
+                <span className="font-semibold">{formatCHF(totaux.montantTva)}</span>
+              </div>
+              {reglages.assujetti_tva || form.taux_tva > 0
+                ? <Segmented<number> label="Taux de TVA" value={form.taux_tva} onChange={v => patch({ taux_tva: v })} options={tvaOptions} />
+                : <p className="text-[13px] text-[var(--gray-500)]">Non assujetti à la TVA</p>}
+            </div>
+            {totaux.arrondi !== 0 && (
+              <div className="flex justify-between items-center py-2 text-[14px] text-[var(--gray-500)] border-t border-[var(--gray-100)]">
+                <span>Arrondi aux 5 centimes</span>
+                <span>{totaux.arrondi > 0 ? '+' : '−'}{Math.abs(totaux.arrondi).toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-baseline gap-2 pt-3 border-t-2 border-[var(--dark)]">
+              <span className="font-bold text-[16px]">Total{form.taux_tva > 0 ? ' TTC' : ''}</span>
+              <span className="font-sora font-extrabold text-[22px]">{formatCHF(totaux.totalTtc)}</span>
+            </div>
+            {!isDevis && (qrManque ? (
+              <button type="button" onClick={() => { setReglagesFocus('paiement'); setShowReglages(true) }}
+                className="mt-4 w-full flex items-center gap-3 p-3 rounded-xl bg-[rgba(232,112,10,0.08)] border border-[rgba(232,112,10,0.25)] text-left cursor-pointer">
+                <span className="w-9 h-9 shrink-0 rounded-lg bg-[var(--orange)] text-white flex items-center justify-center"><IconQr className="w-5 h-5" /></span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[14px] font-semibold text-[var(--dark)]">{qrManque === 'iban' ? 'Ajoutez votre IBAN' : 'Adresse avec NPA manquante'}</span>
+                  <span className="block text-[12px] text-[var(--gray-700)]">Pour la QR-facture : le client paie en scannant.</span>
+                </span>
+                <IconChevron className="w-5 h-5 text-[var(--gray-500)] shrink-0" />
+              </button>
+            ) : (
+              <p className="mt-4 flex items-center gap-2 p-3 rounded-xl bg-[var(--green-light)] text-[13px] font-semibold text-[var(--green)]">
+                <IconQr className="w-5 h-5 shrink-0" /> QR-facture jointe : votre client paie en scannant.
+              </p>
+            ))}
+            <button type="button" onClick={() => setShowReglages(true)} className="mt-4 flex items-center gap-2 text-[13px] font-semibold text-[var(--gray-700)] bg-transparent border-none cursor-pointer p-0">
+              <IconSettings className="w-4 h-4" /> Tarifs, TVA et délais
             </button>
-            <button onClick={() => setViewMode('catalogue')} className="flex items-center gap-1.5 py-2.5 px-4 rounded-full text-sm font-bold bg-[var(--gray-100)] text-[var(--gray-700)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-              Catalogue
-            </button>
+            <div className="max-[900px]:hidden mt-5 flex flex-col gap-2">
+              {editingDoc.statut === 'brouillon' && form.client_nom.trim() && form.lignes.length > 0 && (
+                <button onClick={() => envoyer()} disabled={saving} className={`${BTN_PRIMARY} w-full`}><IconSend className="w-[18px] h-[18px]" /> Envoyer au client</button>
+              )}
+              <button onClick={handleSave} disabled={saving} className={`${editingDoc.statut === 'brouillon' && form.client_nom.trim() && form.lignes.length > 0 ? BTN_SECONDARY : BTN_PRIMARY} w-full`}>Enregistrer</button>
+              <p className="text-center text-[12px] text-[var(--gray-500)] mt-2" aria-live="polite">{saveLabel}</p>
+            </div>
+          </aside>
+        </div>
+
+        {/* Barre du bas (mobile) : total toujours visible + enregistrer */}
+        <div className="fixed inset-x-0 bottom-0 z-40 bg-white border-t border-[var(--gray-200)] px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(0,0,0,0.06)] min-[900px]:hidden">
+          <div className="flex items-center gap-3 max-w-[600px] mx-auto">
+            <div className="flex-1 min-w-0">
+              <div className="text-[12px] text-[var(--gray-500)] truncate" aria-live="polite">{saveLabel}</div>
+              <div className="font-sora font-extrabold text-[20px] text-[var(--dark)] leading-tight truncate">{formatCHF(totaux.totalTtc)}</div>
+            </div>
+            {editingDoc.statut === 'brouillon' && form.client_nom.trim() && form.lignes.length > 0 ? (
+              <>
+                <button onClick={handleSave} disabled={saving} aria-label="Enregistrer" className="w-12 h-12 shrink-0 rounded-full flex items-center justify-center bg-[var(--gray-100)] text-[var(--dark)] border-none cursor-pointer disabled:opacity-60">
+                  <Ico className="w-5 h-5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></Ico>
+                </button>
+                <button onClick={() => envoyer()} disabled={saving} className={BTN_PRIMARY}>
+                  <IconSend className="w-[18px] h-[18px]" /> Envoyer
+                </button>
+              </>
+            ) : (
+              <button onClick={handleSave} disabled={saving} className={BTN_PRIMARY}>
+                Enregistrer
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-3 mb-4 flex-wrap max-[600px]:gap-2">
-          <div className="flex gap-0.5 bg-[var(--gray-100)] p-0.5 rounded-lg">
-            {(['all', 'devis', 'facture'] as const).map(t => (
-              <button key={t} onClick={() => setFilterType(t)}
-                className={`py-1.5 px-3 rounded-md text-xs font-semibold border-none cursor-pointer transition-all ${filterType === t ? 'bg-white text-[var(--dark)] shadow-sm' : 'text-[var(--gray-500)]'}`}>
-                {t === 'all' ? 'Tous' : t === 'devis' ? 'Devis' : 'Factures'}
+        {/* Aperçu : le vrai document, tel que le client le recevra */}
+        {showPreview && (
+          <Dialog onClose={() => setShowPreview(false)} labelledBy="fact-preview-title" variant="sheet" className="max-w-[880px] min-[600px]:max-h-[92vh]">
+            <div className="flex items-baseline justify-between gap-3 px-5 pt-4 pb-3">
+              <h3 id="fact-preview-title" className="font-sora font-bold text-lg">Aperçu</h3>
+              <span className="text-[13px] text-[var(--gray-500)]">Tel que votre client le recevra</span>
+            </div>
+            <div className="px-3 pb-3">
+              <DocumentPreview html={buildInvoiceHTML(dataFromEditor(), profileForPdf, previewQr, pdfOptions)} title={`Aperçu de ${editingDoc.numero}`} />
+            </div>
+            <div className="sticky bottom-0 flex gap-2 p-4 border-t border-[var(--gray-200)] bg-white">
+              <button onClick={() => setShowPreview(false)} className={`${BTN_SECONDARY} flex-1 min-[600px]:flex-none`}>Fermer</button>
+              <button onClick={pdfFromEditor} className={`${BTN_PRIMARY} flex-1 min-[600px]:flex-none min-[600px]:ml-auto`}><IconDownload className="w-[18px] h-[18px]" /> PDF</button>
+            </div>
+          </Dialog>
+        )}
+
+        {/* Catalogue : choisir des prestations */}
+        {showPicker && (
+          <Dialog onClose={() => setShowPicker(false)} labelledBy="fact-picker-title" variant="sheet" className="max-w-[520px]">
+            <div className="p-5 pb-3">
+              <h3 id="fact-picker-title" className="font-sora font-bold text-lg">Ajouter depuis le catalogue</h3>
+              <p className="text-sm text-[var(--gray-500)]">Touchez une prestation pour l&apos;ajouter, encore une fois pour augmenter la quantité.</p>
+            </div>
+            {prestations.length === 0 ? (
+              <p className="text-center text-[var(--gray-500)] px-6 py-8 text-sm">
+                Votre catalogue est vide. Enregistrez vos prestations courantes (main d&apos;œuvre, déplacement…) depuis <strong>Devis &amp; factures › Catalogue</strong>.
+              </p>
+            ) : (
+              <ul className="px-3">
+                {prestations.map(p => {
+                  const n = pickerAdded[p.id] || 0
+                  return (
+                    <li key={p.id}>
+                      <button type="button" onClick={() => addFromCatalogue(p)}
+                        className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left border-2 bg-transparent cursor-pointer transition-colors ${n ? 'border-[var(--orange)] bg-[rgba(232,112,10,0.05)]' : 'border-transparent hover:bg-[var(--gray-50)]'}`}>
+                        <span className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${n ? 'bg-[var(--orange)] text-white' : 'bg-[var(--gray-100)] text-[var(--orange)]'}`}>
+                          {n ? <span className="font-bold text-sm">+{n}</span> : <IconPlus className="w-5 h-5" />}
+                        </span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block font-semibold text-[15px] text-[var(--dark)] truncate">{p.nom}</span>
+                          {p.description && <span className="block text-[13px] text-[var(--gray-500)] truncate">{p.description}</span>}
+                        </span>
+                        <span className="text-[14px] font-semibold text-[var(--dark)] shrink-0">{formatCHF(p.prix)}<span className="font-normal text-[var(--gray-500)]">/{uniteCourte(p.unite)}</span></span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+            <div className="sticky bottom-0 p-4 bg-white border-t border-[var(--gray-100)] mt-2">
+              <button onClick={() => setShowPicker(false)} className={`${BTN_PRIMARY} w-full`}>Terminé</button>
+            </div>
+          </Dialog>
+        )}
+
+        {ligneEdit && (
+          <LigneSheet
+            ligne={ligneEdit.ligne}
+            isNew={ligneEdit.isNew}
+            reglages={reglages}
+            onSave={saveLigne}
+            onDelete={() => removeLine(ligneEdit.ligne.id)}
+            onClose={() => setLigneEdit(null)}
+          />
+        )}
+        {showReglages && (
+          <ReglagesSheet userId={userId} reglages={reglages} adresseEntreprise={profile?.adresse} focus={reglagesFocus}
+            onClose={() => { setShowReglages(false); setReglagesFocus(undefined) }}
+            onSaved={(r, b) => { setReglages(r); if (b) setBank(b); setShowReglages(false); setReglagesFocus(undefined); showToast('success', 'Réglages enregistrés') }} />
+        )}
+
+        {/* Quitter avec des modifications */}
+        {leaveAsk && (
+          <Dialog onClose={() => setLeaveAsk(false)} labelledBy="fact-leave-title" variant="sheet" className="max-w-[420px] p-6">
+            <h3 id="fact-leave-title" className="font-sora font-bold text-lg mb-2">Enregistrer les modifications ?</h3>
+            <p className="text-[15px] text-[var(--gray-500)] mb-6">Vous avez modifié {isDevis ? 'ce devis' : 'cette facture'} sans l&apos;enregistrer.</p>
+            <div className="flex flex-col gap-2">
+              <button onClick={async () => { setLeaveAsk(false); if (await persist()) backToList() }} className={BTN_PRIMARY}>Enregistrer et quitter</button>
+              <button onClick={backToList} className={btn('dangerSoft')}>Quitter sans enregistrer</button>
+              <button onClick={() => setLeaveAsk(false)} className="h-11 text-[15px] font-semibold text-[var(--gray-500)] bg-transparent border-none cursor-pointer">Continuer</button>
+            </div>
+          </Dialog>
+        )}
+
+        {menuDoc && <DocMenu doc={menuDoc} onClose={() => setMenuDoc(null)} onSend={() => { setMenuDoc(null); void envoyer(estEnRetard(menuDoc, today)) }} onPdf={() => { setMenuDoc(null); pdfFromEditor() }} onDuplicate={() => duplicateDoc(menuDoc)} onDelete={() => { setDeleteTarget(menuDoc); setMenuDoc(null) }} />}
+        {envoi && (
+        <EnvoyerSheet doc={envoi.doc} relance={envoi.relance}
+          entreprise={profile?.entreprise || `${profile?.prenom || ''} ${profile?.nom || ''}`.trim()}
+          onSent={() => void marquerEnvoye(envoi.doc)}
+          onPdf={() => { const d = envoi.doc; setEnvoi(null); if (viewMode === 'editor') pdfFromEditor(); else pdfFromDoc(d) }}
+          onClose={() => setEnvoi(null)} />
+      )}
+
+        {deleteDialog}
+        {toastEl}
+      </div>
+    )
+  }
+
+  // ===== VUE : CATALOGUE =====
+  if (viewMode === 'catalogue') {
+    return (
+      <div className="pb-8">
+        <div className={SUBBAR}>
+          <button onClick={backToList} className={`${ICON_BTN} text-[var(--dark)]`} aria-label="Retour à la liste">
+            <IconBack />
+          </button>
+          <h2 className="flex-1 font-sora font-extrabold text-[18px] text-[var(--dark)] px-1">Catalogue</h2>
+          <button onClick={() => { setCatConfirmDelete(false); setCatForm({ id: null, nom: '', prix: 0, unite: 'heure', description: '', categorie: 'main_oeuvre' }) }} className={btn('primary', 'sm')}>
+            <IconPlus className="w-4 h-4" /> Ajouter
+          </button>
+        </div>
+        <p className="text-[14px] text-[var(--gray-500)] mb-4 px-1">Vos prestations courantes, à ajouter en un geste dans vos devis et factures.</p>
+
+        {prestations.length === 0 ? (
+          <div className={`${CARD} text-center py-12`}>
+            <span className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-[rgba(232,112,10,0.12)] text-[var(--orange)] flex items-center justify-center"><IconBook className="w-7 h-7" /></span>
+            <h3 className="font-sora font-bold text-base mb-1">Catalogue vide</h3>
+            <p className="text-sm text-[var(--gray-500)] mb-5">Commencez par votre tarif horaire et vos forfaits.</p>
+            <button onClick={() => setCatForm({ id: null, nom: 'Main d’œuvre', prix: reglages.tarif_horaire, unite: 'heure', description: '', categorie: 'main_oeuvre' })} className={BTN_PRIMARY}>Ajouter ma main d’œuvre</button>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {prestations.map(p => (
+              <li key={p.id}>
+                <button type="button" onClick={() => { setCatConfirmDelete(false); setCatForm({ id: p.id, nom: p.nom, prix: p.prix, unite: p.unite, description: p.description || '', categorie: categorieLigne({ categorie: p.categorie, unite: p.unite }) }) }}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-[20px] border border-[var(--gray-200)] bg-white text-left cursor-pointer hover:border-[var(--gray-300)]">
+                  <CatTile categorie={categorieLigne({ categorie: p.categorie, unite: p.unite })} className="w-11 h-11" />
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-semibold text-[15px] text-[var(--dark)] truncate">{p.nom}</span>
+                    {p.description && <span className="block text-[13px] text-[var(--gray-500)] truncate">{p.description}</span>}
+                  </span>
+                  <span className="text-right shrink-0">
+                    <span className="block font-sora font-bold text-[15px] text-[var(--dark)]">{formatCHF(p.prix)}</span>
+                    <span className="block text-[12px] text-[var(--gray-500)]">par {uniteCourte(p.unite) === 'h' ? 'heure' : uniteCourte(p.unite)}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {catForm && (
+          <Dialog onClose={() => setCatForm(null)} labelledBy="cat-form-title" variant="sheet" className="max-w-[480px]">
+            <div className="p-5">
+              <h3 id="cat-form-title" className="font-sora font-bold text-lg mb-4">{catForm.id ? 'Modifier la prestation' : 'Nouvelle prestation'}</h3>
+              <div className="flex flex-col gap-3">
+                <div>
+                  <label htmlFor="cat-nom" className={LABEL}>Nom *</label>
+                  <input id="cat-nom" type="text" value={catForm.nom} onChange={e => setCatForm({ ...catForm, nom: e.target.value })} placeholder="Ex. Main d'œuvre" className={INPUT} />
+                </div>
+                <div>
+                  <span className={LABEL}>Type</span>
+                  <div role="radiogroup" aria-label="Type de prestation" className="grid grid-cols-2 gap-2">
+                    {CATEGORIES.map(c => {
+                      const on = catForm.categorie === c.key
+                      return (
+                        <button key={c.key} type="button" role="radio" aria-checked={on}
+                          onClick={() => setCatForm({ ...catForm, categorie: c.key, unite: c.key === 'main_oeuvre' ? 'heure' : c.key === 'materiel' ? (catForm.unite === 'heure' || catForm.unite === 'forfait' ? 'unite' : catForm.unite) : 'forfait' })}
+                          className={`flex items-center gap-2 h-12 px-2.5 rounded-xl border text-left text-[14px] font-semibold cursor-pointer transition-colors ${on ? 'border-[var(--dark)] bg-[var(--gray-50)] text-[var(--dark)]' : 'border-[var(--gray-200)] bg-white text-[var(--gray-700)]'}`}>
+                          <CatIcon categorie={c.key} className="w-[18px] h-[18px]" /> {c.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className={`grid gap-3 ${catForm.categorie === 'materiel' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  <div>
+                    <label htmlFor="cat-prix" className={LABEL}>{catForm.categorie === 'main_oeuvre' ? 'Prix par heure (CHF)' : catForm.categorie === 'materiel' ? 'Prix de vente (CHF)' : 'Prix (CHF)'}</label>
+                    <DecimalInput id="cat-prix" value={catForm.prix} onValue={n => setCatForm(c => c ? { ...c, prix: n } : c)} className={`${INPUT} text-right`} />
+                  </div>
+                  {catForm.categorie === 'materiel' && (
+                    <div>
+                      <label htmlFor="cat-unite" className={LABEL}>Par</label>
+                      <select id="cat-unite" value={catForm.unite} onChange={e => setCatForm({ ...catForm, unite: e.target.value })} className={inputCls({ px: 'px-3' })}>
+                        {UNITES.filter(u => u.value !== 'heure' && u.value !== 'forfait').map(u => <option key={u.value} value={u.value}>{u.long}</option>)}
+                      </select>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="cat-desc" className={LABEL}>Description (facultatif)</label>
+                  <input id="cat-desc" type="text" value={catForm.description} onChange={e => setCatForm({ ...catForm, description: e.target.value })} placeholder="Ex. Tarif horaire, déplacement compris" className={INPUT} />
+                </div>
+              </div>
+            </div>
+            <div className="sticky bottom-0 bg-white border-t border-[var(--gray-100)] p-4 flex flex-col gap-2">
+              <button onClick={saveCatForm} className={BTN_PRIMARY}>Enregistrer</button>
+              {catForm.id && !catConfirmDelete && (
+                <button onClick={() => setCatConfirmDelete(true)} className={btn('dangerSoft')}>Supprimer</button>
+              )}
+              {catForm.id && catConfirmDelete && (
+                <button onClick={confirmDeletePrest} className={btn('danger')}>Confirmer la suppression</button>
+              )}
+            </div>
+          </Dialog>
+        )}
+        {toastEl}
+      </div>
+    )
+  }
+
+  // ===== VUE : LISTE =====
+  const filtres: { key: Filtre; label: string }[] = [
+    { key: 'tout', label: 'Tout' },
+    { key: 'devis', label: 'Devis' },
+    { key: 'facture', label: 'Factures' },
+    { key: 'a_encaisser', label: 'À encaisser' },
+  ]
+  const moisLabel = new Date().toLocaleDateString('fr-CH', { month: 'long' })
+
+  return (
+    <div className="pb-4 max-[900px]:pb-20">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <h2 className="font-sora text-[22px] font-extrabold text-[var(--dark)]">Devis &amp; factures</h2>
+        <div className="flex gap-2">
+          <button onClick={() => setShowReglages(true)} className={`${btn('secondary', 'sm')} max-[900px]:hidden`}>
+            <IconSettings className="w-4 h-4" /> Réglages
+          </button>
+          <button onClick={openCatalogue} className={btn('secondary', 'sm')} aria-label="Catalogue de prestations">
+            <IconBook className="w-4 h-4" /> Catalogue
+          </button>
+          <button onClick={() => createNew('facture')} className={`${btn('secondary', 'sm')} max-[900px]:hidden`}>
+            <IconPlus className="w-4 h-4" /> Facture
+          </button>
+          <button onClick={() => createNew('devis')} className={`${btn('primary', 'sm')} max-[900px]:hidden`}>
+            <IconPlus className="w-4 h-4" /> Devis
+          </button>
+        </div>
+      </div>
+
+      {reglages.tarif_horaire === 0 && (
+        <button type="button" onClick={() => setShowReglages(true)}
+          className="w-full flex items-center gap-3 p-4 mb-4 rounded-[20px] bg-[rgba(232,112,10,0.08)] border border-[rgba(232,112,10,0.25)] text-left cursor-pointer">
+          <span className="w-11 h-11 shrink-0 rounded-2xl bg-[var(--orange)] text-white flex items-center justify-center"><IconSettings className="w-5 h-5" /></span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-semibold text-[15px] text-[var(--dark)]">Indiquez votre tarif horaire</span>
+            <span className="block text-[13px] text-[var(--gray-700)]">30 secondes, et vos devis se remplissent tout seuls.</span>
+          </span>
+          <IconChevron className="w-5 h-5 text-[var(--gray-500)] shrink-0" />
+        </button>
+      )}
+
+      {reglages.tarif_horaire > 0 && qrFactureManque(profileForPdf) && (
+        <button type="button" onClick={() => { setReglagesFocus('paiement'); setShowReglages(true) }}
+          className="w-full flex items-center gap-3 p-4 mb-4 rounded-[20px] bg-[rgba(232,112,10,0.08)] border border-[rgba(232,112,10,0.25)] text-left cursor-pointer">
+          <span className="w-11 h-11 shrink-0 rounded-2xl bg-[var(--orange)] text-white flex items-center justify-center"><IconQr className="w-6 h-6" /></span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-semibold text-[15px] text-[var(--dark)]">Activez la QR-facture</span>
+            <span className="block text-[13px] text-[var(--gray-700)]">Ajoutez votre IBAN : vos clients paient en scannant.</span>
+          </span>
+          <IconChevron className="w-5 h-5 text-[var(--gray-500)] shrink-0" />
+        </button>
+      )}
+
+      {documents.length === 0 ? (
+        <div className={`${CARD} text-center py-12 px-6`}>
+          <span className="w-16 h-16 mx-auto mb-4 rounded-3xl bg-[rgba(232,112,10,0.12)] text-[var(--orange)] flex items-center justify-center"><IconDoc className="w-8 h-8" /></span>
+          <h3 className="font-sora font-bold text-lg mb-1">Votre premier devis en 1 minute</h3>
+          <p className="text-[15px] text-[var(--gray-500)] mb-6 max-w-[340px] mx-auto">Client, prestations, total : le PDF est prêt à envoyer. Transformez-le ensuite en facture en un geste.</p>
+          <div className="flex flex-col gap-2 max-w-[280px] mx-auto">
+            <button onClick={() => createNew('devis')} className={BTN_PRIMARY}><IconPlus className="w-[18px] h-[18px]" /> Créer un devis</button>
+            <button onClick={() => createNew('facture')} className={BTN_SECONDARY}>Créer une facture</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Résumé */}
+          <div className="grid grid-cols-2 gap-3 mb-4 min-[900px]:grid-cols-3">
+            <button type="button" onClick={() => setFiltre(filtre === 'a_encaisser' ? 'tout' : 'a_encaisser')} aria-pressed={filtre === 'a_encaisser'}
+              className="col-span-2 min-[900px]:col-span-1 text-left rounded-[20px] p-4 bg-[var(--dark)] text-white border-none cursor-pointer">
+              <div className="text-[13px] text-white/70 font-semibold">À encaisser</div>
+              <div className="font-sora font-extrabold text-[26px] leading-tight mt-0.5">{formatCHF(resume.aEncaisser)}</div>
+              <div className="text-[13px] text-white/70 mt-1">
+                {resume.nbAEncaisser} facture{resume.nbAEncaisser > 1 ? 's' : ''} envoyée{resume.nbAEncaisser > 1 ? 's' : ''}
+                {resume.nbEnRetard > 0 && <span className="ml-2 inline-block py-0.5 px-2 rounded-full bg-[var(--red)] text-white text-[12px] font-bold">{resume.nbEnRetard} en retard</span>}
+              </div>
+            </button>
+            <button type="button" onClick={() => setFiltre(filtre === 'devis' ? 'tout' : 'devis')} aria-pressed={filtre === 'devis'}
+              className="text-left rounded-[20px] p-4 bg-white border border-[var(--gray-200)] cursor-pointer">
+              <div className="text-[13px] text-[var(--gray-500)] font-semibold">Devis en attente</div>
+              <div className="font-sora font-extrabold text-[18px] text-[var(--dark)] leading-tight mt-0.5">{formatCHF(resume.devisEnAttente)}</div>
+              <div className="text-[12px] text-[var(--gray-500)] mt-1">{resume.nbDevisEnAttente} devis envoyé{resume.nbDevisEnAttente > 1 ? 's' : ''}</div>
+            </button>
+            <div className="rounded-[20px] p-4 bg-[var(--green-light)]">
+              <div className="text-[13px] text-[var(--green)] font-semibold">Encaissé en {moisLabel}</div>
+              <div className="font-sora font-extrabold text-[18px] text-[var(--dark)] leading-tight mt-0.5">{formatCHF(resume.encaisseMois)}</div>
+              <div className="text-[12px] text-[var(--green)] mt-1">Factures payées</div>
+            </div>
+          </div>
+
+          {/* Filtres */}
+          <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 mb-3 [scrollbar-width:none] min-[600px]:mx-0 min-[600px]:px-0">
+            {filtres.map(f => (
+              <button key={f.key} type="button" onClick={() => setFiltre(f.key)} aria-pressed={filtre === f.key}
+                className={`shrink-0 h-10 px-4 rounded-full text-sm font-semibold border cursor-pointer transition-colors ${filtre === f.key ? 'bg-[var(--dark)] border-[var(--dark)] text-white' : 'bg-white border-[var(--gray-200)] text-[var(--dark)]'}`}>
+                {f.label} <span className={filtre === f.key ? 'text-white/70' : 'text-[var(--gray-500)]'}>{counts[f.key]}</span>
               </button>
             ))}
           </div>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-            className="py-1.5 px-3 rounded-lg text-xs border border-[var(--gray-200)] outline-none bg-white">
-            <option value="all">Tous les statuts</option>
-            <option value="brouillon">Brouillon</option>
-            <option value="envoye">Envoyé</option>
-            <option value="accepte">Accepté</option>
-            <option value="payee">Payée</option>
-            <option value="en_retard">En retard</option>
-            <option value="refuse">Refusé</option>
-            <option value="converti">Converti</option>
-          </select>
-          <div className="relative flex-1 min-w-[160px]">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--gray-500)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..."
-              className="w-full py-1.5 pl-8 pr-3 rounded-lg text-xs border border-[var(--gray-200)] outline-none focus:border-[var(--orange)]" />
+          <div className="relative mb-5">
+            <IconSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[var(--gray-500)]" />
+            <label htmlFor="fact-search" className="sr-only">Rechercher un client ou un numéro</label>
+            <input id="fact-search" type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Client ou numéro…" className={inputCls({ px: 'pl-11 pr-4', rounded: 'rounded-full' })} />
           </div>
-        </div>
 
-        {/* Document list */}
-        <div className="bg-white rounded-[var(--radius)] border border-[var(--gray-200)] overflow-hidden">
-          {filteredDocs.length === 0 ? (
-            <div className="text-center py-16 px-6">
-              <svg className="w-12 h-12 mx-auto text-[var(--gray-300)] mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              <h3 className="font-sora font-bold text-base mb-2">Aucun document</h3>
-              <p className="text-sm text-[var(--gray-500)]">Utilisez les boutons ci-dessus pour créer votre premier devis ou facture.</p>
-            </div>
+          {groupes.total === 0 ? (
+            <p className="text-center text-[15px] text-[var(--gray-500)] py-10">Aucun document ne correspond.</p>
           ) : (
-            filteredDocs.map(doc => (
-              <div key={doc.id} className="flex items-center gap-4 p-4 border-b border-[var(--gray-100)] last:border-0 hover:bg-[var(--gray-50)] transition-colors max-[600px]:flex-col max-[600px]:items-start max-[600px]:gap-2">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <span className={`shrink-0 py-1 px-2 rounded text-[10px] font-bold uppercase ${doc.type === 'devis' ? 'bg-[rgba(232,112,10,0.1)] text-[var(--orange)]' : 'bg-[var(--blue-light)] text-[var(--blue)]'}`}>
-                    {doc.type === 'devis' ? 'DEV' : 'FAC'}
-                  </span>
-                  <div className="min-w-0">
-                    <div className="font-semibold text-sm text-[var(--dark)] truncate">{doc.numero}</div>
-                    <div className="text-xs text-[var(--gray-500)] truncate">{doc.client_nom || '(sans client)'}</div>
-                  </div>
-                </div>
-                <div className="text-right max-[600px]:flex max-[600px]:items-center max-[600px]:gap-3 max-[600px]:w-full max-[600px]:justify-between">
-                  <div className="font-sora font-bold text-sm text-[var(--dark)]">{formatCHF(doc.total_ttc)}</div>
-                  <div className="flex items-center gap-2 mt-1 max-[600px]:mt-0">
-                    <span className={`py-0.5 px-2 rounded-full text-[10px] font-bold ${statusStyle(doc.statut)}`}>{statusLabel(doc.statut)}</span>
-                    <span className="text-[10px] text-[var(--gray-500)]">{formatDate(doc.date_emission)}</span>
-                  </div>
-                </div>
-                <div className="flex gap-1 shrink-0 max-[600px]:w-full max-[600px]:justify-end">
-                  <button onClick={() => populateEditor(doc)} className="text-[10px] font-bold py-1 px-2.5 rounded-md bg-[var(--gray-100)] text-[var(--gray-700)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors">Modifier</button>
-                  <button onClick={() => duplicateDoc(doc.id)} className="text-[10px] font-bold py-1 px-2.5 rounded-md bg-[var(--gray-100)] text-[var(--gray-700)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors">Dupliquer</button>
-                  <button onClick={() => pdfFromDoc(doc)} title="Télécharger en PDF" className="text-[10px] font-bold py-1 px-2.5 rounded-md bg-[var(--gray-100)] text-[var(--gray-700)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors">PDF</button>
-                  <button onClick={() => setDeleteTarget(doc.id)} className="text-[10px] font-bold py-1 px-2.5 rounded-md bg-[var(--red-light)] text-[var(--red)] border-none cursor-pointer hover:bg-[rgba(211,47,47,0.12)] transition-colors">
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                  </button>
-                </div>
-              </div>
-            ))
+            GROUPES_DOC.map(g => {
+              const docs = groupes.map[g.key]
+              if (docs.length === 0) return null
+              const visibles = g.key === 'clotures' && !showAllClos ? docs.slice(0, 6) : docs
+              return (
+                <section key={g.key} className="mb-5" aria-labelledby={`fact-grp-${g.key}`}>
+                  <h3 id={`fact-grp-${g.key}`} className="text-[13px] font-bold uppercase tracking-wider text-[var(--gray-500)] mb-2 px-1">
+                    {g.label} <span className="font-semibold">· {docs.length}</span>
+                  </h3>
+                  <ul className="flex flex-col gap-2">
+                    {visibles.map(doc => {
+                      const e = etatDocument(doc, today)
+                      return (
+                        <li key={doc.id} className="flex items-center rounded-[20px] border border-[var(--gray-200)] bg-white transition-shadow hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]">
+                          <button type="button" onClick={() => openEditor(doc)} className="flex-1 min-w-0 flex items-center gap-3 p-3.5 pr-1 text-left bg-transparent border-none cursor-pointer">
+                            <DocTile type={doc.type} />
+                            <span className="flex-1 min-w-0">
+                              <span className="flex items-baseline justify-between gap-2">
+                                <span className="font-semibold text-[15px] text-[var(--dark)] truncate">{doc.client_nom || 'Sans client'}</span>
+                                <span className="font-sora font-bold text-[15px] text-[var(--dark)] shrink-0">{formatCHF(doc.total_ttc)}</span>
+                              </span>
+                              <span className="flex items-center justify-between gap-2 mt-1">
+                                <span className="text-[13px] text-[var(--gray-500)] truncate">{doc.numero}<span className="max-[600px]:hidden"> · {formatDateCH(doc.date_emission)}</span></span>
+                                <span className={`shrink-0 py-0.5 px-2 rounded-full text-[11px] font-bold ${TON_CLASSES[e.ton]}`}>{e.libelle}</span>
+                              </span>
+                            </span>
+                          </button>
+                          <button type="button" onClick={() => setMenuDoc(doc)} aria-label={`Actions pour ${doc.numero}`} className={`${ICON_BTN} mr-1 text-[var(--gray-500)]`}>
+                            <IconDots />
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  {g.key === 'clotures' && docs.length > 6 && (
+                    <button type="button" onClick={() => setShowAllClos(v => !v)} className="mt-2 w-full h-11 text-sm font-semibold text-[var(--orange)] bg-transparent border-none cursor-pointer">
+                      {showAllClos ? 'Afficher moins' : `Afficher les ${docs.length} documents`}
+                    </button>
+                  )}
+                </section>
+              )
+            })
           )}
-        </div>
+        </>
+      )}
 
-        {/* Delete Modal */}
-        {deleteTarget && (
-          <div className="fixed inset-0 z-[200] bg-black/50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setDeleteTarget(null) }}>
-            <div className="bg-white rounded-[var(--radius)] p-6 max-w-[400px] w-full">
-              <h3 className="font-sora font-bold text-lg mb-2">Supprimer ce document ?</h3>
-              <p className="text-sm text-[var(--gray-500)] mb-5">Cette action est irréversible.</p>
-              <div className="flex gap-3 justify-end">
-                <button onClick={() => setDeleteTarget(null)} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--gray-100)] text-[var(--gray-500)] border-none cursor-pointer">Annuler</button>
-                <button onClick={confirmDelete} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--red)] text-white border-none cursor-pointer">Supprimer</button>
-              </div>
-            </div>
-          </div>
-        )}
+      {/* Bouton flottant (mobile) */}
+      <button type="button" onClick={() => setShowCreate(true)} aria-label="Créer un devis ou une facture"
+        className="fixed right-4 z-40 bottom-[calc(84px+env(safe-area-inset-bottom))] w-14 h-14 rounded-full bg-[var(--orange)] text-white border-none cursor-pointer shadow-[0_8px_24px_rgba(232,112,10,0.4)] flex items-center justify-center active:scale-95 transition-transform min-[900px]:hidden">
+        <IconPlus className="w-7 h-7" />
+      </button>
 
-        {/* Toast */}
-        {toast && (
-          <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-2 py-3 px-5 rounded-full text-sm font-semibold text-white shadow-lg transition-all ${toast.type === 'success' ? 'bg-[var(--green)]' : 'bg-[var(--red)]'}`}>
-            {toast.type === 'success' ? (
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
-            ) : (
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-            )}
-            {toast.msg}
-          </div>
-        )}
-      </>
-    )
-  }
-
-  // ===== VIEW: EDITOR =====
-  if (viewMode === 'editor' && editingDoc) {
-    const isDevis = editingDoc.type === 'devis'
-    return (
-      <>
-        {/* Editor Header */}
-        <div className="flex items-center justify-between mb-5 max-[600px]:flex-col max-[600px]:gap-3 max-[600px]:items-stretch">
-          <div className="flex items-center gap-3">
-            <button onClick={() => { setViewMode('list'); setEditingDoc(null) }} className="flex items-center gap-1 text-sm text-[var(--gray-500)] font-medium border-none bg-transparent cursor-pointer hover:text-[var(--dark)] transition-colors">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
-              Retour
-            </button>
-            <span className={`py-1 px-2.5 rounded text-[11px] font-bold uppercase ${isDevis ? 'bg-[rgba(232,112,10,0.1)] text-[var(--orange)]' : 'bg-[var(--blue-light)] text-[var(--blue)]'}`}>
-              {isDevis ? 'DEVIS' : 'FACTURE'}
-            </span>
-            <span className="font-sora font-bold text-base">{editingDoc.numero}</span>
-            <span className={`py-0.5 px-2 rounded-full text-[10px] font-bold ${statusStyle(editingDoc.statut)}`}>{statusLabel(editingDoc.statut)}</span>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => setShowPreview(true)} className="flex items-center gap-1.5 text-[11px] font-bold py-1.5 px-3 rounded-lg bg-[var(--gray-100)] text-[var(--gray-700)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors">
-              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              Aperçu
-            </button>
-            <button onClick={handleSave} className="flex items-center gap-1.5 py-2 px-4 rounded-full text-sm font-bold bg-[var(--orange)] text-white border-none cursor-pointer hover:bg-[var(--orange-dark)] transition-colors">
-              Enregistrer
-            </button>
-          </div>
-        </div>
-
-        <div className="grid gap-5 max-[900px]:grid-cols-1" style={{ gridTemplateColumns: '1fr 320px' }}>
-          {/* Main column */}
-          <div className="flex flex-col gap-4">
-            {/* Client */}
-            <div className="bg-white rounded-[var(--radius)] border border-[var(--gray-200)] p-5">
-              <h3 className="font-sora font-bold text-sm mb-4 flex items-center gap-2">
-                <svg className="w-4 h-4 text-[var(--gray-500)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                Client
-              </h3>
-              <div className="grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
-                <div>
-                  <label className="block text-[11px] font-semibold text-[var(--gray-500)] mb-1">Nom / Entreprise</label>
-                  <input type="text" value={clientNom} onChange={e => { setClientNom(e.target.value); triggerAutoSave() }} placeholder="Ex: Sophie Martin"
-                    className="w-full py-2 px-3 border border-[var(--gray-200)] rounded-lg text-sm outline-none focus:border-[var(--orange)]" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-[var(--gray-500)] mb-1">Email</label>
-                  <input type="email" value={clientEmail} onChange={e => { setClientEmail(e.target.value); triggerAutoSave() }} placeholder="sophie@example.ch"
-                    className="w-full py-2 px-3 border border-[var(--gray-200)] rounded-lg text-sm outline-none focus:border-[var(--orange)]" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-[var(--gray-500)] mb-1">Téléphone</label>
-                  <input type="tel" value={clientTelephone} onChange={e => { setClientTelephone(e.target.value); triggerAutoSave() }} placeholder="+41 79 000 00 00"
-                    className="w-full py-2 px-3 border border-[var(--gray-200)] rounded-lg text-sm outline-none focus:border-[var(--orange)]" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-[var(--gray-500)] mb-1">Adresse</label>
-                  <textarea value={clientAdresse} onChange={e => { setClientAdresse(e.target.value); triggerAutoSave() }} placeholder="Rue, NPA Ville" rows={2}
-                    className="w-full py-2 px-3 border border-[var(--gray-200)] rounded-lg text-sm outline-none focus:border-[var(--orange)] resize-y" />
-                </div>
-              </div>
-            </div>
-
-            {/* Line items */}
-            <div className="bg-white rounded-[var(--radius)] border border-[var(--gray-200)] p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-sora font-bold text-sm flex items-center gap-2">
-                  <svg className="w-4 h-4 text-[var(--gray-500)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                  Prestations
-                </h3>
-                <button onClick={() => setShowPicker(true)} className="text-[11px] font-bold py-1 px-3 rounded-md bg-[var(--gray-100)] text-[var(--gray-700)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors">
-                  Catalogue
+      {showCreate && (
+        <Dialog onClose={() => setShowCreate(false)} labelledBy="fact-create-title" variant="sheet" className="max-w-[440px]">
+          <div className="p-5">
+            <h3 id="fact-create-title" className="font-sora font-bold text-lg mb-4">Créer</h3>
+            <div className="flex flex-col gap-2">
+              {([
+                { type: 'devis' as const, titre: 'Un devis', texte: 'Proposez un prix à votre client' },
+                { type: 'facture' as const, titre: 'Une facture', texte: 'Demandez le paiement, avec QR-facture' },
+              ]).map(o => (
+                <button key={o.type} type="button" onClick={() => { setShowCreate(false); createNew(o.type) }}
+                  className="w-full flex items-center gap-4 p-4 rounded-[20px] border border-[var(--gray-200)] bg-white text-left cursor-pointer hover:border-[var(--orange)]">
+                  <DocTile type={o.type} className="w-12 h-12" />
+                  <span>
+                    <span className="block font-sora font-bold text-[16px] text-[var(--dark)]">{o.titre}</span>
+                    <span className="block text-[14px] text-[var(--gray-500)]">{o.texte}</span>
+                  </span>
                 </button>
-              </div>
-
-              {/* Header row */}
-              <div className="grid gap-2 text-[10px] font-bold text-[var(--gray-500)] uppercase tracking-wider pb-2 border-b border-[var(--gray-100)] mb-2 max-[600px]:hidden" style={{ gridTemplateColumns: '1fr 60px 80px 80px 70px 32px' }}>
-                <span>Description</span><span>Qté</span><span>Unité</span><span>Prix unit.</span><span>Total</span><span></span>
-              </div>
-
-              {/* Lines */}
-              {lineItems.map(l => (
-                <div key={l.id} className="grid gap-2 items-center py-2 border-b border-[var(--gray-100)] last:border-0 max-[600px]:grid-cols-2 max-[600px]:gap-1.5" style={{ gridTemplateColumns: '1fr 60px 80px 80px 70px 32px' }}>
-                  <input type="text" value={l.description} onChange={e => updateLine(l.id, 'description', e.target.value)} placeholder="Description"
-                    className="py-1.5 px-2 border border-[var(--gray-200)] rounded text-sm outline-none focus:border-[var(--orange)] max-[600px]:col-span-2" />
-                  <input type="number" value={l.quantite} onChange={e => updateLine(l.id, 'quantite', e.target.value)} min={0} step={0.5}
-                    className="py-1.5 px-2 border border-[var(--gray-200)] rounded text-sm outline-none focus:border-[var(--orange)] text-center" />
-                  <select value={l.unite} onChange={e => updateLine(l.id, 'unite', e.target.value)}
-                    className="py-1.5 px-1 border border-[var(--gray-200)] rounded text-xs outline-none">
-                    {UNITES.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
-                  </select>
-                  <input type="number" value={l.prix_unitaire} onChange={e => updateLine(l.id, 'prix_unitaire', e.target.value)} min={0} step={0.5}
-                    className="py-1.5 px-2 border border-[var(--gray-200)] rounded text-sm outline-none focus:border-[var(--orange)] text-right" />
-                  <div className="text-sm font-semibold text-right pr-1">{l.total.toFixed(2)}</div>
-                  <button onClick={() => removeLine(l.id)} className="w-7 h-7 rounded flex items-center justify-center text-[var(--gray-500)] hover:text-[var(--red)] hover:bg-[var(--red-light)] border-none bg-transparent cursor-pointer transition-colors">
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  </button>
-                </div>
               ))}
-
-              <button onClick={() => addLine()} className="flex items-center gap-1.5 mt-3 text-xs font-semibold text-[var(--orange)] border-none bg-transparent cursor-pointer hover:underline">
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Ajouter une ligne
+              <button type="button" onClick={openCatalogue} className="w-full flex items-center gap-4 p-4 rounded-[20px] bg-[var(--gray-50)] border-none text-left cursor-pointer">
+                <span className="w-12 h-12 shrink-0 rounded-2xl bg-white text-[var(--gray-700)] flex items-center justify-center"><IconBook /></span>
+                <span>
+                  <span className="block font-semibold text-[15px] text-[var(--dark)]">Gérer mon catalogue</span>
+                  <span className="block text-[14px] text-[var(--gray-500)]">{prestations.length} prestation{prestations.length > 1 ? 's' : ''} enregistrée{prestations.length > 1 ? 's' : ''}</span>
+                </span>
+              </button>
+              <button type="button" onClick={() => { setShowCreate(false); setShowReglages(true) }} className="w-full flex items-center gap-4 p-4 rounded-[20px] bg-[var(--gray-50)] border-none text-left cursor-pointer">
+                <span className="w-12 h-12 shrink-0 rounded-2xl bg-white text-[var(--gray-700)] flex items-center justify-center"><IconSettings /></span>
+                <span>
+                  <span className="block font-semibold text-[15px] text-[var(--dark)]">Mes tarifs et réglages</span>
+                  <span className="block text-[14px] text-[var(--gray-500)]">{reglages.tarif_horaire ? `${formatPrixCourt(reglages.tarif_horaire)}/h` : 'Tarif horaire à renseigner'} · TVA · délais</span>
+                </span>
               </button>
             </div>
-
-            {/* Notes */}
-            <div className="bg-white rounded-[var(--radius)] border border-[var(--gray-200)] p-5">
-              <h3 className="font-sora font-bold text-sm mb-3 flex items-center gap-2">
-                <svg className="w-4 h-4 text-[var(--gray-500)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                Notes et conditions
-              </h3>
-              <label className="block text-[11px] font-semibold text-[var(--gray-500)] mb-1">Notes (visibles sur le document)</label>
-              <textarea value={notes} onChange={e => { setNotes(e.target.value); triggerAutoSave() }} rows={2} placeholder="Ex: Matériel fourni par le client..."
-                className="w-full py-2 px-3 border border-[var(--gray-200)] rounded-lg text-sm outline-none focus:border-[var(--orange)] resize-y mb-1" />
-            </div>
           </div>
+        </Dialog>
+      )}
 
-          {/* Sidebar */}
-          <div className="flex flex-col gap-4">
-            {/* Dates */}
-            <div className="bg-white rounded-[var(--radius)] border border-[var(--gray-200)] p-5">
-              <h3 className="font-sora font-bold text-sm mb-3 flex items-center gap-2">
-                <svg className="w-4 h-4 text-[var(--gray-500)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                Dates
-              </h3>
-              <div className="mb-3">
-                <label className="block text-[11px] font-semibold text-[var(--gray-500)] mb-1">Date d&apos;émission</label>
-                <input type="date" value={dateEmission} onChange={e => { setDateEmission(e.target.value); triggerAutoSave() }}
-                  className="w-full py-2 px-3 border border-[var(--gray-200)] rounded-lg text-sm outline-none focus:border-[var(--orange)]" />
-              </div>
-              {!isDevis && (
-                <div>
-                  <label className="block text-[11px] font-semibold text-[var(--gray-500)] mb-1">Date d&apos;échéance</label>
-                  <input type="date" value={dateEcheance} onChange={e => { setDateEcheance(e.target.value); triggerAutoSave() }}
-                    className="w-full py-2 px-3 border border-[var(--gray-200)] rounded-lg text-sm outline-none focus:border-[var(--orange)]" />
-                </div>
-              )}
-            </div>
+      {showReglages && (
+        <ReglagesSheet userId={userId} reglages={reglages} adresseEntreprise={profile?.adresse} focus={reglagesFocus}
+          onClose={() => { setShowReglages(false); setReglagesFocus(undefined) }}
+          onSaved={(r, b) => { setReglages(r); if (b) setBank(b); setShowReglages(false); setReglagesFocus(undefined); showToast('success', 'Réglages enregistrés') }} />
+      )}
+      {menuDoc && <DocMenu doc={menuDoc} onClose={() => setMenuDoc(null)} onOpen={() => { const d = menuDoc; setMenuDoc(null); openEditor(d) }} onSend={() => { const d = menuDoc; setMenuDoc(null); envoiMarqueRef.current = false; setEnvoi({ doc: d, relance: estEnRetard(d, today) }) }} onPdf={() => pdfFromDoc(menuDoc)} onDuplicate={() => duplicateDoc(menuDoc)} onDelete={() => { setDeleteTarget(menuDoc); setMenuDoc(null) }} />}
+      {envoi && (
+        <EnvoyerSheet doc={envoi.doc} relance={envoi.relance}
+          entreprise={profile?.entreprise || `${profile?.prenom || ''} ${profile?.nom || ''}`.trim()}
+          onSent={() => void marquerEnvoye(envoi.doc)}
+          onPdf={() => { const d = envoi.doc; setEnvoi(null); if (viewMode === 'editor') pdfFromEditor(); else pdfFromDoc(d) }}
+          onClose={() => setEnvoi(null)} />
+      )}
 
-            {/* Totals */}
-            <div className="bg-white rounded-[var(--radius)] border border-[var(--gray-200)] p-5">
-              <div className="flex justify-between items-center py-2 text-sm">
-                <span className="text-[var(--gray-500)]">Sous-total</span>
-                <span className="font-semibold">{formatCHF(sousTotal)}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 text-sm border-t border-[var(--gray-100)]">
-                <div className="flex items-center gap-2">
-                  <select value={remiseType} onChange={e => { setRemiseType(e.target.value); triggerAutoSave() }}
-                    className="py-1 px-2 rounded text-xs border border-[var(--gray-200)] outline-none">
-                    <option value="aucune">Pas de remise</option>
-                    <option value="pourcentage">Remise %</option>
-                    <option value="montant">Remise CHF</option>
-                  </select>
-                  {remiseType !== 'aucune' && (
-                    <input type="number" value={remiseValeur} onChange={e => { setRemiseValeur(parseFloat(e.target.value) || 0); triggerAutoSave() }}
-                      min={0} step={0.5} className="w-16 py-1 px-2 rounded text-xs border border-[var(--gray-200)] outline-none text-right" />
-                  )}
-                </div>
-                {remiseType !== 'aucune' && <span className="font-semibold text-[var(--red)]">-{formatCHF(montantRemise)}</span>}
-              </div>
-              <div className="flex justify-between items-center py-2 text-sm border-t border-[var(--gray-100)]">
-                <div className="flex items-center gap-2">
-                  <span className="text-[var(--gray-500)]">TVA</span>
-                  <select value={tauxTva} onChange={e => { setTauxTva(parseFloat(e.target.value)); triggerAutoSave() }}
-                    className="py-0.5 px-1.5 rounded text-[11px] border border-[var(--gray-200)] outline-none">
-                    {TVA_RATES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                  </select>
-                </div>
-                <span className="font-semibold">{formatCHF(montantTva)}</span>
-              </div>
-              <div className="flex justify-between items-center py-3 text-base font-bold border-t-2 border-[var(--dark)] mt-1">
-                <span>Total TTC</span>
-                <span className="font-sora">{formatCHF(totalTtc)}</span>
-              </div>
-            </div>
+      {deleteDialog}
+      {toastEl}
+    </div>
+  )
+}
 
-            {/* Status Actions */}
-            <div className="bg-white rounded-[var(--radius)] border border-[var(--gray-200)] p-5">
-              <h3 className="font-sora font-bold text-sm mb-3 flex items-center gap-2">
-                <svg className="w-4 h-4 text-[var(--gray-500)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                Actions
-              </h3>
-              <div className="flex flex-col gap-2">
-                {isDevis ? (
-                  <>
-                    {editingDoc.statut === 'brouillon' && (
-                      <button onClick={() => setStatus('envoye')} className="w-full py-2 rounded-lg text-sm font-semibold bg-[var(--blue-light)] text-[var(--blue)] border-none cursor-pointer hover:brightness-95 transition-all">Marquer comme envoyé</button>
-                    )}
-                    {editingDoc.statut === 'envoye' && (
-                      <>
-                        <button onClick={() => setStatus('accepte')} className="w-full py-2 rounded-lg text-sm font-semibold bg-[var(--green-light)] text-[var(--green)] border-none cursor-pointer hover:brightness-95 transition-all">Marquer comme accepté</button>
-                        <button onClick={() => setStatus('refuse')} className="w-full py-2 rounded-lg text-sm font-semibold bg-[var(--red-light)] text-[var(--red)] border-none cursor-pointer hover:brightness-95 transition-all">Marquer comme refusé</button>
-                      </>
-                    )}
-                    {editingDoc.statut === 'accepte' && (
-                      <button onClick={convertToFacture} className="w-full py-2.5 rounded-lg text-sm font-bold bg-[var(--orange)] text-white border-none cursor-pointer hover:bg-[var(--orange-dark)] transition-colors flex items-center justify-center gap-2">
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
-                        Convertir en facture
-                      </button>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {editingDoc.statut === 'brouillon' && (
-                      <button onClick={() => setStatus('envoyee')} className="w-full py-2 rounded-lg text-sm font-semibold bg-[var(--blue-light)] text-[var(--blue)] border-none cursor-pointer hover:brightness-95 transition-all">Marquer comme envoyée</button>
-                    )}
-                    {editingDoc.statut === 'envoyee' && (
-                      <>
-                        <button onClick={() => setStatus('payee')} className="w-full py-2 rounded-lg text-sm font-semibold bg-[var(--green-light)] text-[var(--green)] border-none cursor-pointer hover:brightness-95 transition-all">Marquer comme payée</button>
-                        <button onClick={() => setStatus('en_retard')} className="w-full py-2 rounded-lg text-sm font-semibold bg-[var(--red-light)] text-[var(--red)] border-none cursor-pointer hover:brightness-95 transition-all">Marquer en retard</button>
-                      </>
-                    )}
-                    {editingDoc.statut === 'en_retard' && (
-                      <button onClick={() => setStatus('payee')} className="w-full py-2 rounded-lg text-sm font-semibold bg-[var(--green-light)] text-[var(--green)] border-none cursor-pointer hover:brightness-95 transition-all">Marquer comme payée</button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
+// ===== Feuille d'actions d'un document =====
+
+function DocMenu({ doc, onClose, onOpen, onSend, onPdf, onDuplicate, onDelete }: {
+  doc: Document
+  onClose: () => void
+  onOpen?: () => void
+  onSend?: () => void
+  onPdf: () => void
+  onDuplicate: () => void
+  onDelete: () => void
+}) {
+  const item = 'w-full flex items-center gap-3 h-14 px-4 rounded-2xl text-[16px] font-semibold text-left bg-transparent border-none cursor-pointer hover:bg-[var(--gray-50)]'
+  return (
+    <Dialog onClose={onClose} labelledBy="fact-menu-title" variant="sheet" className="max-w-[400px]">
+      <div className="p-3 pt-4">
+        <div className="flex items-center gap-3 px-2 pb-3 mb-1 border-b border-[var(--gray-100)]">
+          <DocTile type={doc.type} />
+          <div className="min-w-0">
+            <h3 id="fact-menu-title" className="font-sora font-bold text-[16px] truncate">{doc.numero}</h3>
+            <p className="text-[13px] text-[var(--gray-500)] truncate">{doc.client_nom || 'Sans client'} · {formatCHF(doc.total_ttc)}</p>
           </div>
         </div>
-
-        {/* Preview Modal */}
-        {showPreview && (
-          <div className="fixed inset-0 z-[200] bg-black/50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setShowPreview(false) }}>
-            <div className="bg-white rounded-[var(--radius)] w-full max-w-[740px] max-h-[90vh] overflow-y-auto">
-              <div className="p-8 max-[600px]:p-5">
-                {/* Company header */}
-                <div className="flex justify-between items-start mb-8 max-[600px]:flex-col max-[600px]:gap-4">
-                  <div>
-                    <div className="font-sora text-xl font-extrabold text-[var(--dark)]">{profile?.entreprise || `${profile?.prenom || ''} ${profile?.nom || ''}`.trim()}</div>
-                    {profile?.adresse && <div className="text-sm text-[var(--gray-500)] mt-1">{profile.adresse}</div>}
-                    {profile?.telephone && <div className="text-sm text-[var(--gray-500)]">{profile.telephone}</div>}
-                    {profile?.email && <div className="text-sm text-[var(--gray-500)]">{profile.email}</div>}
-                  </div>
-                  <div className="text-right max-[600px]:text-left">
-                    <div className={`inline-block py-1 px-3 rounded text-sm font-bold uppercase ${isDevis ? 'bg-[rgba(232,112,10,0.1)] text-[var(--orange)]' : 'bg-[var(--blue-light)] text-[var(--blue)]'}`}>
-                      {isDevis ? 'DEVIS' : 'FACTURE'}
-                    </div>
-                    <div className="font-sora font-bold text-base mt-2">{editingDoc.numero}</div>
-                    <div className="text-xs text-[var(--gray-500)] mt-1">Date : {formatDate(dateEmission)}</div>
-                    {dateEcheance && <div className="text-xs text-[var(--gray-500)]">Échéance : {formatDate(dateEcheance)}</div>}
-                  </div>
-                </div>
-
-                {/* Client */}
-                <div className="bg-[var(--gray-50)] p-4 rounded-lg mb-6">
-                  <div className="text-[10px] font-bold uppercase text-[var(--gray-500)] mb-1">Client</div>
-                  <div className="font-semibold text-sm">{clientNom || '—'}</div>
-                  {clientAdresse && <div className="text-sm text-[var(--gray-700)]">{clientAdresse}</div>}
-                  {clientEmail && <div className="text-sm text-[var(--gray-500)]">{clientEmail}</div>}
-                  {clientTelephone && <div className="text-sm text-[var(--gray-500)]">{clientTelephone}</div>}
-                </div>
-
-                {/* Table */}
-                <table className="w-full border-collapse mb-6 text-sm">
-                  <thead>
-                    <tr className="border-b-2 border-[var(--dark)]">
-                      <th className="text-left py-2 text-[11px] font-bold uppercase text-[var(--gray-500)]">Description</th>
-                      <th className="text-center py-2 text-[11px] font-bold uppercase text-[var(--gray-500)] w-16">Qté</th>
-                      <th className="text-center py-2 text-[11px] font-bold uppercase text-[var(--gray-500)] w-16">Unité</th>
-                      <th className="text-right py-2 text-[11px] font-bold uppercase text-[var(--gray-500)] w-20">Prix</th>
-                      <th className="text-right py-2 text-[11px] font-bold uppercase text-[var(--gray-500)] w-20">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lineItems.map(l => (
-                      <tr key={l.id} className="border-b border-[var(--gray-100)]">
-                        <td className="py-2.5">{l.description || '—'}</td>
-                        <td className="text-center py-2.5">{l.quantite}</td>
-                        <td className="text-center py-2.5">{UNITES.find(u => u.value === l.unite)?.label || l.unite}</td>
-                        <td className="text-right py-2.5">{l.prix_unitaire.toFixed(2)}</td>
-                        <td className="text-right py-2.5 font-semibold">{l.total.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {/* Totals */}
-                <div className="flex justify-end mb-6">
-                  <div className="w-64">
-                    <div className="flex justify-between py-1.5 text-sm"><span className="text-[var(--gray-500)]">Sous-total</span><span>{formatCHF(sousTotal)}</span></div>
-                    {montantRemise > 0 && <div className="flex justify-between py-1.5 text-sm"><span className="text-[var(--gray-500)]">Remise</span><span className="text-[var(--red)]">-{formatCHF(montantRemise)}</span></div>}
-                    <div className="flex justify-between py-1.5 text-sm"><span className="text-[var(--gray-500)]">TVA {tauxTva}%</span><span>{formatCHF(montantTva)}</span></div>
-                    <div className="flex justify-between py-2 text-base font-bold border-t-2 border-[var(--dark)] mt-1"><span>Total TTC</span><span>{formatCHF(totalTtc)}</span></div>
-                  </div>
-                </div>
-
-                {/* Notes */}
-                {notes && (
-                  <div className="bg-[var(--gray-50)] p-4 rounded-lg text-sm text-[var(--gray-700)]">
-                    <div className="text-[10px] font-bold uppercase text-[var(--gray-500)] mb-1">Notes</div>
-                    {notes}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-2 p-4 border-t border-[var(--gray-200)]">
-                <button onClick={() => setShowPreview(false)} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--gray-100)] text-[var(--gray-500)] border-none cursor-pointer">Fermer</button>
-                <button onClick={pdfFromEditor} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--orange)] text-white border-none cursor-pointer hover:bg-[var(--orange-dark)]">Télécharger PDF</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Picker Modal */}
-        {showPicker && (
-          <div className="fixed inset-0 z-[200] bg-black/50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) { setShowPicker(false); setPickerSelected(new Set()) } }}>
-            <div className="bg-white rounded-[var(--radius)] w-full max-w-[520px] p-6">
-              <h3 className="font-sora font-bold text-lg mb-1">Ajouter depuis le catalogue</h3>
-              <p className="text-sm text-[var(--gray-500)] mb-4">Sélectionnez les prestations à ajouter.</p>
-              {prestations.length === 0 ? (
-                <p className="text-center text-[var(--gray-500)] py-5 text-sm">Aucune prestation dans le catalogue. Ajoutez-en d&apos;abord.</p>
-              ) : (
-                <div className="flex flex-col gap-1 max-h-[300px] overflow-y-auto mb-4">
-                  {prestations.map(p => (
-                    <label key={p.id} onClick={() => setPickerSelected(prev => { const s = new Set(prev); s.has(p.id) ? s.delete(p.id) : s.add(p.id); return s })}
-                      className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all border-2 ${pickerSelected.has(p.id) ? 'border-[var(--orange)] bg-[rgba(232,112,10,0.04)]' : 'border-[var(--gray-100)] hover:border-[var(--gray-200)]'}`}>
-                      <span className="font-semibold text-sm">{p.nom}</span>
-                      <span className="text-xs text-[var(--gray-500)]">{formatCHF(p.prix)}/{p.unite}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-              <div className="flex gap-3 justify-end">
-                <button onClick={() => { setShowPicker(false); setPickerSelected(new Set()) }} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--gray-100)] text-[var(--gray-500)] border-none cursor-pointer">Annuler</button>
-                <button onClick={confirmPicker} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--orange)] text-white border-none cursor-pointer hover:bg-[var(--orange-dark)]">Ajouter</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Toast */}
-        {toast && (
-          <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-2 py-3 px-5 rounded-full text-sm font-semibold text-white shadow-lg ${toast.type === 'success' ? 'bg-[var(--green)]' : 'bg-[var(--red)]'}`}>
-            {toast.type === 'success' ? <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg> : <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>}
-            {toast.msg}
-          </div>
-        )}
-      </>
-    )
-  }
-
-  // ===== VIEW: CATALOGUE =====
-  if (viewMode === 'catalogue') {
-    return (
-      <>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setViewMode('list')} className="flex items-center gap-1 text-sm text-[var(--gray-500)] font-medium border-none bg-transparent cursor-pointer hover:text-[var(--dark)] transition-colors">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
-              Retour
-            </button>
-            <h2 className="font-sora text-lg font-bold">Catalogue de prestations</h2>
-          </div>
-          <button onClick={() => openCatForm()} className="flex items-center gap-1.5 py-2 px-4 rounded-full text-sm font-bold bg-[var(--orange)] text-white border-none cursor-pointer hover:bg-[var(--orange-dark)] transition-colors">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Ajouter
+        {onOpen && (
+          <button type="button" onClick={onOpen} className={item}>
+            <Ico className="w-5 h-5 text-[var(--gray-700)]"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></Ico>
+            Ouvrir
           </button>
-        </div>
-
-        <div className="bg-white rounded-[var(--radius)] border border-[var(--gray-200)] overflow-hidden">
-          {/* Add/Edit Form */}
-          {catFormOpen && (
-            <div className="p-5 border-b border-[var(--gray-200)] bg-[var(--gray-50)]">
-              <div className="grid grid-cols-2 gap-3 mb-3 max-[600px]:grid-cols-1">
-                <div>
-                  <label className="block text-[11px] font-semibold text-[var(--gray-500)] mb-1">Nom</label>
-                  <input type="text" value={catNom} onChange={e => setCatNom(e.target.value)} placeholder="Ex: Main d'oeuvre"
-                    className="w-full py-2 px-3 border border-[var(--gray-200)] rounded-lg text-sm outline-none focus:border-[var(--orange)]" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-[var(--gray-500)] mb-1">Prix</label>
-                  <input type="number" value={catPrix} onChange={e => setCatPrix(e.target.value)} placeholder="0.00" min={0} step={0.5}
-                    className="w-full py-2 px-3 border border-[var(--gray-200)] rounded-lg text-sm outline-none focus:border-[var(--orange)]" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-[var(--gray-500)] mb-1">Unité</label>
-                  <select value={catUnite} onChange={e => setCatUnite(e.target.value)}
-                    className="w-full py-2 px-3 border border-[var(--gray-200)] rounded-lg text-sm outline-none">
-                    {UNITES.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-[var(--gray-500)] mb-1">Description (optionnel)</label>
-                  <input type="text" value={catDesc} onChange={e => setCatDesc(e.target.value)} placeholder="Description courte"
-                    className="w-full py-2 px-3 border border-[var(--gray-200)] rounded-lg text-sm outline-none focus:border-[var(--orange)]" />
-                </div>
-              </div>
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setCatFormOpen(false)} className="text-sm font-semibold py-2 px-4 rounded-full bg-[var(--gray-100)] text-[var(--gray-500)] border-none cursor-pointer">Annuler</button>
-                <button onClick={saveCatForm} className="text-sm font-semibold py-2 px-4 rounded-full bg-[var(--orange)] text-white border-none cursor-pointer hover:bg-[var(--orange-dark)]">Enregistrer</button>
-              </div>
-            </div>
-          )}
-
-          {/* List */}
-          {prestations.length === 0 ? (
-            <div className="text-center py-16 px-6">
-              <svg className="w-12 h-12 mx-auto text-[var(--gray-300)] mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-              <h3 className="font-sora font-bold text-base mb-2">Catalogue vide</h3>
-              <p className="text-sm text-[var(--gray-500)] mb-4">Ajoutez vos prestations courantes pour les réutiliser facilement.</p>
-              <button onClick={() => openCatForm()} className="py-2.5 px-5 rounded-full text-sm font-bold bg-[var(--orange)] text-white border-none cursor-pointer hover:bg-[var(--orange-dark)]">Ajouter une prestation</button>
-            </div>
-          ) : (
-            prestations.map(p => (
-              <div key={p.id} className="flex items-center gap-4 p-4 border-b border-[var(--gray-100)] last:border-0 hover:bg-[var(--gray-50)] transition-colors max-[600px]:flex-col max-[600px]:items-start max-[600px]:gap-2">
-                <div className="w-9 h-9 rounded-xl bg-[rgba(232,112,10,0.1)] flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4 text-[var(--orange)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm text-[var(--dark)]">{p.nom}</div>
-                  {p.description && <div className="text-xs text-[var(--gray-500)] truncate">{p.description}</div>}
-                </div>
-                <span className="text-xs text-[var(--gray-500)] shrink-0">/{p.unite}</span>
-                <span className="font-sora font-bold text-sm text-[var(--dark)] shrink-0">{formatCHF(p.prix)}</span>
-                <div className="flex gap-1 shrink-0">
-                  <button onClick={() => openCatForm(p)} className="text-[10px] font-bold py-1 px-2.5 rounded-md bg-[var(--gray-100)] text-[var(--gray-700)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors">Modifier</button>
-                  <button onClick={() => deletePrest(p.id)} className="text-[10px] font-bold py-1 px-2.5 rounded-md bg-[var(--red-light)] text-[var(--red)] border-none cursor-pointer hover:bg-[rgba(211,47,47,0.12)] transition-colors">
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Toast */}
-        {toast && (
-          <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-2 py-3 px-5 rounded-full text-sm font-semibold text-white shadow-lg ${toast.type === 'success' ? 'bg-[var(--green)]' : 'bg-[var(--red)]'}`}>
-            {toast.type === 'success' ? <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg> : <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>}
-            {toast.msg}
-          </div>
         )}
-      </>
-    )
-  }
-
-  return null
+        {onSend && (
+          <button type="button" onClick={onSend} className={item}><IconSend className="w-5 h-5 text-[var(--gray-700)]" /> {doc.statut === 'brouillon' ? 'Envoyer au client' : 'Renvoyer le lien'}</button>
+        )}
+        <button type="button" onClick={onPdf} className={item}><IconDownload className="w-5 h-5 text-[var(--gray-700)]" /> Télécharger le PDF</button>
+        <button type="button" onClick={onDuplicate} className={item}><IconCopy className="w-5 h-5 text-[var(--gray-700)]" /> Dupliquer</button>
+        <button type="button" onClick={onDelete} className={`${item} text-[var(--red)]`}><IconTrash className="w-5 h-5" /> Supprimer</button>
+      </div>
+    </Dialog>
+  )
 }

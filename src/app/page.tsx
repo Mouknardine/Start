@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import ScrollReveal from '@/components/ScrollReveal'
@@ -45,6 +46,31 @@ async function getHeroStats() {
     return { artisans: 0, noteMoyenne: '—', avisCount: 0, metierCounts: {} as Record<string, number> }
   }
 }
+
+
+/** Captures réelles de l'app (données de démonstration). */
+const APP_SCREENS = [
+  { src: '/accueil/app-demandes.webp', alt: 'Tableau de bord artisan : demandes des clients', titre: 'Les demandes arrivent', texte: 'Accepte ou refuse en un geste' },
+  { src: '/accueil/app-devis.webp', alt: 'Devis en cours : main d’œuvre, matériel, déplacement', titre: 'Un devis en 1 minute', texte: 'Tes tarifs sont déjà remplis' },
+  { src: '/accueil/app-envoi.webp', alt: 'Envoi du devis par WhatsApp, SMS ou e-mail', titre: 'Envoyé en 2 touches', texte: 'Le client accepte en ligne' },
+  { src: '/accueil/app-factures.webp', alt: 'Suivi des factures : à encaisser, en retard, payées', titre: 'Factures avec QR', texte: 'Tu vois ce qui reste à encaisser' },
+]
+
+const FEATURES = [
+  { titre: 'Des demandes de ta région', texte: 'Les clients te trouvent par métier et par commune, et t’écrivent avec tous les détails. Tu réponds depuis l’app.', icon: <><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" /></> },
+  { titre: 'Devis pensés artisan', texte: 'Main d’œuvre à l’heure ou à la journée, matériel avec ta marge, déplacement : tout est déjà calculé, TVA et arrondi compris.', icon: <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /></> },
+  { titre: 'Factures avec QR-facture', texte: 'Le devis accepté ou l’intervention devient une facture suisse conforme. Ton client paie en scannant le QR.', icon: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3" /></> },
+  { titre: 'Relances sans y penser', texte: 'Les factures en retard remontent en haut de la liste. Une relance polie part en deux touches.', icon: <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></> },
+  { titre: 'Agenda et disponibilités', texte: 'Tes créneaux libres s’affichent sur ta page publique : les clients demandent un rendez-vous au bon moment.', icon: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></> },
+  { titre: 'Ton équipe planifiée', texte: 'Qui va où, à quelle heure. Une intervention terminée se facture directement, heures comprises.', icon: <><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></> },
+]
+
+const FAQ = [
+  { q: 'Combien ça coûte ?', r: 'Pour les particuliers, Artisano est gratuit. Pour les artisans, toutes les fonctionnalités sont gratuites pendant la bêta ; un éventuel abonnement sera annoncé au moins 30 jours à l’avance et ne démarrera qu’avec ton accord.' },
+  { q: 'Comment les artisans sont-ils vérifiés ?', r: 'À l’inscription, l’artisan indique son numéro IDE (CHE-…). Il est contrôlé au registre du commerce : le badge « Vérifié » apparaît alors sur son profil.' },
+  { q: 'Comment mon client reçoit-il un devis ou une facture ?', r: 'Par un lien envoyé par WhatsApp, SMS ou e-mail. Il le consulte sur son téléphone, l’accepte en un clic s’il s’agit d’un devis, le télécharge en PDF, et paie une facture avec la QR-facture.' },
+  { q: 'Est-ce que ça marche sur mon téléphone ?', r: 'Oui, Artisano est pensé d’abord pour le téléphone. Tu peux aussi l’ajouter à ton écran d’accueil pour l’ouvrir comme une app.' },
+]
 
 export default async function Home() {
   const stats = await getHeroStats()
@@ -95,7 +121,42 @@ export default async function Home() {
             <div className="text-[13px] text-[var(--gray-500)] mt-1">avis vérifiés</div>
           </div>
         </div>
+
+        <a href="#artisans" className="mt-10 inline-flex items-center gap-2 text-[15px] font-semibold text-[var(--dark)] no-underline relative z-[1] hover:text-[var(--orange)] transition-colors max-[900px]:mt-8 max-[900px]:text-[14px]">
+          T’es artisan ? Découvre l’app qui gère le reste
+          <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
+        </a>
       </section>
+
+      {/* ===== HOW IT WORKS ===== */}
+      <ScrollReveal>
+        <section id="how-it-works" className="py-[90px] px-10 max-w-[1200px] mx-auto max-[900px]:py-[60px] max-[900px]:px-5 scroll-mt-20">
+          <p className="text-center text-[13px] font-bold uppercase tracking-[0.12em] text-[var(--orange)] mb-3">Comment ça marche</p>
+          <h2 className="font-sora text-4xl font-bold text-center mb-4 max-[900px]:text-[26px]">Un artisan de confiance, sans prise de tête</h2>
+          <p className="text-center text-[var(--gray-500)] text-[17px] mb-16 max-[900px]:text-[15px] max-[900px]:mb-10">
+            Artisano réunit les pros de ta région, leurs avis et leurs disponibilités, au même endroit.
+          </p>
+          <div className="grid grid-cols-4 gap-8 relative max-[900px]:grid-cols-2 max-[400px]:grid-cols-1">
+            {/* Connecting line */}
+            <div className="absolute top-11 left-[12%] right-[12%] h-0.5 bg-gradient-to-r from-[var(--orange)] via-[var(--yellow)] to-[var(--orange)] opacity-30 z-0 max-[900px]:hidden" />
+
+            {[
+              { num: '1', title: "Dis-nous ce qu'il te faut", desc: 'Choisis un métier ou décris ton problème en deux mots' },
+              { num: '2', title: 'Compare les pros', desc: 'Avis vérifiés, spécialités, zones couvertes — tout est là' },
+              { num: '3', title: 'Contacte direct', desc: 'Demande un rendez-vous ou un devis en 30 secondes' },
+              { num: '4', title: 'Laisse ton avis', desc: 'Aide la communauté en partageant ton expérience' },
+            ].map((step) => (
+              <div key={step.num} className="group text-center relative z-[1]">
+                <div className="w-14 h-14 bg-[var(--dark)] text-white rounded-full flex items-center justify-center font-sora font-extrabold text-xl mx-auto mb-5 transition-all group-hover:bg-[var(--orange)] group-hover:scale-[1.15] group-hover:shadow-[0_8px_24px_rgba(232,112,10,0.35)] max-[900px]:w-11 max-[900px]:h-11 max-[900px]:text-base">
+                  {step.num}
+                </div>
+                <h3 className="font-sora text-base font-bold mb-2">{step.title}</h3>
+                <p className="text-sm text-[var(--gray-500)] leading-relaxed">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </ScrollReveal>
 
       {/* ===== MÉTIERS ===== */}
       <ScrollReveal>
@@ -152,30 +213,109 @@ export default async function Home() {
         </section>
       </ScrollReveal>
 
-      {/* ===== HOW IT WORKS ===== */}
-      <ScrollReveal>
-        <section id="how-it-works" className="py-[100px] px-10 max-w-[1200px] mx-auto max-[900px]:py-[60px] max-[900px]:px-5">
-          <h2 className="font-sora text-4xl font-bold text-center mb-4 max-[900px]:text-[26px]">Simple comme bonjour</h2>
-          <p className="text-center text-[var(--gray-500)] text-[17px] mb-16 max-[900px]:text-[15px] max-[900px]:mb-10">
-            Pas de compte obligatoire, pas de prise de tête.
-          </p>
-          <div className="grid grid-cols-4 gap-8 relative max-[900px]:grid-cols-2 max-[400px]:grid-cols-1">
-            {/* Connecting line */}
-            <div className="absolute top-11 left-[12%] right-[12%] h-0.5 bg-gradient-to-r from-[var(--orange)] via-[var(--yellow)] to-[var(--orange)] opacity-30 z-0 max-[900px]:hidden" />
+      {/* ===== L'APP DES ARTISANS ===== */}
+      <section id="artisans" className="scroll-mt-16 bg-[var(--dark)] text-white overflow-hidden">
+        <div className="max-w-[1200px] mx-auto px-10 py-[100px] max-[900px]:px-5 max-[900px]:py-16">
+          <ScrollReveal>
+            <p className="text-[13px] font-bold uppercase tracking-[0.12em] text-[var(--orange-light)] mb-3">Pour les artisans</p>
+            <h2 className="font-sora text-[44px] font-extrabold leading-[1.1] max-w-[760px] max-[900px]:text-[28px]">
+              Ton métier, c’est le chantier.<br />
+              <span className="text-[var(--orange-light)]">Le reste, Artisano s’en occupe.</span>
+            </h2>
+            <p className="text-[18px] text-white/70 max-w-[620px] mt-5 leading-relaxed max-[900px]:text-[16px]">
+              Demandes, devis, factures avec QR, agenda et équipe : tout se gère depuis ton téléphone, entre deux interventions. Sans paperasse, sans tableur.
+            </p>
+          </ScrollReveal>
 
-            {[
-              { num: '1', title: "Dis-nous ce qu'il te faut", desc: 'Choisis un métier ou décris ton problème en deux mots' },
-              { num: '2', title: 'Compare les pros', desc: 'Avis vérifiés, spécialités, zones couvertes — tout est là' },
-              { num: '3', title: 'Contacte direct', desc: 'Demande un rendez-vous ou un devis en 30 secondes' },
-              { num: '4', title: 'Laisse ton avis', desc: 'Aide la communauté en partageant ton expérience' },
-            ].map((step) => (
-              <div key={step.num} className="group text-center relative z-[1]">
-                <div className="w-14 h-14 bg-[var(--dark)] text-white rounded-full flex items-center justify-center font-sora font-extrabold text-xl mx-auto mb-5 transition-all group-hover:bg-[var(--orange)] group-hover:scale-[1.15] group-hover:shadow-[0_8px_24px_rgba(232,112,10,0.35)] max-[900px]:w-11 max-[900px]:h-11 max-[900px]:text-base">
-                  {step.num}
+          {/* Captures de l'app */}
+          <div className="mt-14 -mx-10 px-10 flex gap-6 overflow-x-auto snap-x snap-mandatory pb-4 [scrollbar-width:none] max-[900px]:-mx-5 max-[900px]:px-5 max-[900px]:gap-4 max-[900px]:mt-10 min-[1100px]:justify-center min-[1100px]:overflow-visible">
+            {APP_SCREENS.map((sc, i) => (
+              <figure key={sc.src} className={`snap-center shrink-0 w-[230px] m-0 max-[900px]:w-[62vw] max-[900px]:max-w-[260px] ${i % 2 ? 'min-[1100px]:translate-y-10' : ''}`}>
+                <div className="rounded-[34px] bg-[#0E1729] p-[7px] shadow-[0_24px_60px_rgba(0,0,0,0.45)] ring-1 ring-white/10">
+                  <div className="rounded-[28px] overflow-hidden bg-white">
+                    <Image src={sc.src} alt={sc.alt} width={540} height={1080} sizes="(max-width: 900px) 62vw, 230px" className="w-full h-auto block" />
+                  </div>
                 </div>
-                <h3 className="font-sora text-base font-bold mb-2">{step.title}</h3>
-                <p className="text-sm text-[var(--gray-500)] leading-relaxed">{step.desc}</p>
+                <figcaption className="mt-4 text-center">
+                  <span className="block font-sora font-bold text-[15px]">{sc.titre}</span>
+                  <span className="block text-[13px] text-white/60 mt-0.5">{sc.texte}</span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+
+          {/* En chiffres */}
+          <div className="grid grid-cols-3 gap-4 mt-16 max-[900px]:grid-cols-1 max-[900px]:mt-10 max-[900px]:gap-3">
+            {[
+              { chiffre: '1 min', texte: 'pour un devis : tes tarifs, ta TVA et tes délais sont déjà remplis' },
+              { chiffre: '2 touches', texte: 'pour l’envoyer par WhatsApp, SMS ou e-mail. Le client l’accepte en ligne' },
+              { chiffre: '1 touche', texte: 'pour transformer le devis accepté ou l’intervention en facture avec QR' },
+            ].map((c) => (
+              <div key={c.chiffre} className="rounded-[20px] bg-white/[0.06] border border-white/10 p-6 max-[900px]:p-5">
+                <div className="font-sora text-[34px] font-extrabold text-[var(--orange-light)] leading-none whitespace-nowrap max-[900px]:text-[28px]">{c.chiffre}</div>
+                <p className="text-[15px] text-white/75 mt-2 leading-snug">{c.texte}</p>
               </div>
+            ))}
+          </div>
+
+          {/* Fonctionnalités */}
+          <div className="grid grid-cols-3 gap-5 mt-16 max-[900px]:grid-cols-1 max-[900px]:mt-12 max-[900px]:gap-3">
+            {FEATURES.map((f) => (
+              <div key={f.titre} className="rounded-[20px] bg-white text-[var(--dark)] p-6 max-[900px]:p-5">
+                <div className="w-11 h-11 rounded-2xl bg-[rgba(232,112,10,0.12)] text-[var(--orange)] flex items-center justify-center mb-4">
+                  <svg aria-hidden="true" className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{f.icon}</svg>
+                </div>
+                <h3 className="font-sora font-bold text-[17px] mb-1.5">{f.titre}</h3>
+                <p className="text-[15px] text-[var(--gray-700)] leading-relaxed">{f.texte}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-4 mt-14 flex-wrap max-[900px]:flex-col max-[900px]:items-stretch max-[900px]:mt-10">
+            <Link href="/inscription" className="bg-[var(--orange)] text-white px-9 py-4 rounded-full font-sora font-bold text-base no-underline text-center transition-all hover:bg-[var(--orange-light)] hover:-translate-y-0.5">
+              Créer mon profil artisan
+            </Link>
+            <span className="text-[15px] text-white/70 text-center">Gratuit pendant la bêta · sans engagement</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== CONFIANCE ===== */}
+      <ScrollReveal>
+        <section className="py-[90px] px-10 max-w-[1200px] mx-auto max-[900px]:py-[60px] max-[900px]:px-5">
+          <p className="text-center text-[13px] font-bold uppercase tracking-[0.12em] text-[var(--orange)] mb-3">La confiance d’abord</p>
+          <h2 className="font-sora text-4xl font-bold text-center mb-12 max-[900px]:text-[26px] max-[900px]:mb-8">Des vrais pros, des vrais avis</h2>
+          <div className="grid grid-cols-3 gap-5 max-[900px]:grid-cols-1 max-[900px]:gap-3">
+            {[
+              { titre: 'Entreprises vérifiées', texte: 'Le numéro IDE de l’artisan est contrôlé au registre du commerce : le badge « Vérifié » le montre sur son profil.', icon: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><polyline points="9 12 11 14 15 10" /></> },
+              { titre: 'Avis de vrais clients', texte: 'Les avis viennent de clients passés par Artisano. L’artisan peut y répondre, publiquement.', icon: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /> },
+              { titre: 'Gratuit pour toi', texte: 'Chercher, comparer et contacter un artisan ne coûte rien. Tu paies l’artisan, directement, pour son travail.', icon: <><circle cx="12" cy="12" r="10" /><path d="M8 12h8M12 8v8" /></> },
+            ].map((c) => (
+              <div key={c.titre} className="rounded-[20px] border border-[var(--gray-200)] bg-white p-6 max-[900px]:p-5">
+                <div className="w-11 h-11 rounded-2xl bg-[var(--gray-100)] text-[var(--dark)] flex items-center justify-center mb-4">
+                  <svg aria-hidden="true" className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{c.icon}</svg>
+                </div>
+                <h3 className="font-sora font-bold text-[17px] mb-1.5">{c.titre}</h3>
+                <p className="text-[15px] text-[var(--gray-700)] leading-relaxed">{c.texte}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </ScrollReveal>
+
+      {/* ===== QUESTIONS ===== */}
+      <ScrollReveal>
+        <section className="pb-[90px] px-10 max-w-[820px] mx-auto max-[900px]:pb-[60px] max-[900px]:px-5">
+          <h2 className="font-sora text-[32px] font-bold text-center mb-8 max-[900px]:text-[24px]">Questions fréquentes</h2>
+          <div className="flex flex-col gap-3">
+            {FAQ.map((q) => (
+              <details key={q.q} className="group rounded-[16px] border border-[var(--gray-200)] bg-white px-5 open:pb-4">
+                <summary className="flex items-center justify-between gap-4 py-4 cursor-pointer list-none font-semibold text-[16px] text-[var(--dark)] [&::-webkit-details-marker]:hidden">
+                  {q.q}
+                  <svg aria-hidden="true" className="w-5 h-5 shrink-0 text-[var(--gray-500)] transition-transform group-open:rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
+                </summary>
+                <p className="text-[15px] text-[var(--gray-700)] leading-relaxed">{q.r}</p>
+              </details>
             ))}
           </div>
         </section>
@@ -191,7 +331,7 @@ export default async function Home() {
             T&apos;es artisan ?<br />Rejoins-nous.
           </h2>
           <p className="text-white/65 text-lg max-w-[480px] mx-auto mb-9 relative z-[1] max-[900px]:text-[15px]">
-            Reçois des demandes locales, gère tes rendez-vous, et construis ta réputation en ligne. Dès 25 CHF/mois.
+            Reçois des demandes de ta région, envoie tes devis et factures en deux touches, et construis ta réputation. Gratuit pendant la bêta.
           </p>
           <div className="flex justify-center gap-4 relative z-[1] max-[900px]:flex-col max-[900px]:items-center">
             <Link
@@ -200,12 +340,12 @@ export default async function Home() {
             >
               Créer mon profil
             </Link>
-            <Link
-              href="/inscription"
+            <a
+              href="#artisans"
               className="bg-transparent text-white px-9 py-4 rounded-full font-sora font-bold text-base no-underline border-2 border-white/25 transition-all hover:border-white hover:bg-white/5 hover:-translate-y-0.5 max-[900px]:px-7 max-[900px]:py-3.5 max-[900px]:text-sm max-[900px]:w-full max-[900px]:text-center"
             >
-              En savoir plus
-            </Link>
+              Voir l’app en détail
+            </a>
           </div>
         </section>
       </ScrollReveal>

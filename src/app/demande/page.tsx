@@ -26,6 +26,9 @@ function formatDateFr(iso: string): string {
   return new Intl.DateTimeFormat('fr-CH', { weekday: 'long', day: 'numeric', month: 'long' }).format(d)
 }
 
+// Classes statiques (Tailwind ne voit pas les noms construits dynamiquement)
+const GRID_COLS: Record<number, string> = { 1: 'grid-cols-1', 2: 'grid-cols-2', 3: 'grid-cols-3' }
+
 type SentSummary = { type: 'message' | 'devis'; message: string; quand: string | null; moment: string | null }
 
 function DemandeContent() {
@@ -291,7 +294,7 @@ function DemandeContent() {
       <p className="text-[15px] text-[var(--gray-500)] mb-7 leading-relaxed max-[600px]:text-sm max-[600px]:mb-5">Choisissez la méthode qui vous convient le mieux.</p>
 
       {/* Options grid */}
-      <div className={`grid gap-4 mb-8 max-[600px]:grid-cols-1 max-[600px]:gap-3 max-[600px]:mb-6`} style={{ gridTemplateColumns: `repeat(${visibleOptions.length}, 1fr)` }}>
+      <div className={`grid gap-4 mb-8 ${GRID_COLS[visibleOptions.length] || 'grid-cols-3'} max-[600px]:grid-cols-1 max-[600px]:gap-3 max-[600px]:mb-6`}>
         {visibleOptions.map((opt, i) => {
           const realIdx = options.indexOf(opt)
           return (

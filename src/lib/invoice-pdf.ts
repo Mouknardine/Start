@@ -11,6 +11,7 @@
 // ============================================================================
 
 import { escapeHtml } from '@/lib/supabase/helpers'
+import { dateLongue, detailLigne, formatDateCH, formatNumeroTva, localiteDepuisAdresse, quantiteLisible, regrouperLignes } from '@/lib/facturation'
 import type { Artisan } from '@/lib/supabase/helpers'
 
 export type InvoiceLine = {
@@ -19,6 +20,9 @@ export type InvoiceLine = {
   unite: string
   prix_unitaire: number
   total: number
+  categorie?: string
+  heures?: number
+  personnes?: number
 }
 
 export type InvoiceData = {
@@ -33,152 +37,308 @@ export type InvoiceData = {
   taux_tva: number
   montant_tva: number
   montant_remise?: number | null
+  remise_type?: string | null
+  remise_valeur?: number | null
   total_ttc: number
   date_emission: string
   date_echeance?: string | null
   notes?: string
 }
 
-const UNITE_LABELS: Record<string, string> = {
-  heure: 'heure', forfait: 'forfait', m2: 'm²', ml: 'ml', unite: 'unité', lot: 'lot',
+/** Document enregistré (table documents) → données du document imprimable. */
+export function invoiceDataFromDocument(doc: {
+  type: 'devis' | 'facture'; numero: string; client_nom: string; client_email?: string | null; client_telephone?: string | null
+  client_adresse?: string | null; lignes: Record<string, unknown>[] | null; sous_total: number; taux_tva: number; montant_tva: number
+  montant_remise?: number | null; remise_type?: string | null; remise_valeur?: number | null; total_ttc: number
+  date_emission: string; date_echeance?: string | null; notes?: string | null
+}): InvoiceData {
+  const num = (v: unknown) => (v === undefined || v === null || v === '' ? undefined : Number(v))
+  return {
+    type: doc.type, numero: doc.numero, client_nom: doc.client_nom,
+    client_email: doc.client_email || undefined, client_telephone: doc.client_telephone || undefined,
+    client_adresse: doc.client_adresse || undefined,
+    lignes: (Array.isArray(doc.lignes) ? doc.lignes : []).map(l => {
+      const quantite = Number(l.quantite) || 0
+      const prix = Number(l.prix_unitaire) || 0
+      return {
+        description: String(l.description || ''), quantite, unite: String(l.unite || 'unite'), prix_unitaire: prix,
+        total: Number(l.total) || Math.round(quantite * prix * 100) / 100,
+        categorie: l.categorie ? String(l.categorie) : undefined, heures: num(l.heures), personnes: num(l.personnes),
+      }
+    }),
+    sous_total: Number(doc.sous_total) || 0, taux_tva: Number(doc.taux_tva) || 0, montant_tva: Number(doc.montant_tva) || 0,
+    montant_remise: doc.montant_remise, remise_type: doc.remise_type, remise_valeur: doc.remise_valeur,
+    total_ttc: Number(doc.total_ttc) || 0, date_emission: doc.date_emission, date_echeance: doc.date_echeance, notes: doc.notes || '',
+  }
+}
+
+/** Réglages de l'artisan utiles au document (TVA). */
+export type InvoiceOptions = {
+  assujettiTva?: boolean
+  numeroTva?: string
 }
 
 function formatCHF(n: number): string {
   const fixed = Math.abs(n).toFixed(2)
   const [int, dec] = fixed.split('.')
   const formatted = int.replace(/\B(?=(\d{3})+(?!\d))/g, "'")
-  return `${n < 0 ? '-' : ''}${formatted}.${dec}`
+  return `${n < 0 ? '−' : ''}${formatted}.${dec}`
 }
 
-function formatDate(dateStr: string): string {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return dateStr
-  return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`
-}
+const esc = (v: unknown) => escapeHtml(String(v ?? ''))
+const lines = (raw: string | null | undefined) =>
+  String(raw || '').split(/\r?\n|,\s*/).map(x => x.trim()).filter(Boolean)
 
-/** Construit le HTML autonome imprimable d'un devis/facture.
- *  `qrSvg` : section de paiement QR-facture suisse (SVG) à placer en bas de la
- *  dernière page A4. Si fournie, elle remplace le bloc IBAN texte. */
-export function buildInvoiceHTML(doc: InvoiceData, profile: Artisan | null, qrSvg?: string | null): string {
+/**
+ * Construit le document HTML autonome (A4) d'un devis ou d'une facture.
+ *
+ * Mise en page suisse : adresse du client à droite, à la hauteur de la
+ * fenêtre d'une enveloppe C5 ; lignes regroupées par main d'œuvre, matériel,
+ * déplacements ; total arrondi aux 5 centimes ; mention TVA ou « non
+ * assujetti » ; « bon pour accord » à signer sur les devis.
+ *
+ * Le même HTML sert à l'aperçu dans l'app (styles écran : pages sur fond gris)
+ * et à l'impression / PDF. `qrSvg` : section QR-facture sur une page dédiée.
+ */
+export function buildInvoiceHTML(doc: InvoiceData, profile: Artisan | null, qrSvg?: string | null, options: InvoiceOptions = {}): string {
   const isDevis = doc.type === 'devis'
-  const accent = isDevis ? '#E8700A' : '#1565C0'
-  const docLabel = isDevis ? 'DEVIS' : 'FACTURE'
-
   const companyName = profile?.entreprise?.trim()
     || `${profile?.prenom || ''} ${profile?.nom || ''}`.trim()
     || 'Artisan'
+  const contact = `${profile?.prenom || ''} ${profile?.nom || ''}`.trim()
+  const adresse = lines(profile?.adresse)
+  const localite = localiteDepuisAdresse(profile?.adresse)
+  // Une facture avec TVA est forcément d'un assujetti ; sans TVA, on suit le réglage
+  const assujetti = doc.taux_tva > 0 || (options.assujettiTva ?? false)
+  const numeroTva = assujetti && options.numeroTva ? formatNumeroTva(options.numeroTva) : ''
 
-  const companyLines = [
-    profile?.adresse,
-    profile?.telephone,
-    profile?.email,
-    profile?.site,
-    profile?.ide_number ? `IDE : ${profile.ide_number}` : '',
-  ].filter(Boolean).map(l => escapeHtml(String(l))).join('<br>')
+  // --- En-tête : expéditeur ---
+  const logo = profile?.avatar_url
+    ? `<img class="logo" src="${esc(profile.avatar_url)}" alt="">`
+    : `<div class="logo logo-txt">${esc(companyName.split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join(''))}</div>`
+  const senderLines = [
+    ...adresse,
+    [profile?.telephone, profile?.email].filter(Boolean).join(' · '),
+    profile?.site || '',
+  ].filter(Boolean).map(esc).join('<br>')
 
-  const clientLines = [
-    doc.client_adresse,
-    doc.client_email,
-    doc.client_telephone,
-  ].filter(Boolean).map(l => escapeHtml(String(l))).join('<br>')
+  // --- Références ---
+  const meta: [string, string][] = [
+    [isDevis ? 'Devis n°' : 'Facture n°', doc.numero],
+    ['Date', formatDateCH(doc.date_emission)],
+  ]
+  if (doc.date_echeance) meta.push([isDevis ? 'Valable jusqu’au' : 'Échéance', formatDateCH(doc.date_echeance)])
+  if (contact) meta.push(['Votre contact', [contact, profile?.telephone].filter(Boolean).join(', ')])
+  if (numeroTva) meta.push(['N° TVA', numeroTva])
+  const metaRows = meta.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')
 
-  const rows = doc.lignes.map(l => `
-    <tr>
-      <td style="padding:8px 6px;border-bottom:1px solid #eee;">${escapeHtml(l.description) || '—'}</td>
-      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;">${l.quantite}</td>
-      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;">${escapeHtml(UNITE_LABELS[l.unite] || l.unite)}</td>
-      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:right;">${formatCHF(l.prix_unitaire)}</td>
-      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:right;font-weight:600;">${formatCHF(l.total)}</td>
-    </tr>`).join('')
+  // --- Destinataire (fenêtre d'enveloppe) ---
+  const recipient = [
+    `<strong>${esc(doc.client_nom) || '—'}</strong>`,
+    ...lines(doc.client_adresse).map(esc),
+  ].join('<br>')
 
-  const remise = doc.montant_remise && doc.montant_remise > 0
-    ? `<tr><td style="padding:4px 0;color:#666;">Remise</td><td style="padding:4px 0;text-align:right;color:#C62828;">-${formatCHF(doc.montant_remise)} CHF</td></tr>`
-    : ''
+  // --- Lignes, regroupées par catégorie ---
+  const groupes = regrouperLignes(doc.lignes)
+  const plusieurs = groupes.length > 1
+  const body = groupes.map(g => {
+    const rows = g.lignes.map(l => {
+      const detail = detailLigne(l)
+      return `<tr>
+        <td>${esc(l.description) || '—'}${detail ? `<div class="sub">${esc(detail)}</div>` : ''}</td>
+        <td class="r nw">${esc(quantiteLisible(l.quantite, l.unite))}</td>
+        <td class="r nw">${formatCHF(l.prix_unitaire)}</td>
+        <td class="r nw strong">${formatCHF(l.total)}</td>
+      </tr>`
+    }).join('')
+    const sousTotal = g.lignes.reduce((s, l) => s + (Number(l.total) || 0), 0)
+    // Sous-total d'un groupe seulement s'il compte plusieurs lignes
+    return (plusieurs ? `<tr class="group"><td colspan="4">${esc(g.titre)}</td></tr>` : '')
+      + rows
+      + (plusieurs && g.lignes.length > 1 ? `<tr class="group-total"><td colspan="3">Total ${esc(g.titre.toLowerCase())}</td><td class="r nw">${formatCHF(sousTotal)}</td></tr>` : '')
+  }).join('')
 
-  // Bloc paiement texte (factures uniquement, si IBAN renseigné).
-  // Masqué quand un QR-facture est présent : le QR porte déjà ces infos.
+  // --- Totaux ---
+  const remise = doc.montant_remise && doc.montant_remise > 0 ? doc.montant_remise : 0
+  const base = Math.round((doc.sous_total - remise) * 100) / 100
+  const brut = Math.round((base + doc.montant_tva) * 100) / 100
+  const arrondi = Math.round((doc.total_ttc - brut) * 100) / 100
+  const totalRows = [
+    `<tr><td>${remise || doc.montant_tva ? 'Sous-total' : 'Total hors TVA'}</td><td class="r">${formatCHF(doc.sous_total)}</td></tr>`,
+    remise ? `<tr><td>Remise${doc.remise_type === 'pourcentage' && doc.remise_valeur ? ` ${doc.remise_valeur} %` : ''}</td><td class="r">−${formatCHF(remise)}</td></tr>` : '',
+    doc.taux_tva > 0 ? `<tr><td>TVA ${doc.taux_tva} %${remise ? ` sur ${formatCHF(base)}` : ''}</td><td class="r">${formatCHF(doc.montant_tva)}</td></tr>` : '',
+    arrondi !== 0 && Math.abs(arrondi) < 0.05 ? `<tr><td>Arrondi</td><td class="r">${arrondi > 0 ? '+' : '−'}${formatCHF(Math.abs(arrondi))}</td></tr>` : '',
+  ].join('')
+
+  // --- Mentions ---
+  const mentions: string[] = []
+  if (!assujetti) mentions.push('Non assujetti à la TVA.')
+  if (isDevis) {
+    if (doc.date_echeance) mentions.push(`Offre valable jusqu’au ${formatDateCH(doc.date_echeance)}.`)
+  } else if (doc.date_echeance) {
+    const jours = Math.round((Date.parse(doc.date_echeance) - Date.parse(doc.date_emission)) / 86400000)
+    mentions.push(`Payable net${jours > 0 ? ` à ${jours} jours` : ''}, soit jusqu’au ${formatDateCH(doc.date_echeance)}.`)
+  }
+  if (!isDevis && qrSvg) mentions.push('Merci d’utiliser la QR-facture jointe pour votre paiement.')
+
   const paymentBlock = (!isDevis && !qrSvg && profile?.bank_iban)
-    ? `<div style="margin-top:24px;padding:14px 16px;background:#F5F7FA;border-radius:8px;font-size:12px;color:#333;">
-         <div style="font-weight:700;text-transform:uppercase;font-size:10px;color:#888;margin-bottom:4px;">Coordonnées de paiement</div>
-         <div>${escapeHtml(profile.bank_titulaire || companyName)}</div>
-         <div>IBAN : ${escapeHtml(profile.bank_iban)}</div>
-         ${profile.bank_bic ? `<div>BIC : ${escapeHtml(profile.bank_bic)}</div>` : ''}
-         ${doc.date_echeance ? `<div style="margin-top:4px;">Payable jusqu'au ${formatDate(doc.date_echeance)}</div>` : ''}
+    ? `<div class="box">
+         <div class="box-title">Coordonnées de paiement</div>
+         ${esc(profile.bank_titulaire || companyName)}<br>
+         IBAN ${esc(profile.bank_iban)}${profile.bank_bic ? `<br>BIC ${esc(profile.bank_bic)}` : ''}<br>
+         Référence : ${esc(doc.numero)}
        </div>`
     : ''
 
   const notesBlock = doc.notes
-    ? `<div style="margin-top:20px;padding:14px 16px;background:#F5F7FA;border-radius:8px;font-size:12px;color:#444;">
-         <div style="font-weight:700;text-transform:uppercase;font-size:10px;color:#888;margin-bottom:4px;">Notes</div>
-         ${escapeHtml(doc.notes).replace(/\n/g, '<br>')}
+    ? `<div class="notes">${esc(doc.notes).replace(/\n/g, '<br>')}</div>`
+    : ''
+
+  const signature = isDevis
+    ? `<div class="sign">
+         <div class="sign-title">Bon pour accord</div>
+         <div class="sign-grid">
+           <div><div class="sign-line"></div>Lieu et date</div>
+           <div><div class="sign-line"></div>Signature du client</div>
+         </div>
        </div>`
     : ''
+
+  const footer = [companyName, adresse.join(', '), profile?.telephone, profile?.email, numeroTva]
+    .filter(Boolean).map(esc).join(' · ')
+
+  // QR-facture : en bas de la première page si tout y tient (usage suisse),
+  // sinon sur une page dédiée. Estimation prudente de la hauteur du contenu (mm).
+  const nbLignesNotes = doc.notes ? doc.notes.split(/\n/).reduce((n, l) => n + Math.max(1, Math.ceil(l.length / 95)), 0) : 0
+  const hauteur = 12 + 28 + 33 + 8 + 8 + 9 + 8
+    + doc.lignes.reduce((h, l) => h + 9 + (detailLigne(l) ? 4 : 0) + Math.max(0, Math.ceil((l.description || '').length / 60) - 1) * 4, 0)
+    + (plusieurs ? groupes.reduce((h, g) => h + 6 + (g.lignes.length > 1 ? 6 : 0), 0) : 0)
+    + 3 + 6 * (2 + (remise ? 1 : 0) + (doc.taux_tva > 0 ? 1 : 0)) + 14
+    + (mentions.length ? 4 + 5 * mentions.length : 0)
+    + (paymentBlock ? 24 : 0)
+    + (nbLignesNotes ? 3 + 5 * nbLignesNotes : 0)
+    + 15
+  // Mesuré : l'estimation dépasse le rendu réel de quelques mm (marge de sécurité)
+  const qrEnBas = !!qrSvg && hauteur <= 297 - 105 - 6
+  if (qrEnBas) mentions[mentions.length - 1] = 'Merci d’utiliser la QR-facture ci-dessous pour votre paiement.'
+
+  const intro = isDevis
+    ? 'Suite à votre demande, nous avons le plaisir de vous remettre notre offre pour les travaux suivants :'
+    : 'Nous vous remercions de votre confiance et vous adressons notre facture pour les travaux suivants :'
 
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>${escapeHtml(doc.numero || docLabel)}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(doc.numero || (isDevis ? 'Devis' : 'Facture'))}</title>
 <style>
   @page { size: A4; margin: 0; }
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1A1A2E; margin: 0; font-size: 13px; line-height: 1.5; }
-  table { border-collapse: collapse; width: 100%; }
-  .doc-content { padding: 16mm; }
-  /* La section QR-facture occupe le bas d'une page A4 dédiée, pleine largeur. */
-  .qr-page { page-break-before: always; break-before: page; height: 297mm; display: flex; flex-direction: column; justify-content: flex-end; }
+  html, body { margin: 0; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1A2744; font-size: 10pt; line-height: 1.45; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { position: relative; width: 210mm; min-height: 297mm; padding: 12mm 15mm 20mm 18mm; background: #fff; }
+  .head { display: flex; justify-content: space-between; align-items: flex-start; height: 28mm; }
+  .sender { display: flex; gap: 4mm; align-items: flex-start; }
+  .logo { width: 14mm; height: 14mm; border-radius: 3mm; object-fit: cover; flex-shrink: 0; }
+  .logo-txt { background: #1A2744; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12pt; }
+  .company { font-size: 13pt; font-weight: 800; line-height: 1.2; }
+  .muted { color: #6B6A66; font-size: 8.5pt; margin-top: 1mm; line-height: 1.35; }
+  .kind { text-align: right; }
+  .kind-label { font-size: 19pt; font-weight: 800; letter-spacing: .02em; color: #1A2744; line-height: 1; }
+  .kind-bar { width: 14mm; height: 1.2mm; background: #E8700A; border-radius: 1mm; margin: 2.5mm 0 0 auto; }
+  .band { height: 33mm; padding-top: 3mm; }
+  .meta { border-collapse: collapse; font-size: 8.5pt; }
+  .meta th { text-align: left; font-weight: 600; color: #6B6A66; padding: .5mm 5mm .5mm 0; white-space: nowrap; vertical-align: top; }
+  .meta td { padding: .5mm 0; }
+  /* Fenêtre à droite d'une enveloppe C5/C6 suisse */
+  .recipient { position: absolute; top: 46mm; left: 118mm; width: 76mm; font-size: 10.5pt; line-height: 1.4; }
+  .place { color: #6B6A66; font-size: 9pt; margin: 0 0 3mm; }
+  h1 { font-size: 13.5pt; margin: 0 0 1.5mm; }
+  .intro { margin: 0 0 3.5mm; color: #3B3A37; }
+  table.lines { width: 100%; border-collapse: collapse; }
+  .lines th { font-size: 7.5pt; text-transform: uppercase; letter-spacing: .04em; color: #6B6A66; text-align: left; padding: 1.6mm 2mm; border-bottom: .5mm solid #1A2744; }
+  .lines td { padding: 1.7mm 2mm; border-bottom: .2mm solid #E5E3DE; vertical-align: top; }
+  .lines .r { text-align: right; }
+  .nw { white-space: nowrap; }
+  .strong { font-weight: 700; }
+  .sub { color: #6B6A66; font-size: 8.5pt; margin-top: .3mm; }
+  .group td { background: #F7F6F3; font-weight: 700; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .05em; color: #55524D; padding-top: 1.2mm; padding-bottom: 1.2mm; }
+  .group-total td { color: #55524D; font-size: 8.5pt; border-bottom: .3mm solid #D1CEC7; }
+  .totals { display: flex; justify-content: flex-end; margin-top: 3mm; break-inside: avoid; }
+  .totals > div { width: 80mm; }
+  .totals table { width: 100%; border-collapse: collapse; }
+  .totals td { padding: .8mm 2mm; }
+  .totals .r { text-align: right; white-space: nowrap; }
+  .grand { display: flex; justify-content: space-between; margin-top: 1.5mm; padding: 2.4mm 3mm; background: #1A2744; color: #fff; border-radius: 2mm; font-weight: 800; font-size: 12pt; }
+  .mentions { margin-top: 4mm; font-size: 9pt; color: #3B3A37; }
+  .mentions p { margin: 0 0 .8mm; }
+  .box { margin-top: 3mm; padding: 2.5mm 4mm; background: #F7F6F3; border-radius: 2mm; font-size: 9pt; break-inside: avoid; }
+  .box-title { font-weight: 700; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .04em; color: #6B6A66; margin-bottom: .8mm; }
+  .notes { margin-top: 3mm; font-size: 9pt; color: #3B3A37; }
+  .closing { margin-top: 5mm; font-size: 10pt; break-inside: avoid; }
+  .sign { margin-top: 5mm; padding: 3.5mm 4mm; border: .3mm solid #D1CEC7; border-radius: 2mm; break-inside: avoid; }
+  .sign-title { font-weight: 700; margin-bottom: 7mm; }
+  .sign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; font-size: 8pt; color: #6B6A66; }
+  .sign-line { border-bottom: .3mm solid #1A2744; margin-bottom: 1mm; height: 5mm; }
+  .footer { position: absolute; left: 18mm; right: 15mm; bottom: 8mm; padding-top: 2mm; border-top: .2mm solid #E5E3DE; font-size: 7.5pt; color: #8A8680; text-align: center; }
+  .qr-inline { position: absolute; left: 0; bottom: 0; width: 210mm; height: 105mm; }
+  .qr-inline svg { width: 210mm; height: 105mm; display: block; }
+  .qr-page { break-before: page; page-break-before: always; width: 210mm; height: 297mm; display: flex; flex-direction: column; justify-content: flex-end; background: #fff; }
   .qr-page svg { width: 210mm; height: 105mm; display: block; }
-  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  @media screen {
+    body { background: #E5E3DE; padding: 6mm 0; }
+    .page, .qr-page { margin: 0 auto 6mm; box-shadow: 0 2mm 8mm rgba(0,0,0,.12); }
+  }
 </style>
 </head>
 <body>
-<div class="doc-content">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;">
-    <div>
-      <div style="font-size:20px;font-weight:800;">${escapeHtml(companyName)}</div>
-      <div style="font-size:12px;color:#666;margin-top:4px;">${companyLines}</div>
+<div class="page">
+  <div class="head">
+    <div class="sender">
+      ${logo}
+      <div>
+        <div class="company">${esc(companyName)}</div>
+        <div class="muted">${senderLines}</div>
+      </div>
     </div>
-    <div style="text-align:right;">
-      <div style="display:inline-block;padding:4px 12px;border-radius:4px;font-weight:700;font-size:13px;letter-spacing:.05em;background:${accent}1A;color:${accent};">${docLabel}</div>
-      <div style="font-weight:700;font-size:15px;margin-top:8px;">${escapeHtml(doc.numero)}</div>
-      <div style="font-size:11px;color:#666;margin-top:4px;">Date : ${formatDate(doc.date_emission)}</div>
-      ${doc.date_echeance ? `<div style="font-size:11px;color:#666;">Échéance : ${formatDate(doc.date_echeance)}</div>` : ''}
+    <div class="kind">
+      <div class="kind-label">${isDevis ? 'DEVIS' : 'FACTURE'}</div>
+      <div class="kind-bar"></div>
     </div>
   </div>
 
-  <div style="background:#F5F7FA;padding:14px 16px;border-radius:8px;margin-bottom:24px;">
-    <div style="font-weight:700;text-transform:uppercase;font-size:10px;color:#888;margin-bottom:4px;">Client</div>
-    <div style="font-weight:600;">${escapeHtml(doc.client_nom) || '—'}</div>
-    ${clientLines ? `<div style="font-size:12px;color:#555;margin-top:2px;">${clientLines}</div>` : ''}
+  <div class="band">
+    <table class="meta">${metaRows}</table>
   </div>
+  <div class="recipient">${recipient}</div>
 
-  <table>
-    <thead>
-      <tr style="border-bottom:2px solid #1A1A2E;">
-        <th style="text-align:left;padding:6px;font-size:10px;text-transform:uppercase;color:#888;">Description</th>
-        <th style="text-align:center;padding:6px;font-size:10px;text-transform:uppercase;color:#888;width:50px;">Qté</th>
-        <th style="text-align:center;padding:6px;font-size:10px;text-transform:uppercase;color:#888;width:60px;">Unité</th>
-        <th style="text-align:right;padding:6px;font-size:10px;text-transform:uppercase;color:#888;width:90px;">Prix</th>
-        <th style="text-align:right;padding:6px;font-size:10px;text-transform:uppercase;color:#888;width:90px;">Total</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
+  <div class="place">${esc(localite ? `${localite}, le ${dateLongue(doc.date_emission)}` : `Le ${dateLongue(doc.date_emission)}`)}</div>
+  <h1>${isDevis ? 'Devis' : 'Facture'} ${esc(doc.numero)}</h1>
+  <p class="intro">${intro}</p>
+
+  <table class="lines">
+    <thead><tr><th>Désignation</th><th class="r">Quantité</th><th class="r">Prix unit.</th><th class="r">Montant CHF</th></tr></thead>
+    <tbody>${body || '<tr><td colspan="4">—</td></tr>'}</tbody>
   </table>
 
-  <div style="display:flex;justify-content:flex-end;margin-top:20px;">
-    <table style="width:260px;">
-      <tr><td style="padding:4px 0;color:#666;">Sous-total</td><td style="padding:4px 0;text-align:right;">${formatCHF(doc.sous_total)} CHF</td></tr>
-      ${remise}
-      <tr><td style="padding:4px 0;color:#666;">TVA ${doc.taux_tva}%</td><td style="padding:4px 0;text-align:right;">${formatCHF(doc.montant_tva)} CHF</td></tr>
-      <tr style="border-top:2px solid #1A1A2E;"><td style="padding:8px 0;font-weight:800;font-size:15px;">Total TTC</td><td style="padding:8px 0;text-align:right;font-weight:800;font-size:15px;">${formatCHF(doc.total_ttc)} CHF</td></tr>
-    </table>
+  <div class="totals">
+    <div>
+      <table>${totalRows}</table>
+      <div class="grand"><span>Total CHF${doc.taux_tva > 0 ? ' TTC' : ''}</span><span>${formatCHF(doc.total_ttc)}</span></div>
+    </div>
   </div>
 
+  ${mentions.length ? `<div class="mentions">${mentions.map(m => `<p>${esc(m)}</p>`).join('')}</div>` : ''}
   ${paymentBlock}
   ${notesBlock}
+  <div class="closing">Avec nos meilleures salutations.<br><strong>${esc(companyName)}</strong></div>
+  ${signature}
+
+  ${qrEnBas ? '' : `<div class="footer">${footer}</div>`}
+  ${qrEnBas ? `<div id="qr-facture" class="qr-inline">${qrSvg}</div>` : ''}
 </div>
-${qrSvg ? `<div class="qr-page">${qrSvg}</div>` : ''}
+${qrSvg && !qrEnBas ? `<div id="qr-facture" class="qr-page">${qrSvg}</div>` : ''}
 </body>
 </html>`
 }
@@ -191,7 +351,7 @@ ${qrSvg ? `<div class="qr-page">${qrSvg}</div>` : ''}
  * Pour les factures, tente d'ajouter la section QR-facture suisse (repli sur
  * le bloc IBAN texte si l'IBAN/adresse ne permettent pas un QR conforme).
  */
-export async function printInvoice(doc: InvoiceData, profile: Artisan | null): Promise<void> {
+export async function printInvoice(doc: InvoiceData, profile: Artisan | null, options: InvoiceOptions = {}): Promise<void> {
   let qrSvg: string | null = null
   try {
     const { buildQrBillSvg } = await import('@/lib/swiss-qr')
@@ -199,7 +359,7 @@ export async function printInvoice(doc: InvoiceData, profile: Artisan | null): P
   } catch {
     qrSvg = null
   }
-  const html = buildInvoiceHTML(doc, profile, qrSvg)
+  const html = buildInvoiceHTML(doc, profile, qrSvg, options)
   const iframe = document.createElement('iframe')
   iframe.setAttribute('aria-hidden', 'true')
   iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
