@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Logo from '@/components/Logo'
 import ReportButton from '@/components/ReportButton'
 import AuthNavButton from '@/components/AuthNavButton'
+import OwnerBanner from '@/components/OwnerBanner'
 import { createClient } from '@/lib/supabase/client'
 import type { Artisan, Avis } from '@/lib/supabase/helpers'
 import { getMonday, formatDateStr, summarizeWeekAvailability, formatNextSlot, type DispoData, type WeekAvailability } from '@/lib/availability'
@@ -197,6 +198,7 @@ export default function ArtisanProfileClient({ artisanId, initialProfile, initia
       {/* HERO */}
       <section className="pt-20 bg-white border-b border-[var(--gray-200)]">
         <div className="max-w-[1100px] mx-auto pt-10 px-10 max-[960px]:pt-6 max-[960px]:px-4 max-[500px]:pt-4 max-[500px]:px-3">
+          <OwnerBanner artisanId={artisanId} />
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-[13px] text-[var(--gray-500)] mb-7 max-[960px]:text-xs max-[960px]:mb-5 max-[960px]:overflow-x-auto max-[960px]:whitespace-nowrap max-[960px]:scrollbar-none">
             <Link href="/" className="text-[var(--gray-500)] no-underline hover:text-[var(--orange)]">Accueil</Link>

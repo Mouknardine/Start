@@ -9,24 +9,28 @@ import {
   getNextDocNumber, loadMyBankDetails,
 } from '@/lib/supabase/helpers'
 import type { Document, Prestation, Artisan } from '@/lib/supabase/helpers'
-import { printInvoice, type InvoiceData } from '@/lib/invoice-pdf'
+import { printInvoice, buildInvoiceHTML, type InvoiceData, type InvoiceLine } from '@/lib/invoice-pdf'
 import {
   calculerTotaux, totalLigne, formatCHF, formatDateCH, todayISO, addDaysISO,
   etatDocument, etapesDocument, estEnRetard, resumeFacturation, clientsRecents,
-  emailValide, GROUPES_DOC, type DevisPrefill, type Remise, type Ton, type GroupeDoc,
+  emailValide, GROUPES_DOC, CATEGORIES, UNITES, uniteCourte, categorieLigne, resumeLigne,
+  formatPrixCourt, normaliserReglages, CLE_REGLAGES, REGLAGES_DEFAUT,
+  type DevisPrefill, type Remise, type GroupeDoc, type Categorie, type ReglagesFacturation,
 } from '@/lib/facturation'
+import { loadAgendaKey, saveAgendaKey } from '@/lib/supabase/agenda'
 import Dialog from '@/components/ui/Dialog'
 import DecimalInput from '@/components/ui/DecimalInput'
+import {
+  TON_CLASSES, inputCls, INPUT, LABEL, CARD, btn, BTN_PRIMARY, BTN_SECONDARY, ICON_BTN, SUBBAR,
+  Ico, IconPlus, IconBack, IconDots, IconEye, IconTrash, IconDoc, IconInvoice, IconBook,
+  IconDownload, IconCopy, IconCheck, IconSearch, IconSettings, IconChevron, DocTile, Segmented, CatTile, CatIcon,
+} from './facturation/ui'
+import { type LineItem, generateLineId, lineFromRaw, lineToRaw, nouvelleLigne } from './facturation/lignes'
+import LigneSheet from './facturation/LigneSheet'
+import ReglagesSheet from './facturation/ReglagesSheet'
+import DocumentPreview from './facturation/DocumentPreview'
 
 // ===== Types =====
-
-type LineItem = {
-  id: string
-  description: string
-  quantite: number
-  unite: string
-  prix_unitaire: number
-}
 
 type EditorForm = {
   client_nom: string
@@ -60,16 +64,6 @@ type Props = {
 
 // ===== Constantes =====
 
-const UNITES = [
-  { value: 'heure', label: 'heure' },
-  { value: 'forfait', label: 'forfait' },
-  { value: 'm2', label: 'm²' },
-  { value: 'ml', label: 'ml' },
-  { value: 'unite', label: 'unité' },
-  { value: 'lot', label: 'lot' },
-]
-const uniteLabel = (u: string) => UNITES.find(x => x.value === u)?.label || u
-
 // Taux suisses en vigueur depuis 2024 ; un ancien document à 7.7 % garde son taux.
 const TVA_RATES = [
   { value: 0, label: 'Sans TVA' },
@@ -77,55 +71,7 @@ const TVA_RATES = [
   { value: 8.1, label: '8.1 %' },
 ]
 
-const TON_CLASSES: Record<Ton, string> = {
-  neutre: 'bg-[var(--gray-100)] text-[var(--gray-700)]',
-  info: 'bg-[var(--blue-light)] text-[var(--blue)]',
-  succes: 'bg-[var(--green-light)] text-[var(--green)]',
-  alerte: 'bg-[var(--red-light)] text-[var(--red)]',
-  action: 'bg-[rgba(232,112,10,0.12)] text-[var(--orange-dark)]',
-}
-
-// Classes composées sans doublon de propriété : avec Tailwind, deux classes
-// qui règlent la même propriété (bg-…, h-…) ne se surchargent pas dans l'ordre écrit.
-const INPUT_CORE = 'w-full border bg-white text-base text-[var(--dark)] outline-none transition-shadow focus:border-[var(--orange)] focus:shadow-[0_0_0_4px_rgba(232,112,10,0.1)] placeholder:text-[var(--gray-500)]'
-function inputCls({ h = 'h-12', px = 'px-3.5', rounded = 'rounded-xl', invalid = false, extra = '' } = {}): string {
-  return `${INPUT_CORE} ${h} ${px} ${rounded} ${invalid ? 'border-[var(--red)]' : 'border-[var(--gray-200)]'} ${extra}`
-}
-const INPUT = inputCls()
-const LABEL = 'block text-[13px] font-semibold text-[var(--gray-700)] mb-1.5'
-const CARD = 'bg-white rounded-[20px] border border-[var(--gray-200)] p-5 max-[600px]:p-4'
-const BTN_SIZES = { md: 'h-12 px-5 text-[15px]', tight: 'h-12 px-3 text-[15px]', sm: 'h-10 px-4 text-sm' }
-const BTN_VARIANTS = {
-  primary: 'font-bold bg-[var(--orange)] text-white hover:bg-[var(--orange-dark)]',
-  success: 'font-bold bg-[var(--green)] text-white hover:bg-[#1B5E20]',
-  danger: 'font-bold bg-[var(--red)] text-white hover:bg-[#B71C1C]',
-  secondary: 'font-semibold bg-[var(--gray-100)] text-[var(--dark)] hover:bg-[var(--gray-200)]',
-  dangerSoft: 'font-semibold bg-[var(--gray-100)] text-[var(--red)] hover:bg-[var(--red-light)]',
-}
-function btn(variant: keyof typeof BTN_VARIANTS = 'primary', size: keyof typeof BTN_SIZES = 'md'): string {
-  return `inline-flex items-center justify-center gap-2 rounded-full border-none cursor-pointer transition-colors disabled:opacity-60 ${BTN_SIZES[size]} ${BTN_VARIANTS[variant]}`
-}
-const BTN_PRIMARY = btn('primary')
-const BTN_SECONDARY = btn('secondary')
-const ICON_BTN = 'w-11 h-11 shrink-0 rounded-full flex items-center justify-center bg-transparent border-none cursor-pointer transition-colors hover:bg-[var(--gray-100)]'
-// Barre de titre des sous-écrans : collée en haut sur mobile, simple en-tête sur ordinateur
-const SUBBAR = 'sticky top-0 z-40 -mx-4 px-2 py-2 mb-3 flex items-center gap-1 bg-[rgba(249,250,251,0.94)] backdrop-blur-[16px] border-b border-[var(--gray-200)] min-[600px]:-mx-5 min-[600px]:px-3 min-[900px]:static min-[900px]:mx-0 min-[900px]:px-0 min-[900px]:border-0 min-[900px]:bg-transparent min-[900px]:backdrop-blur-none'
-
 // ===== Helpers =====
-
-function generateLineId(): string {
-  return 'l_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)
-}
-
-function lineFromRaw(raw: Record<string, unknown>): LineItem {
-  return {
-    id: (raw.id as string) || generateLineId(),
-    description: (raw.description as string) || '',
-    quantite: Number(raw.quantite) || 0,
-    unite: (raw.unite as string) || 'heure',
-    prix_unitaire: Number(raw.prix_unitaire) || 0,
-  }
-}
 
 function formFromDoc(doc: Document): EditorForm {
   return {
@@ -146,6 +92,13 @@ function formFromDoc(doc: Document): EditorForm {
 function errMsg(e: unknown): string {
   if (e && typeof e === 'object' && 'message' in e) return String((e as { message: unknown }).message)
   return ''
+}
+
+function toInvoiceLine(l: LineItem): InvoiceLine {
+  return {
+    description: l.description, quantite: l.quantite, unite: l.unite, prix_unitaire: l.prix_unitaire,
+    total: totalLigne(l.quantite, l.prix_unitaire), categorie: l.categorie, heures: l.heures, personnes: l.personnes,
+  }
 }
 
 function initiales(nom: string): string {
@@ -174,60 +127,6 @@ function enterView(pushedRef: RefObject<boolean>, param: 'doc' | 'catalogue', va
   }
 }
 
-// ===== Icônes =====
-
-function Ico({ children, className = 'w-5 h-5' }: { children: ReactNode; className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      {children}
-    </svg>
-  )
-}
-const IconPlus = ({ className }: { className?: string }) => <Ico className={className}><path d="M12 5v14M5 12h14" /></Ico>
-const IconBack = () => <Ico className="w-6 h-6"><polyline points="15 18 9 12 15 6" /></Ico>
-const IconDots = () => <Ico><circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" /></Ico>
-const IconEye = () => <Ico><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></Ico>
-const IconTrash = ({ className }: { className?: string }) => <Ico className={className}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></Ico>
-const IconDoc = ({ className }: { className?: string }) => <Ico className={className}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="13" y2="17" /></Ico>
-const IconInvoice = ({ className }: { className?: string }) => <Ico className={className}><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z" /><path d="M9 8h6M9 12h6M9 16h3" /></Ico>
-const IconBook = ({ className }: { className?: string }) => <Ico className={className}><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /></Ico>
-const IconDownload = ({ className }: { className?: string }) => <Ico className={className}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></Ico>
-const IconCopy = ({ className }: { className?: string }) => <Ico className={className}><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></Ico>
-const IconCheck = ({ className }: { className?: string }) => <Ico className={className}><polyline points="20 6 9 17 4 12" /></Ico>
-const IconSearch = ({ className }: { className?: string }) => <Ico className={className}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Ico>
-
-function DocTile({ type, className = 'w-11 h-11' }: { type: 'devis' | 'facture'; className?: string }) {
-  return (
-    <span className={`${className} shrink-0 rounded-2xl flex items-center justify-center ${type === 'devis' ? 'bg-[rgba(232,112,10,0.12)] text-[var(--orange)]' : 'bg-[var(--blue-light)] text-[var(--blue)]'}`}>
-      {type === 'devis' ? <IconDoc /> : <IconInvoice />}
-    </span>
-  )
-}
-
-function Segmented<T extends string | number>({ value, options, onChange, label }: {
-  value: T
-  options: { value: T; label: string }[]
-  onChange: (v: T) => void
-  label: string
-}) {
-  return (
-    <div role="radiogroup" aria-label={label} className="flex gap-1 p-1 rounded-full bg-[var(--gray-100)]">
-      {options.map(o => (
-        <button
-          key={String(o.value)}
-          type="button"
-          role="radio"
-          aria-checked={value === o.value}
-          onClick={() => onChange(o.value)}
-          className={`flex-1 h-9 px-3 rounded-full text-[13px] font-semibold border-none cursor-pointer whitespace-nowrap transition-all ${value === o.value ? 'bg-white text-[var(--dark)] shadow-[0_1px_3px_rgba(0,0,0,0.1)]' : 'bg-transparent text-[var(--gray-500)]'}`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  )
-}
-
 // ===== Composant =====
 
 export default function DashFacturation({ userId, profile, prefill, onPrefillConsumed, onImmersiveChange }: Props) {
@@ -251,8 +150,15 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
   const [flashLine, setFlashLine] = useState<string | null>(null)
   const [triedSave, setTriedSave] = useState(false)
 
+  // Saisie d'une ligne, réglages, contexte de la demande d'origine
+  const [ligneEdit, setLigneEdit] = useState<{ ligne: LineItem; isNew: boolean } | null>(null)
+  const [reglages, setReglages] = useState<ReglagesFacturation>(REGLAGES_DEFAUT)
+  const [showReglages, setShowReglages] = useState(false)
+  const [contexte, setContexte] = useState<DevisPrefill | null>(null)
+  const [previewQr, setPreviewQr] = useState<string | null>(null)
+
   // Catalogue
-  const [catForm, setCatForm] = useState<{ id: string | null; nom: string; prix: number; unite: string; description: string } | null>(null)
+  const [catForm, setCatForm] = useState<{ id: string | null; nom: string; prix: number; unite: string; description: string; categorie: Categorie } | null>(null)
   const [catConfirmDelete, setCatConfirmDelete] = useState(false)
 
   // Fenêtres
@@ -281,6 +187,7 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
     setSavedAt(null)
     setTriedSave(false)
     setNotesOpen(!!doc.notes)
+    setContexte(null)
     setViewMode('editor')
     enterView(pushedRef, 'doc', doc.id || 'nouveau')
     window.scrollTo(0, 0)
@@ -313,15 +220,19 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
       loadDocuments(supabase, userId),
       loadPrestations(supabase, userId),
       loadMyBankDetails(supabase).catch(() => null),
-    ]).then(([docs, prests, bankDetails]) => {
+      loadAgendaKey<unknown>(supabase, userId, CLE_REGLAGES, null),
+    ]).then(([docs, prests, bankDetails, regl]) => {
       setDocuments(docs)
       setPrestations(prests)
       setBank(bankDetails)
+      setReglages(normaliserReglages(regl))
       setLoading(false)
       // Lien direct ?doc=<id> (page rechargée, lien partagé)
-      const id = new URLSearchParams(window.location.search).get('doc')
+      const params = new URLSearchParams(window.location.search)
+      const id = params.get('doc')
       const found = id && docs.find(d => d.id === id)
       if (found) openEditor(found)
+      else if (params.get('catalogue')) setViewMode('catalogue')
       else if (id) window.history.replaceState(window.history.state, '', viewUrl(null))
     }).catch(() => setLoading(false))
   }, [userId, openEditor])
@@ -398,10 +309,7 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
       client_email: (f.client_email.trim() || null) as string,
       client_telephone: f.client_telephone.trim(),
       client_adresse: f.client_adresse.trim(),
-      lignes: f.lignes.map(l => ({
-        id: l.id, description: l.description.trim(), quantite: l.quantite,
-        unite: l.unite, prix_unitaire: l.prix_unitaire, total: totalLigne(l.quantite, l.prix_unitaire),
-      })),
+      lignes: f.lignes.map(lineToRaw),
       sous_total: t.sousTotal,
       taux_tva: f.taux_tva,
       montant_tva: t.montantTva,
@@ -479,29 +387,27 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
     try {
       const numero = await getNextDocNumber(supabase, userId, type)
       const t = todayISO()
+      const r = reglages
       const newDoc: Document = {
         id: '', artisan_id: userId, type, numero,
         client_nom: '', client_email: '', client_telephone: '', client_adresse: '',
-        lignes: [], sous_total: 0, taux_tva: 8.1, montant_tva: 0,
+        lignes: [], sous_total: 0, taux_tva: r.assujetti_tva ? r.taux_tva : 0, montant_tva: 0,
         remise_type: null, remise_valeur: null, montant_remise: null, total_ttc: 0,
-        date_emission: t, date_echeance: type === 'facture' ? addDaysISO(t, 30) : null,
+        date_emission: t, date_echeance: addDaysISO(t, type === 'facture' ? r.delai_paiement : r.validite_devis),
         date_acceptation: null, date_paiement: null,
-        statut: 'brouillon', notes: '', devis_source_id: null, created_at: new Date().toISOString(),
+        statut: 'brouillon', notes: r.conditions, devis_source_id: null, created_at: new Date().toISOString(),
       }
       const base = formFromDoc(newDoc)
-      const firstLine: LineItem = pre
-        ? { id: generateLineId(), description: pre.description.slice(0, 200), quantite: 1, unite: 'forfait', prix_unitaire: 0 }
-        : { id: generateLineId(), description: '', quantite: 1, unite: 'heure', prix_unitaire: 0 }
       const initial: EditorForm = pre
-        ? { ...base, client_nom: pre.client_nom, client_email: pre.client_email, client_telephone: pre.client_telephone, client_adresse: pre.client_adresse, lignes: [firstLine] }
-        : { ...base, lignes: [firstLine] }
+        ? { ...base, client_nom: pre.client_nom, client_email: pre.client_email, client_telephone: pre.client_telephone, client_adresse: pre.client_adresse }
+        : base
       openEditor(newDoc, initial)
-      // Un document neuf avec sa ligne vide n'est pas « modifié »
-      if (!pre) setSavedSnapshot(JSON.stringify(initial))
+      // La demande d'origine reste affichée pendant la rédaction du devis
+      if (pre) setContexte(pre)
     } catch (e) {
       showToast('error', 'Impossible de créer le document. ' + errMsg(e))
     }
-  }, [userId, openEditor, showToast])
+  }, [userId, reglages, openEditor, showToast])
 
   // Devis demandé depuis l'onglet Demandes
   useEffect(() => {
@@ -513,34 +419,54 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
   }, [prefill, loading, onPrefillConsumed, createNew])
 
   // ===== Lignes =====
-  const addLine = useCallback(() => {
-    const id = generateLineId()
-    setForm(f => f ? { ...f, lignes: [...f.lignes, { id, description: '', quantite: 1, unite: 'heure', prix_unitaire: 0 }] } : f)
-    return id
-  }, [])
+  const saveReglages = useCallback(async (p: Partial<ReglagesFacturation>) => {
+    const next = { ...reglages, ...p }
+    setReglages(next)
+    try { await saveAgendaKey(createClient(), userId, CLE_REGLAGES, next) } catch { showToast('error', 'Le tarif n’a pas pu être mémorisé.') }
+  }, [reglages, userId, showToast])
 
-  const updateLine = useCallback((lineId: string, p: Partial<LineItem>) => {
-    setForm(f => f ? { ...f, lignes: f.lignes.map(l => l.id === lineId ? { ...l, ...p } : l) } : f)
-  }, [])
+  const flash = (id: string) => {
+    setFlashLine(id)
+    setTimeout(() => setFlashLine(null), 900)
+  }
+
+  const saveLigne = useCallback((ligne: LineItem, memoriser: Partial<ReglagesFacturation> | null) => {
+    setForm(f => {
+      if (!f) return f
+      const exists = f.lignes.some(l => l.id === ligne.id)
+      return { ...f, lignes: exists ? f.lignes.map(l => l.id === ligne.id ? ligne : l) : [...f.lignes, ligne] }
+    })
+    setLigneEdit(null)
+    flash(ligne.id)
+    if (memoriser) void saveReglages(memoriser)
+  }, [saveReglages])
 
   const removeLine = useCallback((lineId: string) => {
     setForm(f => f ? { ...f, lignes: f.lignes.filter(l => l.id !== lineId) } : f)
+    setLigneEdit(null)
   }, [])
 
   /** Ajout depuis le catalogue : une 2e pression sur la même prestation augmente la quantité. */
   const addFromCatalogue = useCallback((p: Prestation) => {
     if (!form) return
+    const categorie = categorieLigne({ categorie: p.categorie, unite: p.unite })
     const same = form.lignes.find(l => l.description === p.nom && l.unite === p.unite && l.prix_unitaire === p.prix)
-    // La ligne vide de départ est remplacée plutôt que gardée
-    const blank = form.lignes.length === 1 && !form.lignes[0].description && !form.lignes[0].prix_unitaire
-    const line: LineItem = { id: generateLineId(), description: p.nom, quantite: 1, unite: p.unite, prix_unitaire: p.prix }
+    const line: LineItem = categorie === 'main_oeuvre'
+      ? { id: generateLineId(), categorie, description: p.nom, heures: 1, personnes: 1, quantite: 1, unite: 'heure', prix_unitaire: p.prix }
+      : { id: generateLineId(), categorie, description: p.nom, quantite: 1, unite: p.unite, prix_unitaire: p.prix }
     const lignes = same
-      ? form.lignes.map(l => l.id === same.id ? { ...l, quantite: l.quantite + 1 } : l)
-      : blank ? [line] : [...form.lignes, line]
+      ? form.lignes.map(l => {
+        if (l.id !== same.id) return l
+        if (l.categorie === 'main_oeuvre') {
+          const heures = (l.heures ?? l.quantite) + 1
+          return { ...l, heures, quantite: heures * (l.personnes ?? 1) }
+        }
+        return { ...l, quantite: l.quantite + 1 }
+      })
+      : [...form.lignes, line]
     patch({ lignes })
     setPickerAdded(prev => ({ ...prev, [p.id]: (prev[p.id] || 0) + 1 }))
-    setFlashLine(same ? same.id : line.id)
-    setTimeout(() => setFlashLine(null), 900)
+    flash(same ? same.id : line.id)
   }, [form, patch])
 
   // ===== Statuts =====
@@ -561,7 +487,7 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
       const t = todayISO()
       const facture = await saveDocument(supabase, buildData(form, {
         ...editingDoc, id: '', type: 'facture', numero, statut: 'brouillon', devis_source_id: editingDoc.id,
-      }, { date_emission: t, date_echeance: addDaysISO(t, 30), date_acceptation: null, date_paiement: null }))
+      }, { date_emission: t, date_echeance: addDaysISO(t, reglages.delai_paiement), date_acceptation: null, date_paiement: null }))
       const devis = await saveDocument(supabase, buildData(form, editingDoc, { statut: 'converti' }))
       setDocuments(prev => [facture, ...prev.map(d => d.id === devis.id ? devis : d)])
       showToast('success', `Facture ${numero} créée`)
@@ -569,7 +495,7 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
     } catch (e) {
       showToast('error', 'Conversion impossible. ' + errMsg(e))
     }
-  }, [editingDoc, form, userId, buildData, openEditor, showToast])
+  }, [editingDoc, form, userId, reglages, buildData, openEditor, showToast])
 
   // ===== Actions sur un document =====
   const confirmDelete = useCallback(async () => {
@@ -600,7 +526,7 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
         lignes: doc.lignes, sous_total: doc.sous_total, taux_tva: doc.taux_tva,
         montant_tva: doc.montant_tva, remise_type: doc.remise_type,
         remise_valeur: doc.remise_valeur, montant_remise: doc.montant_remise,
-        total_ttc: doc.total_ttc, date_emission: t, date_echeance: doc.type === 'facture' ? addDaysISO(t, 30) : null,
+        total_ttc: doc.total_ttc, date_emission: t, date_echeance: addDaysISO(t, doc.type === 'facture' ? reglages.delai_paiement : reglages.validite_devis),
         statut: 'brouillon', notes: doc.notes, devis_source_id: null,
       })
       setDocuments(prev => [saved, ...prev])
@@ -609,41 +535,62 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
     } catch (e) {
       showToast('error', 'Duplication impossible. ' + errMsg(e))
     }
-  }, [userId, openEditor, showToast])
+  }, [userId, reglages, openEditor, showToast])
 
   // ===== PDF =====
   // Les coordonnées bancaires sont privées (hors profil public) : on les
   // ajoute ici pour que la facture porte l'IBAN et la QR-facture.
   const profileForPdf = useMemo(() => profile ? { ...profile, ...(bank || {}) } as Artisan : null, [profile, bank])
 
+  const pdfOptions = useMemo(() => ({ assujettiTva: reglages.assujetti_tva, numeroTva: reglages.numero_tva }), [reglages])
+
   const printData = useCallback((data: InvoiceData) => {
-    printInvoice(data, profileForPdf).catch(() => showToast('error', 'Erreur lors de la génération du PDF.'))
-  }, [profileForPdf, showToast])
+    printInvoice(data, profileForPdf, pdfOptions).catch(() => showToast('error', 'Erreur lors de la génération du PDF.'))
+  }, [profileForPdf, pdfOptions, showToast])
 
   const pdfFromDoc = useCallback((doc: Document) => {
     setMenuDoc(null)
-    const f = formFromDoc(doc)
     printData({
       type: doc.type, numero: doc.numero, client_nom: doc.client_nom,
       client_email: doc.client_email, client_telephone: doc.client_telephone, client_adresse: doc.client_adresse,
-      lignes: f.lignes.map(l => ({ ...l, total: totalLigne(l.quantite, l.prix_unitaire) })),
+      lignes: formFromDoc(doc).lignes.map(toInvoiceLine),
       sous_total: doc.sous_total, taux_tva: doc.taux_tva, montant_tva: doc.montant_tva,
-      montant_remise: doc.montant_remise, total_ttc: doc.total_ttc,
+      montant_remise: doc.montant_remise, remise_type: doc.remise_type, remise_valeur: doc.remise_valeur, total_ttc: doc.total_ttc,
       date_emission: doc.date_emission, date_echeance: doc.date_echeance, notes: doc.notes,
     })
   }, [printData])
 
+  /** Données du document tel qu'il est à l'écran (même avant enregistrement). */
+  const dataFromEditor = useCallback((): InvoiceData => {
+    const f = form!
+    const t = calculerTotaux(f.lignes, f.remise_type, f.remise_valeur, f.taux_tva)
+    return {
+      type: editingDoc!.type, numero: editingDoc!.numero, client_nom: f.client_nom,
+      client_email: f.client_email, client_telephone: f.client_telephone, client_adresse: f.client_adresse,
+      lignes: f.lignes.map(toInvoiceLine),
+      sous_total: t.sousTotal, taux_tva: f.taux_tva, montant_tva: t.montantTva,
+      montant_remise: t.montantRemise, remise_type: f.remise_type, remise_valeur: f.remise_valeur, total_ttc: t.totalTtc,
+      date_emission: f.date_emission, date_echeance: f.date_echeance || null, notes: f.notes,
+    }
+  }, [editingDoc, form])
+
   const pdfFromEditor = useCallback(() => {
-    if (!editingDoc || !form || !totaux) return
-    printData({
-      type: editingDoc.type, numero: editingDoc.numero, client_nom: form.client_nom,
-      client_email: form.client_email, client_telephone: form.client_telephone, client_adresse: form.client_adresse,
-      lignes: form.lignes.map(l => ({ ...l, total: totalLigne(l.quantite, l.prix_unitaire) })),
-      sous_total: totaux.sousTotal, taux_tva: form.taux_tva, montant_tva: totaux.montantTva,
-      montant_remise: totaux.montantRemise, total_ttc: totaux.totalTtc,
-      date_emission: form.date_emission, date_echeance: form.date_echeance || null, notes: form.notes,
-    })
-  }, [editingDoc, form, totaux, printData])
+    if (!editingDoc || !form) return
+    printData(dataFromEditor())
+  }, [editingDoc, form, dataFromEditor, printData])
+
+  const openPreview = useCallback(() => {
+    if (!editingDoc || !form) return
+    setPreviewQr(null)
+    setShowPreview(true)
+    if (editingDoc.type === 'facture') {
+      const data = dataFromEditor()
+      import('@/lib/swiss-qr')
+        .then(m => m.buildQrBillSvg(data, profileForPdf))
+        .then(svg => setPreviewQr(svg))
+        .catch(() => setPreviewQr(null))
+    }
+  }, [editingDoc, form, dataFromEditor, profileForPdf])
 
   // ===== Catalogue =====
   const openCatalogue = useCallback(() => {
@@ -660,7 +607,7 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
     try {
       const data: Partial<Prestation> = {
         artisan_id: userId, nom: catForm.nom.trim(), prix: catForm.prix,
-        unite: catForm.unite, description: catForm.description.trim(),
+        unite: catForm.unite, description: catForm.description.trim(), categorie: catForm.categorie,
         ordre: catForm.id ? (prestations.find(p => p.id === catForm.id)?.ordre ?? 0) : prestations.length,
       }
       if (catForm.id) data.id = catForm.id
@@ -842,7 +789,7 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
             </div>
             <h2 className="font-sora font-extrabold text-[17px] text-[var(--dark)] truncate leading-tight">{editingDoc.numero}</h2>
           </div>
-          <button onClick={() => setShowPreview(true)} className={`${ICON_BTN} text-[var(--dark)]`} aria-label="Aperçu du document">
+          <button onClick={openPreview} className={`${ICON_BTN} text-[var(--dark)]`} aria-label="Aperçu du document">
             <IconEye />
           </button>
           {editingDoc.id && (
@@ -856,8 +803,8 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
         <ol aria-label="Avancement" className="flex mb-4">
           {etapes.map((e, i) => (
             <li key={e.label} className="relative flex-1 min-w-0 flex flex-col items-center gap-1" aria-current={e.etat === 'actuel' ? 'step' : undefined}>
-              {i > 0 && <span aria-hidden="true" className={`absolute top-3 right-1/2 w-full h-0.5 ${etapes[i - 1].etat === 'fait' ? 'bg-[var(--green)]' : 'bg-[var(--gray-200)]'}`} />}
-              <span className={`relative w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
+              {i > 0 && <span aria-hidden="true" className={`absolute top-3 right-1/2 w-full h-0.5 z-0 ${etapes[i - 1].etat === 'fait' ? 'bg-[var(--green)]' : 'bg-[var(--gray-200)]'}`} />}
+              <span className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
                 e.alerte ? 'bg-[var(--red)] text-white'
                   : e.etat === 'fait' ? 'bg-[var(--green)] text-white'
                     : e.etat === 'actuel' ? 'bg-[var(--orange)] text-white ring-4 ring-[rgba(232,112,10,0.18)]'
@@ -880,6 +827,12 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
 
         <div className="grid gap-4 grid-cols-[1fr_340px] items-start max-[900px]:grid-cols-1">
           <div className="flex flex-col gap-4 min-w-0">
+            {contexte && (
+              <div className="rounded-[20px] p-4 bg-[rgba(232,112,10,0.08)] border border-[rgba(232,112,10,0.25)]">
+                <div className="text-[12px] font-bold uppercase tracking-wider text-[var(--orange-dark)] mb-1">Demande de {contexte.client_nom || 'votre client'}</div>
+                <p className="text-[14px] text-[var(--dark)] whitespace-pre-line">« {contexte.description || 'Pas de message'} »</p>
+              </div>
+            )}
             {/* Client */}
             <section className={CARD} aria-labelledby="fact-client-title">
               <h3 id="fact-client-title" className="font-sora font-bold text-[16px] mb-3">Client</h3>
@@ -935,110 +888,85 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
                 <label htmlFor="fact-date" className="text-[15px] font-semibold text-[var(--dark)]">{isDevis ? 'Date du devis' : 'Date de la facture'}</label>
                 <input id="fact-date" type="date" value={form.date_emission} onChange={e => patch({ date_emission: e.target.value })} className={inputCls({ px: 'px-3', extra: 'max-w-[180px]' })} />
               </div>
-              {!isDevis && (
-                <>
-                  <div className="flex items-center justify-between gap-3">
-                    <label htmlFor="fact-echeance" className="text-[15px] font-semibold text-[var(--dark)]">Échéance</label>
-                    <input id="fact-echeance" type="date" value={form.date_echeance} onChange={e => patch({ date_echeance: e.target.value })} className={inputCls({ px: 'px-3', extra: 'max-w-[180px]' })} />
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[13px] text-[var(--gray-500)]">Payable sous</span>
-                    {[10, 30, 60].map(j => {
-                      const val = addDaysISO(form.date_emission || today, j)
-                      const on = form.date_echeance === val
-                      return (
-                        <button key={j} type="button" onClick={() => patch({ date_echeance: val })} aria-pressed={on}
-                          className={`h-9 px-3.5 rounded-full text-[13px] font-semibold border cursor-pointer transition-colors ${on ? 'bg-[var(--dark)] border-[var(--dark)] text-white' : 'bg-white border-[var(--gray-200)] text-[var(--dark)] hover:border-[var(--dark)]'}`}>
-                          {j} jours
-                        </button>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
+              <div className="flex items-center justify-between gap-3">
+                <label htmlFor="fact-echeance" className="text-[15px] font-semibold text-[var(--dark)]">{isDevis ? 'Valable jusqu’au' : 'À payer jusqu’au'}</label>
+                <input id="fact-echeance" type="date" value={form.date_echeance} onChange={e => patch({ date_echeance: e.target.value })} className={inputCls({ px: 'px-3', extra: 'max-w-[180px]' })} />
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[13px] text-[var(--gray-500)]">{isDevis ? 'Validité' : 'Payable sous'}</span>
+                {(isDevis ? [15, 30, 60] : [10, 20, 30, 60]).map(j => {
+                  const val = addDaysISO(form.date_emission || today, j)
+                  const on = form.date_echeance === val
+                  return (
+                    <button key={j} type="button" onClick={() => patch({ date_echeance: val })} aria-pressed={on}
+                      className={`h-9 px-3.5 rounded-full text-[13px] font-semibold border cursor-pointer transition-colors ${on ? 'bg-[var(--dark)] border-[var(--dark)] text-white' : 'bg-white border-[var(--gray-200)] text-[var(--dark)] hover:border-[var(--dark)]'}`}>
+                      {j} jours
+                    </button>
+                  )
+                })}
+              </div>
             </section>
 
             {/* Prestations */}
             <section className={CARD} aria-labelledby="fact-lines-title">
               <div className="flex items-center justify-between mb-3">
                 <h3 id="fact-lines-title" className="font-sora font-bold text-[16px]">Prestations</h3>
-                <span className="text-[13px] text-[var(--gray-500)]">{form.lignes.length} ligne{form.lignes.length > 1 ? 's' : ''}</span>
+                {form.lignes.length > 0 && <span className="text-[13px] text-[var(--gray-500)]">{form.lignes.length} ligne{form.lignes.length > 1 ? 's' : ''}</span>}
               </div>
 
-              <ul className="flex flex-col gap-3">
-                {form.lignes.map((l, idx) => (
-                  <li key={l.id} className={`rounded-2xl border p-3 transition-colors ${flashLine === l.id ? 'border-[var(--orange)] bg-[rgba(232,112,10,0.05)]' : 'border-[var(--gray-200)] bg-[var(--gray-50)]'}`}>
-                    <div className="flex items-start gap-2">
-                      <label htmlFor={`fact-desc-${l.id}`} className="sr-only">Description de la ligne {idx + 1}</label>
-                      <input id={`fact-desc-${l.id}`} type="text" value={l.description} onChange={e => updateLine(l.id, { description: e.target.value })}
-                        placeholder="Ex. Remplacement du siphon" autoComplete="off"
-                        className={`${INPUT} font-semibold`} />
-                      <button type="button" onClick={() => removeLine(l.id)} aria-label={`Supprimer la ligne ${idx + 1}`}
-                        className="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-[var(--gray-500)] bg-transparent border-none cursor-pointer hover:text-[var(--red)] hover:bg-[var(--red-light)]">
-                        <IconTrash className="w-[18px] h-[18px]" />
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 mt-2 min-[600px]:grid-cols-[150px_1fr_1fr]">
-                      <div className="min-w-0">
-                        <span className="block text-[12px] font-semibold text-[var(--gray-500)] mb-1" id={`fact-qte-l-${l.id}`}>Quantité</span>
-                        <div className="flex items-center h-12 rounded-xl border border-[var(--gray-200)] bg-white overflow-hidden focus-within:border-[var(--orange)]">
-                          <button type="button" aria-label="Diminuer la quantité" onClick={() => updateLine(l.id, { quantite: Math.max(0, l.quantite - (l.unite === 'heure' ? 0.5 : 1)) })}
-                            className="w-10 h-full shrink-0 text-xl text-[var(--gray-700)] bg-transparent border-none cursor-pointer hover:bg-[var(--gray-100)]">−</button>
-                          <DecimalInput value={l.quantite} onValue={n => updateLine(l.id, { quantite: n })} aria-labelledby={`fact-qte-l-${l.id}`}
-                            className="w-full min-w-0 h-full text-center text-base font-semibold bg-transparent border-none outline-none" />
-                          <button type="button" aria-label="Augmenter la quantité" onClick={() => updateLine(l.id, { quantite: l.quantite + (l.unite === 'heure' ? 0.5 : 1) })}
-                            className="w-10 h-full shrink-0 text-xl text-[var(--gray-700)] bg-transparent border-none cursor-pointer hover:bg-[var(--gray-100)]">+</button>
-                        </div>
-                      </div>
-                      <div className="min-w-0">
-                        <label htmlFor={`fact-unite-${l.id}`} className="block text-[12px] font-semibold text-[var(--gray-500)] mb-1">Unité</label>
-                        <select id={`fact-unite-${l.id}`} value={l.unite} onChange={e => updateLine(l.id, { unite: e.target.value })} className={inputCls({ px: 'px-3' })}>
-                          {UNITES.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
-                        </select>
-                      </div>
-                      <div className="col-span-2 min-w-0 min-[600px]:col-span-1">
-                        <label htmlFor={`fact-prix-${l.id}`} className="block text-[12px] font-semibold text-[var(--gray-500)] mb-1">Prix par {uniteLabel(l.unite)} (CHF)</label>
-                        <DecimalInput id={`fact-prix-${l.id}`} value={l.prix_unitaire} onValue={n => updateLine(l.id, { prix_unitaire: n })}
-                          placeholder="0.00" className={`${INPUT} text-right font-semibold`} />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between gap-2 mt-2 px-1 text-[13px]">
-                      <span className="text-[var(--gray-500)] truncate">{l.quantite} {uniteLabel(l.unite)} × {l.prix_unitaire.toFixed(2)}</span>
-                      <span className="font-sora font-bold text-[15px] text-[var(--dark)] shrink-0">{formatCHF(totalLigne(l.quantite, l.prix_unitaire))}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-
-              {form.lignes.length === 0 && (
-                <p className="text-center text-[14px] text-[var(--gray-500)] py-4">Ajoutez une première prestation.</p>
+              {form.lignes.length > 0 ? (
+                <ul className="flex flex-col gap-2 mb-4">
+                  {form.lignes.map(l => {
+                    return (
+                      <li key={l.id}>
+                        <button type="button" onClick={() => setLigneEdit({ ligne: l, isNew: false })}
+                          className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left border cursor-pointer transition-colors ${flashLine === l.id ? 'border-[var(--orange)] bg-[rgba(232,112,10,0.06)]' : 'border-transparent bg-[var(--gray-50)] hover:bg-[var(--gray-100)]'}`}>
+                          <CatTile categorie={l.categorie} />
+                          <span className="flex-1 min-w-0">
+                            <span className="block font-semibold text-[15px] text-[var(--dark)] truncate">{l.description || 'Sans description'}</span>
+                            <span className="block text-[13px] text-[var(--gray-500)] truncate">{resumeLigne(l)}</span>
+                          </span>
+                          <span className="font-sora font-bold text-[15px] text-[var(--dark)] shrink-0">{formatCHF(totalLigne(l.quantite, l.prix_unitaire))}</span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              ) : (
+                <p className="text-[14px] text-[var(--gray-500)] mb-3">Qu’allez-vous facturer ?</p>
               )}
+
+              <div className="grid grid-cols-2 gap-2 min-[600px]:grid-cols-4">
+                {CATEGORIES.map(c => (
+                  <button key={c.key} type="button" onClick={() => setLigneEdit({ ligne: nouvelleLigne(c.key, reglages), isNew: true })}
+                    className="flex items-center gap-2.5 h-14 px-2.5 rounded-2xl border border-[var(--gray-200)] bg-white text-left cursor-pointer hover:border-[var(--orange)] active:scale-[0.98] transition-transform">
+                    <CatTile categorie={c.key} className="w-9 h-9" />
+                    <span className="text-[14px] font-semibold text-[var(--dark)] leading-tight">{c.label}</span>
+                  </button>
+                ))}
+              </div>
 
               {/* Ajout rapide */}
               {quick.length > 0 && (
                 <div className="mt-4">
-                  <div className="text-[13px] text-[var(--gray-500)] mb-2">Ajout rapide</div>
+                  <div className="text-[13px] text-[var(--gray-500)] mb-2">Depuis votre catalogue</div>
                   <div className="flex flex-wrap gap-2">
                     {quick.map(p => (
                       <button key={p.id} type="button" onClick={() => addFromCatalogue(p)}
                         className="flex items-center gap-1.5 h-10 pl-2.5 pr-3.5 max-w-full rounded-full border border-[var(--gray-200)] bg-white text-sm cursor-pointer hover:border-[var(--orange)] active:scale-95 transition-transform">
                         <IconPlus className="w-4 h-4 shrink-0 text-[var(--orange)]" />
                         <span className="font-semibold text-[var(--dark)] truncate">{p.nom}</span>
-                        <span className="text-[var(--gray-500)] shrink-0">{Math.round(p.prix)}.–/{uniteLabel(p.unite)}</span>
+                        <span className="text-[var(--gray-500)] shrink-0">{formatPrixCourt(p.prix)}/{uniteCourte(p.unite)}</span>
                       </button>
                     ))}
                   </div>
                 </div>
               )}
-
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                <button type="button" onClick={() => { const id = addLine(); setTimeout(() => document.getElementById(`fact-desc-${id}`)?.focus(), 0) }} className={btn('secondary', 'tight')}>
-                  <IconPlus className="w-[18px] h-[18px]" /> Ligne
+              {prestations.length > quick.length && (
+                <button type="button" onClick={() => { setPickerAdded({}); setShowPicker(true) }} className="mt-3 flex items-center gap-2 h-10 text-[14px] font-semibold text-[var(--gray-700)] bg-transparent border-none cursor-pointer p-0">
+                  <IconBook className="w-4 h-4" /> Tout le catalogue ({prestations.length})
                 </button>
-                <button type="button" onClick={() => { setPickerAdded({}); setShowPicker(true) }} className={btn('secondary', 'tight')}>
-                  <IconBook className="w-[18px] h-[18px]" /> Catalogue
-                </button>
-              </div>
+              )}
             </section>
 
             {/* Notes */}
@@ -1082,13 +1010,21 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
             </div>
             <div className="py-3 border-t border-[var(--gray-100)]">
               <div className="flex justify-between items-center mb-2 text-[15px]">
-                <span className="text-[var(--gray-500)]">TVA</span>
+                <span className="text-[var(--gray-500)]">TVA{form.taux_tva > 0 ? ` ${form.taux_tva} %` : ''}</span>
                 <span className="font-semibold">{formatCHF(totaux.montantTva)}</span>
               </div>
-              <Segmented<number> label="Taux de TVA" value={form.taux_tva} onChange={v => patch({ taux_tva: v })} options={tvaOptions} />
+              {reglages.assujetti_tva || form.taux_tva > 0
+                ? <Segmented<number> label="Taux de TVA" value={form.taux_tva} onChange={v => patch({ taux_tva: v })} options={tvaOptions} />
+                : <p className="text-[13px] text-[var(--gray-500)]">Non assujetti à la TVA</p>}
             </div>
+            {totaux.arrondi !== 0 && (
+              <div className="flex justify-between items-center py-2 text-[14px] text-[var(--gray-500)] border-t border-[var(--gray-100)]">
+                <span>Arrondi aux 5 centimes</span>
+                <span>{totaux.arrondi > 0 ? '+' : '−'}{Math.abs(totaux.arrondi).toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between items-baseline gap-2 pt-3 border-t-2 border-[var(--dark)]">
-              <span className="font-bold text-[16px]">Total TTC</span>
+              <span className="font-bold text-[16px]">Total{form.taux_tva > 0 ? ' TTC' : ''}</span>
               <span className="font-sora font-extrabold text-[22px]">{formatCHF(totaux.totalTtc)}</span>
             </div>
             {!isDevis && !bank?.bank_iban && (
@@ -1096,6 +1032,9 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
                 Ajoutez votre IBAN dans <Link href="/mon-profil" className="font-semibold underline">Mon profil</Link> : la QR-facture sera jointe au PDF.
               </p>
             )}
+            <button type="button" onClick={() => setShowReglages(true)} className="mt-4 flex items-center gap-2 text-[13px] font-semibold text-[var(--gray-700)] bg-transparent border-none cursor-pointer p-0">
+              <IconSettings className="w-4 h-4" /> Tarifs, TVA et délais
+            </button>
             <div className="max-[900px]:hidden mt-5">
               <button onClick={handleSave} disabled={saving} className={`${BTN_PRIMARY} w-full`}>Enregistrer</button>
               <p className="text-center text-[12px] text-[var(--gray-500)] mt-2" aria-live="polite">{saveLabel}</p>
@@ -1116,55 +1055,15 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
           </div>
         </div>
 
-        {/* Aperçu */}
+        {/* Aperçu : le vrai document, tel que le client le recevra */}
         {showPreview && (
-          <Dialog onClose={() => setShowPreview(false)} labelledBy="fact-preview-title" variant="sheet" className="max-w-[760px] min-[600px]:max-h-[90vh]">
-            <div className="p-7 max-[600px]:p-5">
-              <h3 id="fact-preview-title" className="sr-only">Aperçu de {editingDoc.numero}</h3>
-              <div className="flex justify-between items-start gap-4 mb-6 max-[600px]:flex-col">
-                <div>
-                  <div className="font-sora text-lg font-extrabold text-[var(--dark)]">{profile?.entreprise || `${profile?.prenom || ''} ${profile?.nom || ''}`.trim()}</div>
-                  {profile?.adresse && <div className="text-sm text-[var(--gray-500)] mt-1">{profile.adresse}</div>}
-                  {profile?.telephone && <div className="text-sm text-[var(--gray-500)]">{profile.telephone}</div>}
-                  {profile?.email && <div className="text-sm text-[var(--gray-500)]">{profile.email}</div>}
-                </div>
-                <div className="text-right max-[600px]:text-left">
-                  <div className={`inline-block py-1 px-3 rounded-lg text-sm font-bold uppercase ${isDevis ? 'bg-[rgba(232,112,10,0.1)] text-[var(--orange)]' : 'bg-[var(--blue-light)] text-[var(--blue)]'}`}>{isDevis ? 'Devis' : 'Facture'}</div>
-                  <div className="font-sora font-bold text-base mt-2">{editingDoc.numero}</div>
-                  <div className="text-xs text-[var(--gray-500)] mt-1">Date : {formatDateCH(form.date_emission)}</div>
-                  {!isDevis && form.date_echeance && <div className="text-xs text-[var(--gray-500)]">Échéance : {formatDateCH(form.date_echeance)}</div>}
-                </div>
-              </div>
-              <div className="bg-[var(--gray-50)] p-4 rounded-xl mb-5">
-                <div className="text-[11px] font-bold uppercase text-[var(--gray-500)] mb-1">Client</div>
-                <div className="font-semibold text-sm">{form.client_nom || '—'}</div>
-                {form.client_adresse && <div className="text-sm text-[var(--gray-700)] whitespace-pre-line">{form.client_adresse}</div>}
-                {form.client_email && <div className="text-sm text-[var(--gray-500)]">{form.client_email}</div>}
-                {form.client_telephone && <div className="text-sm text-[var(--gray-500)]">{form.client_telephone}</div>}
-              </div>
-              <ul className="mb-5 border-t-2 border-[var(--dark)]">
-                {form.lignes.map(l => (
-                  <li key={l.id} className="flex justify-between gap-4 py-3 border-b border-[var(--gray-100)] text-sm">
-                    <div className="min-w-0">
-                      <div className="font-semibold text-[var(--dark)] break-words">{l.description || '—'}</div>
-                      <div className="text-[var(--gray-500)]">{l.quantite} {uniteLabel(l.unite)} × {l.prix_unitaire.toFixed(2)}</div>
-                    </div>
-                    <div className="font-semibold shrink-0">{totalLigne(l.quantite, l.prix_unitaire).toFixed(2)}</div>
-                  </li>
-                ))}
-              </ul>
-              <div className="ml-auto max-w-[280px]">
-                <div className="flex justify-between py-1 text-sm"><span className="text-[var(--gray-500)]">Sous-total</span><span>{formatCHF(totaux.sousTotal)}</span></div>
-                {totaux.montantRemise > 0 && <div className="flex justify-between py-1 text-sm"><span className="text-[var(--gray-500)]">Remise</span><span className="text-[var(--red)]">−{formatCHF(totaux.montantRemise)}</span></div>}
-                <div className="flex justify-between py-1 text-sm"><span className="text-[var(--gray-500)]">TVA {form.taux_tva} %</span><span>{formatCHF(totaux.montantTva)}</span></div>
-                <div className="flex justify-between py-2 mt-1 font-bold border-t-2 border-[var(--dark)]"><span>Total TTC</span><span>{formatCHF(totaux.totalTtc)}</span></div>
-              </div>
-              {form.notes && (
-                <div className="bg-[var(--gray-50)] p-4 rounded-xl text-sm text-[var(--gray-700)] mt-5 whitespace-pre-line">
-                  <div className="text-[11px] font-bold uppercase text-[var(--gray-500)] mb-1">Notes</div>
-                  {form.notes}
-                </div>
-              )}
+          <Dialog onClose={() => setShowPreview(false)} labelledBy="fact-preview-title" variant="sheet" className="max-w-[880px] min-[600px]:max-h-[92vh]">
+            <div className="flex items-baseline justify-between gap-3 px-5 pt-4 pb-3">
+              <h3 id="fact-preview-title" className="font-sora font-bold text-lg">Aperçu</h3>
+              <span className="text-[13px] text-[var(--gray-500)]">Tel que votre client le recevra</span>
+            </div>
+            <div className="px-3 pb-3">
+              <DocumentPreview html={buildInvoiceHTML(dataFromEditor(), profileForPdf, previewQr, pdfOptions)} title={`Aperçu de ${editingDoc.numero}`} />
             </div>
             <div className="sticky bottom-0 flex gap-2 p-4 border-t border-[var(--gray-200)] bg-white">
               <button onClick={() => setShowPreview(false)} className={`${BTN_SECONDARY} flex-1 min-[600px]:flex-none`}>Fermer</button>
@@ -1199,7 +1098,7 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
                           <span className="block font-semibold text-[15px] text-[var(--dark)] truncate">{p.nom}</span>
                           {p.description && <span className="block text-[13px] text-[var(--gray-500)] truncate">{p.description}</span>}
                         </span>
-                        <span className="text-[14px] font-semibold text-[var(--dark)] shrink-0">{formatCHF(p.prix)}<span className="font-normal text-[var(--gray-500)]">/{uniteLabel(p.unite)}</span></span>
+                        <span className="text-[14px] font-semibold text-[var(--dark)] shrink-0">{formatCHF(p.prix)}<span className="font-normal text-[var(--gray-500)]">/{uniteCourte(p.unite)}</span></span>
                       </button>
                     </li>
                   )
@@ -1210,6 +1109,21 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
               <button onClick={() => setShowPicker(false)} className={`${BTN_PRIMARY} w-full`}>Terminé</button>
             </div>
           </Dialog>
+        )}
+
+        {ligneEdit && (
+          <LigneSheet
+            ligne={ligneEdit.ligne}
+            isNew={ligneEdit.isNew}
+            reglages={reglages}
+            onSave={saveLigne}
+            onDelete={() => removeLine(ligneEdit.ligne.id)}
+            onClose={() => setLigneEdit(null)}
+          />
+        )}
+        {showReglages && (
+          <ReglagesSheet userId={userId} reglages={reglages} onClose={() => setShowReglages(false)}
+            onSaved={r => { setReglages(r); setShowReglages(false); showToast('success', 'Réglages enregistrés') }} />
         )}
 
         {/* Quitter avec des modifications */}
@@ -1241,7 +1155,7 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
             <IconBack />
           </button>
           <h2 className="flex-1 font-sora font-extrabold text-[18px] text-[var(--dark)] px-1">Catalogue</h2>
-          <button onClick={() => { setCatConfirmDelete(false); setCatForm({ id: null, nom: '', prix: 0, unite: 'heure', description: '' }) }} className={btn('primary', 'sm')}>
+          <button onClick={() => { setCatConfirmDelete(false); setCatForm({ id: null, nom: '', prix: 0, unite: 'heure', description: '', categorie: 'main_oeuvre' }) }} className={btn('primary', 'sm')}>
             <IconPlus className="w-4 h-4" /> Ajouter
           </button>
         </div>
@@ -1252,22 +1166,22 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
             <span className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-[rgba(232,112,10,0.12)] text-[var(--orange)] flex items-center justify-center"><IconBook className="w-7 h-7" /></span>
             <h3 className="font-sora font-bold text-base mb-1">Catalogue vide</h3>
             <p className="text-sm text-[var(--gray-500)] mb-5">Commencez par votre tarif horaire et vos forfaits.</p>
-            <button onClick={() => setCatForm({ id: null, nom: "Main d'œuvre", prix: 0, unite: 'heure', description: '' })} className={BTN_PRIMARY}>Ajouter ma main d&apos;œuvre</button>
+            <button onClick={() => setCatForm({ id: null, nom: 'Main d’œuvre', prix: reglages.tarif_horaire, unite: 'heure', description: '', categorie: 'main_oeuvre' })} className={BTN_PRIMARY}>Ajouter ma main d’œuvre</button>
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
             {prestations.map(p => (
               <li key={p.id}>
-                <button type="button" onClick={() => { setCatConfirmDelete(false); setCatForm({ id: p.id, nom: p.nom, prix: p.prix, unite: p.unite, description: p.description || '' }) }}
+                <button type="button" onClick={() => { setCatConfirmDelete(false); setCatForm({ id: p.id, nom: p.nom, prix: p.prix, unite: p.unite, description: p.description || '', categorie: categorieLigne({ categorie: p.categorie, unite: p.unite }) }) }}
                   className="w-full flex items-center gap-3 p-3.5 rounded-[20px] border border-[var(--gray-200)] bg-white text-left cursor-pointer hover:border-[var(--gray-300)]">
-                  <span className="w-11 h-11 shrink-0 rounded-2xl bg-[rgba(232,112,10,0.12)] text-[var(--orange)] flex items-center justify-center"><IconBook className="w-5 h-5" /></span>
+                  <CatTile categorie={categorieLigne({ categorie: p.categorie, unite: p.unite })} className="w-11 h-11" />
                   <span className="flex-1 min-w-0">
                     <span className="block font-semibold text-[15px] text-[var(--dark)] truncate">{p.nom}</span>
                     {p.description && <span className="block text-[13px] text-[var(--gray-500)] truncate">{p.description}</span>}
                   </span>
                   <span className="text-right shrink-0">
                     <span className="block font-sora font-bold text-[15px] text-[var(--dark)]">{formatCHF(p.prix)}</span>
-                    <span className="block text-[12px] text-[var(--gray-500)]">par {uniteLabel(p.unite)}</span>
+                    <span className="block text-[12px] text-[var(--gray-500)]">par {uniteCourte(p.unite) === 'h' ? 'heure' : uniteCourte(p.unite)}</span>
                   </span>
                 </button>
               </li>
@@ -1284,17 +1198,34 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
                   <label htmlFor="cat-nom" className={LABEL}>Nom *</label>
                   <input id="cat-nom" type="text" value={catForm.nom} onChange={e => setCatForm({ ...catForm, nom: e.target.value })} placeholder="Ex. Main d'œuvre" className={INPUT} />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className={LABEL}>Type</span>
+                  <div role="radiogroup" aria-label="Type de prestation" className="grid grid-cols-2 gap-2">
+                    {CATEGORIES.map(c => {
+                      const on = catForm.categorie === c.key
+                      return (
+                        <button key={c.key} type="button" role="radio" aria-checked={on}
+                          onClick={() => setCatForm({ ...catForm, categorie: c.key, unite: c.key === 'main_oeuvre' ? 'heure' : c.key === 'materiel' ? (catForm.unite === 'heure' || catForm.unite === 'forfait' ? 'unite' : catForm.unite) : 'forfait' })}
+                          className={`flex items-center gap-2 h-12 px-2.5 rounded-xl border text-left text-[14px] font-semibold cursor-pointer transition-colors ${on ? 'border-[var(--dark)] bg-[var(--gray-50)] text-[var(--dark)]' : 'border-[var(--gray-200)] bg-white text-[var(--gray-700)]'}`}>
+                          <CatIcon categorie={c.key} className="w-[18px] h-[18px]" /> {c.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className={`grid gap-3 ${catForm.categorie === 'materiel' ? 'grid-cols-2' : 'grid-cols-1'}`}>
                   <div>
-                    <label htmlFor="cat-prix" className={LABEL}>Prix (CHF)</label>
+                    <label htmlFor="cat-prix" className={LABEL}>{catForm.categorie === 'main_oeuvre' ? 'Prix par heure (CHF)' : catForm.categorie === 'materiel' ? 'Prix de vente (CHF)' : 'Prix (CHF)'}</label>
                     <DecimalInput id="cat-prix" value={catForm.prix} onValue={n => setCatForm(c => c ? { ...c, prix: n } : c)} className={`${INPUT} text-right`} />
                   </div>
-                  <div>
-                    <label htmlFor="cat-unite" className={LABEL}>Par</label>
-                    <select id="cat-unite" value={catForm.unite} onChange={e => setCatForm({ ...catForm, unite: e.target.value })} className={inputCls({ px: 'px-3' })}>
-                      {UNITES.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
-                    </select>
-                  </div>
+                  {catForm.categorie === 'materiel' && (
+                    <div>
+                      <label htmlFor="cat-unite" className={LABEL}>Par</label>
+                      <select id="cat-unite" value={catForm.unite} onChange={e => setCatForm({ ...catForm, unite: e.target.value })} className={inputCls({ px: 'px-3' })}>
+                        {UNITES.filter(u => u.value !== 'heure' && u.value !== 'forfait').map(u => <option key={u.value} value={u.value}>{u.long}</option>)}
+                      </select>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="cat-desc" className={LABEL}>Description (facultatif)</label>
@@ -1332,6 +1263,9 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
       <div className="flex items-center justify-between gap-3 mb-4">
         <h2 className="font-sora text-[22px] font-extrabold text-[var(--dark)]">Devis &amp; factures</h2>
         <div className="flex gap-2">
+          <button onClick={() => setShowReglages(true)} className={`${btn('secondary', 'sm')} max-[900px]:hidden`}>
+            <IconSettings className="w-4 h-4" /> Réglages
+          </button>
           <button onClick={openCatalogue} className={btn('secondary', 'sm')} aria-label="Catalogue de prestations">
             <IconBook className="w-4 h-4" /> Catalogue
           </button>
@@ -1343,6 +1277,18 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
           </button>
         </div>
       </div>
+
+      {reglages.tarif_horaire === 0 && (
+        <button type="button" onClick={() => setShowReglages(true)}
+          className="w-full flex items-center gap-3 p-4 mb-4 rounded-[20px] bg-[rgba(232,112,10,0.08)] border border-[rgba(232,112,10,0.25)] text-left cursor-pointer">
+          <span className="w-11 h-11 shrink-0 rounded-2xl bg-[var(--orange)] text-white flex items-center justify-center"><IconSettings className="w-5 h-5" /></span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-semibold text-[15px] text-[var(--dark)]">Indiquez votre tarif horaire</span>
+            <span className="block text-[13px] text-[var(--gray-700)]">30 secondes, et vos devis se remplissent tout seuls.</span>
+          </span>
+          <IconChevron className="w-5 h-5 text-[var(--gray-500)] shrink-0" />
+        </button>
+      )}
 
       {documents.length === 0 ? (
         <div className={`${CARD} text-center py-12 px-6`}>
@@ -1475,11 +1421,22 @@ export default function DashFacturation({ userId, profile, prefill, onPrefillCon
                   <span className="block text-[14px] text-[var(--gray-500)]">{prestations.length} prestation{prestations.length > 1 ? 's' : ''} enregistrée{prestations.length > 1 ? 's' : ''}</span>
                 </span>
               </button>
+              <button type="button" onClick={() => { setShowCreate(false); setShowReglages(true) }} className="w-full flex items-center gap-4 p-4 rounded-[20px] bg-[var(--gray-50)] border-none text-left cursor-pointer">
+                <span className="w-12 h-12 shrink-0 rounded-2xl bg-white text-[var(--gray-700)] flex items-center justify-center"><IconSettings /></span>
+                <span>
+                  <span className="block font-semibold text-[15px] text-[var(--dark)]">Mes tarifs et réglages</span>
+                  <span className="block text-[14px] text-[var(--gray-500)]">{reglages.tarif_horaire ? `${formatPrixCourt(reglages.tarif_horaire)}/h` : 'Tarif horaire à renseigner'} · TVA · délais</span>
+                </span>
+              </button>
             </div>
           </div>
         </Dialog>
       )}
 
+      {showReglages && (
+        <ReglagesSheet userId={userId} reglages={reglages} onClose={() => setShowReglages(false)}
+          onSaved={r => { setReglages(r); setShowReglages(false); showToast('success', 'Réglages enregistrés') }} />
+      )}
       {menuDoc && <DocMenu doc={menuDoc} onClose={() => setMenuDoc(null)} onOpen={() => { const d = menuDoc; setMenuDoc(null); openEditor(d) }} onPdf={() => pdfFromDoc(menuDoc)} onDuplicate={() => duplicateDoc(menuDoc)} onDelete={() => { setDeleteTarget(menuDoc); setMenuDoc(null) }} />}
       {deleteDialog}
       {toastEl}

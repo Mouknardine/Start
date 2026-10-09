@@ -88,11 +88,18 @@ export type Totaux = {
   sousTotal: number
   montantRemise: number
   montantTva: number
+  /** Écart d'arrondi aux 5 centimes (usage suisse), en général entre −0.02 et +0.02 */
+  arrondi: number
   totalTtc: number
 }
 
 export function totalLigne(quantite: number, prixUnitaire: number): number {
   return round2(quantite * prixUnitaire)
+}
+
+/** Arrondi aux 5 centimes, comme les totaux des factures suisses. */
+export function arrondi5(n: number): number {
+  return round2(Math.round((n + Number.EPSILON) * 20) / 20)
 }
 
 export function calculerTotaux(
@@ -109,7 +116,203 @@ export function calculerTotaux(
       : 0
   const base = round2(sousTotal - montantRemise)
   const montantTva = round2(base * tauxTva / 100)
-  return { sousTotal, montantRemise, montantTva, totalTtc: round2(base + montantTva) }
+  const brut = round2(base + montantTva)
+  const totalTtc = arrondi5(brut)
+  return { sousTotal, montantRemise, montantTva, arrondi: round2(totalTtc - brut), totalTtc }
+}
+
+/** Prix de vente du matériel : prix d'achat + marge, arrondi aux 5 centimes. */
+export function prixDepuisAchat(prixAchat: number, margePct: number): number {
+  return arrondi5(Math.max(prixAchat, 0) * (1 + Math.max(margePct, 0) / 100))
+}
+
+// ===== Lignes : catégories, unités, durées =====
+
+export type Categorie = 'main_oeuvre' | 'materiel' | 'deplacement' | 'forfait'
+
+export const CATEGORIES: { key: Categorie; label: string; titre: string }[] = [
+  { key: 'main_oeuvre', label: 'Main d’œuvre', titre: 'Main d’œuvre' },
+  { key: 'materiel', label: 'Matériel', titre: 'Fournitures et matériel' },
+  { key: 'deplacement', label: 'Déplacement', titre: 'Déplacements' },
+  { key: 'forfait', label: 'Forfait', titre: 'Prestations' },
+]
+
+/** Catégorie d'une ligne ; les anciennes lignes sans catégorie sont déduites de l'unité. */
+export function categorieLigne(l: { categorie?: unknown; unite?: string }): Categorie {
+  if (CATEGORIES.some(c => c.key === l.categorie)) return l.categorie as Categorie
+  return l.unite === 'heure' ? 'main_oeuvre' : 'forfait'
+}
+
+export const UNITES: { value: string; court: string; long: string }[] = [
+  { value: 'unite', court: 'pce', long: 'pièce' },
+  { value: 'm', court: 'm', long: 'mètre' },
+  { value: 'ml', court: 'ml', long: 'mètre linéaire' },
+  { value: 'm2', court: 'm²', long: 'm²' },
+  { value: 'm3', court: 'm³', long: 'm³' },
+  { value: 'kg', court: 'kg', long: 'kilo' },
+  { value: 'l', court: 'l', long: 'litre' },
+  { value: 'lot', court: 'lot', long: 'lot' },
+  { value: 'forfait', court: 'forfait', long: 'forfait' },
+  { value: 'heure', court: 'h', long: 'heure' },
+]
+
+export function uniteCourte(u: string): string {
+  return UNITES.find(x => x.value === u)?.court || u
+}
+
+export function uniteLongue(u: string): string {
+  return UNITES.find(x => x.value === u)?.long || u
+}
+
+/** « 1.5 » → « 1.5 », « 2 » → « 2 » (au plus deux décimales, sans zéros inutiles). */
+export function formatNombre(n: number): string {
+  return String(round2(n))
+}
+
+/**
+ * Durée tapée par un artisan → heures décimales.
+ * Accepte « 1h30 », « 1 h 30 », « 1:30 », « 1,5 », « 1.5 h », « 90 min ». Sinon null.
+ */
+export function parseDuree(raw: string): number | null {
+  const s = raw.trim().toLowerCase().replace(/\s+/g, '')
+  if (!s) return null
+  let m = s.match(/^(\d+)(?:h|:)(\d{1,2})?(?:min|mn|m)?$/)
+  if (m) return +m[1] + (m[2] ? +m[2] / 60 : 0)
+  m = s.match(/^(\d+)(?:min|mn|m)$/)
+  if (m) return +m[1] / 60
+  m = s.match(/^(\d+(?:[.,]\d+)?)h?$/)
+  if (m) return parseFloat(m[1].replace(',', '.'))
+  return null
+}
+
+/** Heures décimales → « 30 min », « 1 h », « 1 h 30 ». */
+export function formatDuree(heures: number): string {
+  const total = Math.max(0, Math.round(heures * 60))
+  const h = Math.floor(total / 60)
+  const min = total % 60
+  if (h === 0) return `${min} min`
+  if (min === 0) return `${h} h`
+  return `${h} h ${String(min).padStart(2, '0')}`
+}
+
+/** Quantité affichée dans une ligne : « 4 h 30 », « 3 pce », « forfait ». */
+export function quantiteLisible(quantite: number, unite: string): string {
+  if (unite === 'heure') return formatDuree(quantite)
+  if (unite === 'forfait' && quantite === 1) return 'forfait'
+  return `${formatNombre(quantite)} ${uniteCourte(unite)}`
+}
+
+/** Détail sous la désignation : « 2 personnes × 4 h » pour une équipe. */
+export function detailLigne(l: { categorie?: unknown; unite?: string; heures?: unknown; personnes?: unknown }): string {
+  const personnes = Number(l.personnes) || 1
+  const heures = Number(l.heures) || 0
+  if (categorieLigne(l) === 'main_oeuvre' && personnes > 1 && heures > 0) {
+    return `${personnes} personnes × ${formatDuree(heures)}`
+  }
+  return ''
+}
+
+/** Prix court à la suisse : « 95.– » pour un montant rond, sinon « 14.80 ». */
+export function formatPrixCourt(n: number): string {
+  const r = round2(n)
+  return Number.isInteger(r) ? `${r}.–` : r.toFixed(2)
+}
+
+/** Résumé d'une ligne : « 2 pers. × 4 h × 95.–/h », « 2 pce × 14.80 ». */
+export function resumeLigne(l: { categorie?: unknown; unite: string; quantite: number; prix_unitaire: number; heures?: number; personnes?: number }): string {
+  const prix = formatPrixCourt(l.prix_unitaire)
+  if (categorieLigne(l) === 'main_oeuvre' && l.unite === 'heure') {
+    const personnes = l.personnes ?? 1
+    const heures = l.heures ?? l.quantite / personnes
+    return `${personnes > 1 ? `${personnes} pers. × ` : ''}${formatDuree(heures)} × ${prix}/h`
+  }
+  return `${quantiteLisible(l.quantite, l.unite)} × ${prix}`
+}
+
+/** Regroupe les lignes par catégorie, dans l'ordre main d'œuvre → matériel → déplacement → forfait. */
+export function regrouperLignes<T extends { categorie?: unknown; unite?: string }>(lignes: T[]): { categorie: Categorie; titre: string; lignes: T[] }[] {
+  return CATEGORIES
+    .map(c => ({ categorie: c.key, titre: c.titre, lignes: lignes.filter(l => categorieLigne(l) === c.key) }))
+    .filter(g => g.lignes.length > 0)
+}
+
+// ===== Réglages de facturation (table agenda_data, clé ci-dessous) =====
+
+export const CLE_REGLAGES = 'facturation_reglages'
+
+export type ReglagesFacturation = {
+  /** CHF HT par heure ; 0 = pas encore renseigné */
+  tarif_horaire: number
+  /** CHF HT par déplacement ; 0 = pas de forfait */
+  tarif_deplacement: number
+  /** % ajouté au prix d'achat du matériel */
+  marge_materiel: number
+  assujetti_tva: boolean
+  numero_tva: string
+  taux_tva: number
+  /** jours */
+  delai_paiement: number
+  /** jours */
+  validite_devis: number
+  /** texte ajouté aux notes des nouveaux documents */
+  conditions: string
+}
+
+export const REGLAGES_DEFAUT: ReglagesFacturation = {
+  tarif_horaire: 0,
+  tarif_deplacement: 0,
+  marge_materiel: 20,
+  assujetti_tva: true,
+  numero_tva: '',
+  taux_tva: 8.1,
+  delai_paiement: 30,
+  validite_devis: 30,
+  conditions: '',
+}
+
+export function normaliserReglages(raw: unknown): ReglagesFacturation {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  const num = (v: unknown, def: number, max: number) => {
+    const n = Number(v)
+    return Number.isFinite(n) && n >= 0 ? Math.min(n, max) : def
+  }
+  const d = REGLAGES_DEFAUT
+  return {
+    tarif_horaire: num(r.tarif_horaire, d.tarif_horaire, 100000),
+    tarif_deplacement: num(r.tarif_deplacement, d.tarif_deplacement, 100000),
+    marge_materiel: num(r.marge_materiel, d.marge_materiel, 1000),
+    assujetti_tva: typeof r.assujetti_tva === 'boolean' ? r.assujetti_tva : d.assujetti_tva,
+    numero_tva: typeof r.numero_tva === 'string' ? r.numero_tva.slice(0, 40) : d.numero_tva,
+    taux_tva: num(r.taux_tva, d.taux_tva, 100),
+    delai_paiement: Math.round(num(r.delai_paiement, d.delai_paiement, 365)),
+    validite_devis: Math.round(num(r.validite_devis, d.validite_devis, 365)),
+    conditions: typeof r.conditions === 'string' ? r.conditions.slice(0, 1000) : d.conditions,
+  }
+}
+
+/** « che123456789 » → « CHE-123.456.789 TVA » ; laissé tel quel si ce n'est pas un IDE. */
+export function formatNumeroTva(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  if (digits.length !== 9) return raw.trim()
+  return `CHE-${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)} TVA`
+}
+
+// ===== Textes du document =====
+
+const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
+
+/** « 2026-10-09 » → « 9 octobre 2026 ». */
+export function dateLongue(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const [y, m, d] = iso.slice(0, 10).split('-').map(Number)
+  if (!y || !m || !d) return iso
+  return `${d} ${MOIS[m - 1]} ${y}`
+}
+
+/** Localité d'une adresse suisse (« Rue du Lac 15, 1003 Lausanne » → « Lausanne »). */
+export function localiteDepuisAdresse(adresse: string | null | undefined): string {
+  const m = (adresse || '').match(/\b\d{4}\s+([A-Za-zÀ-ÿ'’.\- ]+)/)
+  return m ? m[1].trim().replace(/[,;]+$/, '').trim() : ''
 }
 
 // ===== Statuts =====

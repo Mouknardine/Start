@@ -3,6 +3,9 @@ import {
   parseDecimal, formatDecimalInput, formatCHF, formatDateCH, todayISO, addDaysISO,
   calculerTotaux, totalLigne, estEnRetard, etatDocument, etapesDocument,
   resumeFacturation, clientsRecents, emailValide, type DocResume,
+  arrondi5, prixDepuisAchat, parseDuree, formatDuree, quantiteLisible, detailLigne,
+  categorieLigne, regrouperLignes, normaliserReglages, formatNumeroTva, dateLongue,
+  localiteDepuisAdresse, REGLAGES_DEFAUT, formatPrixCourt, resumeLigne,
 } from '@/lib/facturation'
 
 const doc = (p: Partial<DocResume>): DocResume => ({
@@ -51,8 +54,8 @@ describe('formatage', () => {
 
 describe('calculerTotaux', () => {
   const lignes = [{ quantite: 1, prix_unitaire: 180 }, { quantite: 1.5, prix_unitaire: 95 }]
-  it('sous-total, TVA 8.1 % et total arrondis au centime', () => {
-    expect(calculerTotaux(lignes, 'aucune', 0, 8.1)).toEqual({ sousTotal: 322.5, montantRemise: 0, montantTva: 26.12, totalTtc: 348.62 })
+  it('TVA au centime, total arrondi aux 5 centimes avec l’écart affiché', () => {
+    expect(calculerTotaux(lignes, 'aucune', 0, 8.1)).toEqual({ sousTotal: 322.5, montantRemise: 0, montantTva: 26.12, arrondi: -0.02, totalTtc: 348.6 })
   })
   it('remise en pourcentage (bornée à 100 %)', () => {
     expect(calculerTotaux(lignes, 'pourcentage', 10, 0).montantRemise).toBe(32.25)
@@ -126,5 +129,100 @@ describe('emailValide', () => {
     expect(emailValide('client@example.ch')).toBe(true)
     expect(emailValide('client@example')).toBe(false)
     expect(emailValide('pas une adresse')).toBe(false)
+  })
+})
+
+describe('arrondis et prix', () => {
+  it('arrondi5', () => {
+    expect(arrondi5(348.62)).toBe(348.6)
+    expect(arrondi5(348.63)).toBe(348.65)
+    expect(arrondi5(10.025)).toBe(10.05)
+  })
+  it('prix de vente = achat + marge, aux 5 centimes', () => {
+    expect(prixDepuisAchat(10, 20)).toBe(12)
+    expect(prixDepuisAchat(12.34, 25)).toBe(15.45)
+    expect(prixDepuisAchat(-5, 20)).toBe(0)
+  })
+})
+
+describe('durées', () => {
+  it('lit les écritures courantes', () => {
+    expect(parseDuree('1h30')).toBe(1.5)
+    expect(parseDuree('1 h 30')).toBe(1.5)
+    expect(parseDuree('1:45')).toBe(1.75)
+    expect(parseDuree('2h')).toBe(2)
+    expect(parseDuree('1,5')).toBe(1.5)
+    expect(parseDuree('90 min')).toBe(1.5)
+    expect(parseDuree('')).toBeNull()
+    expect(parseDuree('demain')).toBeNull()
+  })
+  it('affiche en heures et minutes', () => {
+    expect(formatDuree(0.5)).toBe('30 min')
+    expect(formatDuree(1)).toBe('1 h')
+    expect(formatDuree(1.5)).toBe('1 h 30')
+    expect(formatDuree(2.25)).toBe('2 h 15')
+  })
+  it('quantité lisible selon l’unité', () => {
+    expect(quantiteLisible(4.5, 'heure')).toBe('4 h 30')
+    expect(quantiteLisible(3, 'unite')).toBe('3 pce')
+    expect(quantiteLisible(1, 'forfait')).toBe('forfait')
+    expect(quantiteLisible(12.5, 'm2')).toBe('12.5 m²')
+  })
+})
+
+describe('catégories de lignes', () => {
+  it('déduit la catégorie des anciennes lignes', () => {
+    expect(categorieLigne({ unite: 'heure' })).toBe('main_oeuvre')
+    expect(categorieLigne({ unite: 'm2' })).toBe('forfait')
+    expect(categorieLigne({ categorie: 'materiel', unite: 'heure' })).toBe('materiel')
+  })
+  it('détail équipe', () => {
+    expect(detailLigne({ categorie: 'main_oeuvre', heures: 4, personnes: 2 })).toBe('2 personnes × 4 h')
+    expect(detailLigne({ categorie: 'main_oeuvre', heures: 4, personnes: 1 })).toBe('')
+  })
+  it('regroupe dans l’ordre métier', () => {
+    const g = regrouperLignes([
+      { categorie: 'deplacement', unite: 'forfait' },
+      { categorie: 'materiel', unite: 'unite' },
+      { unite: 'heure' },
+    ])
+    expect(g.map(x => x.categorie)).toEqual(['main_oeuvre', 'materiel', 'deplacement'])
+  })
+})
+
+describe('réglages', () => {
+  it('complète et borne les valeurs', () => {
+    expect(normaliserReglages(null)).toEqual(REGLAGES_DEFAUT)
+    const r = normaliserReglages({ tarif_horaire: '95', marge_materiel: -3, assujetti_tva: false, delai_paiement: 29.6 })
+    expect(r.tarif_horaire).toBe(95)
+    expect(r.marge_materiel).toBe(REGLAGES_DEFAUT.marge_materiel)
+    expect(r.assujetti_tva).toBe(false)
+    expect(r.delai_paiement).toBe(30)
+  })
+  it('met en forme le numéro TVA', () => {
+    expect(formatNumeroTva('che123456789')).toBe('CHE-123.456.789 TVA')
+    expect(formatNumeroTva('CHE-123.456.789 MWST')).toBe('CHE-123.456.789 TVA')
+    expect(formatNumeroTva('12')).toBe('12')
+  })
+})
+
+describe('textes du document', () => {
+  it('date longue et localité', () => {
+    expect(dateLongue('2026-10-09')).toBe('9 octobre 2026')
+    expect(localiteDepuisAdresse('Rue du Lac 15, 1003 Lausanne')).toBe('Lausanne')
+    expect(localiteDepuisAdresse('Chemin des Prés 2\n1400 Yverdon-les-Bains')).toBe('Yverdon-les-Bains')
+    expect(localiteDepuisAdresse('')).toBe('')
+  })
+})
+
+describe('résumé de ligne', () => {
+  it('prix court', () => {
+    expect(formatPrixCourt(95)).toBe('95.–')
+    expect(formatPrixCourt(14.8)).toBe('14.80')
+  })
+  it('main d’œuvre et matériel', () => {
+    expect(resumeLigne({ categorie: 'main_oeuvre', unite: 'heure', quantite: 8, prix_unitaire: 95, heures: 4, personnes: 2 })).toBe('2 pers. × 4 h × 95.–/h')
+    expect(resumeLigne({ categorie: 'main_oeuvre', unite: 'heure', quantite: 1.5, prix_unitaire: 95 })).toBe('1 h 30 × 95.–/h')
+    expect(resumeLigne({ categorie: 'materiel', unite: 'unite', quantite: 2, prix_unitaire: 14.8 })).toBe('2 pce × 14.80')
   })
 })

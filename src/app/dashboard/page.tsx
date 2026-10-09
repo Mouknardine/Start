@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import Image from 'next/image'
 import Logo from '@/components/Logo'
 import { createClient } from '@/lib/supabase/client'
@@ -13,9 +12,10 @@ import DashDemandes from '@/components/dashboard/DashDemandes'
 import DashAgenda from '@/components/dashboard/DashAgenda'
 import DashEquipe from '@/components/dashboard/DashEquipe'
 import DashFacturation from '@/components/dashboard/DashFacturation'
+import DashProfil from '@/components/dashboard/DashProfil'
 import type { DevisPrefill } from '@/lib/facturation'
 
-type TabKey = 'demandes' | 'agenda' | 'equipe' | 'facturation'
+type TabKey = 'demandes' | 'agenda' | 'equipe' | 'facturation' | 'profil'
 
 const ICON = { className: 'w-6 h-6', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true }
 
@@ -24,6 +24,7 @@ const TABS: { key: TabKey; label: string; icon: ReactNode }[] = [
   { key: 'agenda', label: 'Agenda', icon: <svg {...ICON}><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg> },
   { key: 'equipe', label: 'Équipe', icon: <svg {...ICON}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></svg> },
   { key: 'facturation', label: 'Factures', icon: <svg {...ICON}><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z" /><path d="M9 8h6M9 12h6M9 16h3" /></svg> },
+  { key: 'profil', label: 'Profil', icon: <svg {...ICON}><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg> },
 ]
 
 const isTab = (t: string | null): t is TabKey => TABS.some(x => x.key === t)
@@ -41,9 +42,9 @@ export default function DashboardPage() {
   const [devisPrefill, setDevisPrefill] = useState<DevisPrefill | null>(null)
 
   // L'onglet courant vit dans l'URL (?tab=) : un rechargement y revient
-  const changeTab = useCallback((key: TabKey) => {
+  const changeTab = useCallback((key: TabKey, extra = '') => {
     setTab(key)
-    window.history.replaceState(window.history.state, '', `/dashboard?tab=${key}`)
+    window.history.replaceState(window.history.state, '', `/dashboard?tab=${key}${extra}`)
     window.scrollTo(0, 0)
   }, [])
 
@@ -178,18 +179,18 @@ export default function DashboardPage() {
         <div className="flex items-center gap-8">
           <Logo />
           <div className="flex items-center gap-1 max-[600px]:hidden">
-            <Link href="/dashboard" className="no-underline text-sm font-semibold text-[var(--dark)]">Tableau de bord</Link>
+            <button type="button" onClick={() => changeTab('demandes')} className={`bg-transparent border-none p-0 cursor-pointer text-sm transition-colors ${tab !== 'profil' ? 'font-semibold text-[var(--dark)]' : 'text-[var(--gray-500)] hover:text-[var(--dark)]'}`}>Tableau de bord</button>
             <span className="text-[var(--gray-300)] mx-1">·</span>
-            <Link href="/mon-profil" className="no-underline text-sm text-[var(--gray-500)] hover:text-[var(--dark)] transition-colors">Mon profil</Link>
+            <button type="button" onClick={() => changeTab('profil')} className={`bg-transparent border-none p-0 cursor-pointer text-sm transition-colors ${tab === 'profil' ? 'font-semibold text-[var(--dark)]' : 'text-[var(--gray-500)] hover:text-[var(--dark)]'}`}>Mon profil</button>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-[var(--gray-500)] mr-1 max-[600px]:hidden">{displayName}</span>
-          <Link href="/mon-profil" aria-label="Mon profil" className="relative w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden no-underline" style={{ background: profile?.avatar_url ? undefined : 'linear-gradient(135deg, var(--dark), var(--dark-mid))' }}>
+          <button type="button" onClick={() => changeTab('profil')} aria-label="Mon profil" className="relative w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden border-none cursor-pointer p-0" style={{ background: profile?.avatar_url ? undefined : 'linear-gradient(135deg, var(--dark), var(--dark-mid))' }}>
             {profile?.avatar_url ? (
               <Image src={profile.avatar_url} alt="" fill sizes="40px" className="object-cover" />
             ) : initials}
-          </Link>
+          </button>
           <button onClick={handleLogout} aria-label="Se déconnecter" title="Se déconnecter" className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--gray-500)] bg-transparent border-none cursor-pointer hover:text-[var(--dark)] hover:bg-[var(--gray-100)] transition-colors">
             <svg aria-hidden="true" className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           </button>
@@ -240,7 +241,7 @@ export default function DashboardPage() {
                       : 'text-[var(--gray-500)] hover:text-[var(--dark)]'
                   }`}
                 >
-                  {t.key === 'facturation' ? 'Devis & factures' : t.label}
+                  {t.key === 'facturation' ? 'Devis & factures' : t.key === 'profil' ? 'Mon profil' : t.label}
                   {t.key === 'demandes' && newDemandes > 0 && (
                     <span className="ml-1.5 inline-block min-w-5 px-1.5 rounded-full text-[11px] leading-5 text-center bg-[var(--orange)] text-white">
                       {newDemandes}<span className="sr-only"> nouvelle{newDemandes > 1 ? 's' : ''}</span>
@@ -269,6 +270,15 @@ export default function DashboardPage() {
         {tab === 'equipe' && (
           <DashEquipe userId={userId} demandes={demandes} />
         )}
+        {tab === 'profil' && profile && (
+          <DashProfil
+            userId={userId}
+            profile={profile}
+            avis={avis}
+            onOpenTab={t => changeTab(t, t === 'facturation' ? '&catalogue=1' : '')}
+            onLogout={handleLogout}
+          />
+        )}
         {tab === 'facturation' && (
           <DashFacturation
             userId={userId}
@@ -283,7 +293,7 @@ export default function DashboardPage() {
       {/* Barre d'onglets (mobile) */}
       {!immersive && (
         <nav aria-label="Sections du tableau de bord" className="fixed bottom-0 inset-x-0 z-50 bg-[rgba(255,255,255,0.96)] backdrop-blur-[20px] border-t border-[var(--gray-200)] pb-[env(safe-area-inset-bottom)] min-[900px]:hidden">
-          <ul className="grid grid-cols-4 max-w-[600px] mx-auto">
+          <ul className="grid grid-cols-5 max-w-[600px] mx-auto">
             {TABS.map(t => {
               const active = tab === t.key
               return (

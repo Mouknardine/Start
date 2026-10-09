@@ -342,6 +342,14 @@ export default function MonProfilPage() {
   const displayName = entreprise || `${prenom} ${nom}`.trim() || ''
   const initials = displayName.split(/[\s&]+/).filter(w => w.length > 0).slice(0, 2).map(w => w[0].toUpperCase()).join('')
 
+  // Lien direct vers une section (/mon-profil#banque) : la page n'existe
+  // qu'après le chargement, on fait défiler à ce moment-là.
+  useEffect(() => {
+    if (loading) return
+    const id = window.location.hash.slice(1)
+    if (id) document.getElementById(id)?.scrollIntoView({ block: 'start' })
+  }, [loading])
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--white)]">
@@ -354,8 +362,12 @@ export default function MonProfilPage() {
     <div className="min-h-screen bg-[var(--gray-50)]">
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-10 py-3.5 flex items-center justify-between bg-[rgba(250,250,248,0.92)] backdrop-blur-[20px] border-b border-black/5 max-[600px]:px-4 max-[600px]:py-3">
-        <div className="flex items-center gap-8">
-          <Logo />
+        <div className="flex items-center gap-8 max-[600px]:gap-1">
+          <Link href="/dashboard?tab=profil" aria-label="Retour au tableau de bord" className="hidden max-[600px]:flex w-10 h-10 -ml-2 items-center justify-center rounded-full text-[var(--dark)] hover:bg-[var(--gray-100)]">
+            <svg aria-hidden="true" className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+          </Link>
+          <span className="max-[600px]:hidden"><Logo /></span>
+          <span className="hidden max-[600px]:block font-sora font-extrabold text-[17px] text-[var(--dark)]">Mon profil</span>
           <div className="flex items-center gap-1 max-[600px]:hidden">
             <Link href="/dashboard" className="no-underline text-sm text-[var(--gray-500)] hover:text-[var(--dark)] transition-colors">Tableau de bord</Link>
             <span className="text-[var(--gray-300)] mx-1">·</span>
@@ -367,7 +379,7 @@ export default function MonProfilPage() {
           <div className="relative w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden" style={{ background: avatarUrl ? undefined : 'linear-gradient(135deg, var(--dark), var(--dark-mid))' }}>
             {avatarUrl ? <Image key={avatarUrl} src={avatarUrl} alt="" fill sizes="36px" className="object-cover" /> : initials}
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-1.5 text-sm text-[var(--gray-500)] font-medium hover:text-[var(--dark)] transition-colors" title="Se deconnecter">
+          <button onClick={handleLogout} className="flex items-center gap-1.5 text-sm text-[var(--gray-500)] font-medium hover:text-[var(--dark)] transition-colors" title="Se déconnecter" aria-label="Se déconnecter">
             <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           </button>
         </div>
@@ -378,10 +390,16 @@ export default function MonProfilPage() {
         <div className="mb-8">
           <h1 className="font-sora text-[28px] font-extrabold text-[var(--dark)] max-[900px]:text-[22px] max-[500px]:text-xl">Mon profil</h1>
           <p className="text-[14px] text-[var(--gray-500)] mt-1">Modifiez vos informations visibles sur votre page artisan</p>
+          {userId && (
+            <Link href={`/artisan/${userId}`} className="inline-flex items-center gap-1.5 mt-3 text-[14px] font-semibold text-[var(--orange)] no-underline">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Voir ma page publique
+            </Link>
+          )}
         </div>
 
         {/* PHOTO / AVATAR */}
-        <Card icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>} title="Photo de profil">
+        <Card id="photo" icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>} title="Photo de profil">
           <div className="flex items-center gap-5 max-[900px]:flex-col max-[900px]:items-start">
             <div className="w-20 h-20 rounded-full bg-[var(--dark)] flex items-center justify-center text-white font-sora font-extrabold text-2xl shrink-0 overflow-hidden relative">
               {avatarUploading ? (
@@ -405,7 +423,7 @@ export default function MonProfilPage() {
         </Card>
 
         {/* GALERIE */}
-        <Card icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>} title="Galerie de realisations">
+        <Card id="galerie" icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>} title="Galerie de réalisations">
           <p className="text-xs text-[var(--gray-500)] mb-2">Montrez vos realisations aux clients potentiels. Max 10 photos, 5 Mo chacune.</p>
           <div className="text-[13px] text-[var(--gray-500)] mb-1">{galleryUrls.length} / 10 photos</div>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3 mt-4 max-[900px]:grid-cols-[repeat(auto-fill,minmax(120px,1fr))] max-[400px]:grid-cols-2 max-[400px]:gap-2">
@@ -431,9 +449,9 @@ export default function MonProfilPage() {
         </Card>
 
         {/* INFORMATIONS ENTREPRISE */}
-        <Card icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>} title="Informations de l'entreprise">
+        <Card id="entreprise" icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>} title="Informations de l'entreprise">
           <div className="grid grid-cols-2 gap-4 mb-4 max-[900px]:grid-cols-1">
-            <FormGroup label="Prenom">
+            <FormGroup label="Prénom">
               <input type="text" value={prenom} onChange={e => setPrenom(e.target.value)} placeholder="Jean" className="form-input" />
             </FormGroup>
             <FormGroup label="Nom">
@@ -444,7 +462,7 @@ export default function MonProfilPage() {
             <input type="text" value={entreprise} onChange={e => setEntreprise(e.target.value)} placeholder="Muller & Fils" className="form-input" />
           </FormGroup>
           <div className="grid grid-cols-2 gap-4 mb-4 max-[900px]:grid-cols-1">
-            <FormGroup label="Telephone">
+            <FormGroup label="Téléphone">
               <input type="tel" value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="021 123 45 67" className="form-input" />
             </FormGroup>
             <FormGroup label="Email professionnel">
@@ -460,14 +478,14 @@ export default function MonProfilPage() {
         </Card>
 
         {/* ACTIVITE */}
-        <Card icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>} title="Activite">
-          <FormGroup label="Metier principal">
+        <Card id="activite" icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>} title="Activité">
+          <FormGroup label="Métier principal">
             <select value={metier} onChange={e => setMetier(e.target.value)} className="form-input appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2716%27%20height=%2716%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%238A8680%27%20stroke-width=%272%27%3E%3Cpath%20d=%27M6%209l6%206%206-6%27/%3E%3C/svg%3E')] bg-no-repeat bg-[right_12px_center] pr-9 cursor-pointer">
               <option value="">Selectionnez votre metier</option>
               {METIERS.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </FormGroup>
-          <FormGroup label="Specialites">
+          <FormGroup label="Spécialités">
             <div className="flex flex-wrap gap-2 mb-2">
               {specialites.map((tag, i) => (
                 <span key={i} className="inline-flex items-center gap-1.5 py-1.5 px-3.5 bg-[var(--gray-100)] rounded-full text-[13px] font-medium">
@@ -495,13 +513,13 @@ export default function MonProfilPage() {
               <button onClick={() => addTag('zones')} className="py-2.5 px-4.5 rounded-[var(--radius-sm)] border-2 border-[var(--gray-200)] bg-white text-[13px] font-semibold text-[var(--dark)] cursor-pointer transition-all whitespace-nowrap hover:border-[var(--orange)] hover:text-[var(--orange)]">Ajouter</button>
             </div>
           </FormGroup>
-          <FormGroup label="Description de votre activite">
+          <FormGroup label="Description de votre activité">
             <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Decrivez vos services, votre experience, vos points forts..." className="form-input resize-y min-h-[100px]" />
           </FormGroup>
         </Card>
 
         {/* HORAIRES */}
-        <Card icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>} title="Horaires d'ouverture">
+        <Card id="horaires" icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>} title="Horaires d'ouverture">
           <div>
             {horaires.map((h, i) => (
               <div key={h.jour} className="flex items-center gap-3 py-3 border-b border-[var(--gray-100)] last:border-b-0 max-[900px]:flex-wrap max-[900px]:gap-2">
@@ -528,7 +546,7 @@ export default function MonProfilPage() {
         </Card>
 
         {/* URGENCES */}
-        <Card icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>} title="Disponibilite urgences">
+        <Card id="urgences" icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>} title="Disponibilité urgences">
           <div className="flex items-center justify-between py-0">
             <div className="flex-1">
               <div className="text-sm font-semibold">Activer les urgences</div>
@@ -545,7 +563,7 @@ export default function MonProfilPage() {
           <div className={`overflow-hidden transition-all duration-400 ${urgence ? 'max-h-[400px]' : 'max-h-0'}`}>
             <div className="pt-4">
               <div className="grid grid-cols-2 gap-4 mb-4 max-[900px]:grid-cols-1">
-                <FormGroup label="Supplement urgence (CHF)">
+                <FormGroup label="Supplément urgence (CHF)">
                   <input type="number" value={urgenceSupplement} onChange={e => setUrgenceSupplement(e.target.value)} placeholder="Ex: 50" className="form-input" />
                   <span className="text-xs text-[var(--gray-500)] mt-1 block">Laissez vide si pas de supplement</span>
                 </FormGroup>
@@ -557,11 +575,11 @@ export default function MonProfilPage() {
                 <FormGroup label="Disponible de">
                   <input type="time" value={urgenceHeureDebut} onChange={e => setUrgenceHeureDebut(e.target.value)} className="form-input" />
                 </FormGroup>
-                <FormGroup label="Jusqu'a">
+                <FormGroup label="Jusqu'à">
                   <input type="time" value={urgenceHeureFin} onChange={e => setUrgenceHeureFin(e.target.value)} className="form-input" />
                 </FormGroup>
               </div>
-              <FormGroup label="Jours de disponibilite urgence">
+              <FormGroup label="Jours de disponibilité urgence">
                 <div className="flex gap-1.5 flex-wrap mt-3">
                   {JOURS_URGENCE.map(day => (
                     <button
@@ -584,7 +602,7 @@ export default function MonProfilPage() {
         </Card>
 
         {/* PREFERENCES DE CONTACT */}
-        <Card icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>} title="Preferences de contact">
+        <Card id="contact" icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>} title="Préférences de contact">
           {[
             { key: 'complete' as const, label: 'Demande complete (formulaire)' },
             { key: 'message' as const, label: 'Message rapide' },
@@ -613,7 +631,7 @@ export default function MonProfilPage() {
         </Card>
 
         {/* VERIFICATION D'IDENTITE (IDE-CHE) */}
-        <Card
+        <Card id="verification"
           icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.21 0 4.21.81 5.75 2.15"/></svg>}
           title="Vérification d'identité"
         >
@@ -637,7 +655,7 @@ export default function MonProfilPage() {
         </Card>
 
         {/* COORDONNEES BANCAIRES */}
-        <Card icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>} title="Coordonnees bancaires">
+        <Card id="banque" icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>} title="Coordonnées bancaires">
           <p className="text-xs text-[var(--gray-500)] mb-3.5">Ces informations apparaitront sur vos factures et permettront a vos clients de vous payer. Elles ne sont jamais partagees publiquement.</p>
           <FormGroup label="IBAN">
             <input type="text" value={bankIban} onChange={e => setBankIban(e.target.value)} placeholder="CH93 0076 2011 6238 5295 7" className="form-input font-mono tracking-wider" />
@@ -656,8 +674,8 @@ export default function MonProfilPage() {
         </Card>
 
         {/* ACTIONS BAR */}
-        <div className="flex gap-3 justify-end mt-8 max-[900px]:flex-col">
-          <Link href={userId ? `/artisan/${userId}` : '/recherche'} className="no-underline bg-white text-[var(--dark)] py-4 px-8 rounded-full font-sora font-bold text-[15px] border-2 border-[var(--gray-200)] cursor-pointer transition-all inline-flex items-center gap-2 hover:border-[var(--gray-300)] hover:bg-[var(--gray-100)] max-[900px]:w-full max-[900px]:justify-center">
+        <div className="flex gap-3 justify-end mt-8 max-[900px]:sticky max-[900px]:bottom-0 max-[900px]:z-40 max-[900px]:-mx-4 max-[900px]:px-4 max-[900px]:py-3 max-[900px]:pb-[calc(12px+env(safe-area-inset-bottom))] max-[900px]:bg-[rgba(249,250,251,0.95)] max-[900px]:backdrop-blur-[12px] max-[900px]:border-t max-[900px]:border-[var(--gray-200)] max-[500px]:-mx-3 max-[500px]:px-3">
+          <Link href={userId ? `/artisan/${userId}` : '/recherche'} className="no-underline bg-white text-[var(--dark)] py-4 px-8 rounded-full font-sora font-bold text-[15px] border-2 border-[var(--gray-200)] cursor-pointer transition-all inline-flex items-center gap-2 hover:border-[var(--gray-300)] hover:bg-[var(--gray-100)] max-[900px]:hidden">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             Voir mon profil public
           </Link>
@@ -672,7 +690,7 @@ export default function MonProfilPage() {
         </div>
 
         {/* RGPD : EXPORT */}
-        <div className="mt-8 p-5 border border-[var(--gray-200)] rounded-[var(--radius)]">
+        <div id="donnees" className="mt-8 p-5 border border-[var(--gray-200)] rounded-[var(--radius)] scroll-mt-[84px]">
           <div className="font-sora text-[15px] font-bold text-[var(--dark)] mb-2">Mes données personnelles</div>
           <p className="text-[13px] text-[var(--gray-500)] leading-relaxed mb-4">
             Conformément au RGPD (art. 15 et 20), téléchargez l&apos;ensemble de vos données stockées sur Artisano au format JSON.
@@ -689,7 +707,7 @@ export default function MonProfilPage() {
         {/* DANGER ZONE */}
         <div className="mt-8 p-5 border border-[rgba(211,47,47,0.2)] rounded-[var(--radius)] bg-[rgba(211,47,47,0.02)]">
           <div className="font-sora text-[15px] font-bold text-[var(--red)] mb-2">Supprimer mon compte</div>
-          <p className="text-[13px] text-[var(--gray-500)] leading-relaxed mb-4">Cette action est irreversible. Toutes vos donnees seront definitivement supprimees : profil, demandes, avis, devis, factures et catalogue.</p>
+          <p className="text-[13px] text-[var(--gray-500)] leading-relaxed mb-4">Cette action est irréversible. Toutes vos données seront définitivement supprimées : profil, demandes, avis, devis, factures et catalogue.</p>
           <button
             onClick={handleDeleteAccount}
             className="bg-transparent border-2 border-[var(--red)] text-[var(--red)] py-3 px-6 rounded-full font-sora font-bold text-sm cursor-pointer transition-all hover:bg-[var(--red)] hover:text-white"
@@ -702,7 +720,7 @@ export default function MonProfilPage() {
       {/* TOAST */}
       <div className={`fixed bottom-[30px] left-1/2 -translate-x-1/2 bg-[var(--dark)] text-white py-3.5 px-7 rounded-full font-semibold text-sm flex items-center gap-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.15)] z-[999] transition-transform duration-400 ${toast ? 'translate-y-0' : 'translate-y-20'}`} style={{ transitionTimingFunction: 'cubic-bezier(0.34,1.56,0.64,1)' }}>
         <svg className="w-[18px] h-[18px] text-[var(--green)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        Profil enregistre avec succes
+        Profil enregistré
       </div>
     </div>
   )
@@ -710,9 +728,9 @@ export default function MonProfilPage() {
 
 // ===== Sub-components =====
 
-function Card({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+function Card({ id, icon, title, children }: { id?: string; icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-[var(--radius)] p-7 border border-[var(--gray-200)] mb-5 max-[900px]:p-5">
+    <div id={id} className="bg-white rounded-[var(--radius)] p-7 border border-[var(--gray-200)] mb-5 scroll-mt-[84px] max-[900px]:p-5">
       <div className="font-sora text-lg font-bold mb-5 flex items-center gap-2.5">
         <span className="w-5 h-5 text-[var(--orange)] shrink-0">{icon}</span>
         {title}
