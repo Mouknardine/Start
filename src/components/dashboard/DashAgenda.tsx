@@ -93,6 +93,14 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
   const emptyAff = useMemo<AffData>(() => ({ titre: '', employe_id: '', date: '', heure_debut: '08:00', heure_fin: '10:00', adresse: '', notes: '', demande_id: '' }), [])
   const [affPopup, setAffPopup] = useState<{ open: boolean; editId: string | null; data: AffData }>({ open: false, editId: null, data: emptyAff })
 
+  // Mobile : un seul jour affiché à la fois (lundi = 0)
+  const [mobileDay, setMobileDay] = useState(() => (new Date().getDay() + 6) % 7)
+  // Toucher : appui court = un créneau, appui long puis glisser = plusieurs.
+  // Un glissé sans appui long fait défiler la page normalement.
+  const touchRef = useRef<{ x: number; y: number; cell: { col: number; row: number } | null; timer: ReturnType<typeof setTimeout> | null; dragging: boolean; moved: boolean; active: boolean }>(
+    { x: 0, y: 0, cell: null, timer: null, dragging: false, moved: false, active: false },
+  )
+
   // Drag state refs
   const isDragging = useRef(false)
   const dragStartCol = useRef<number | null>(null)
@@ -567,20 +575,41 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
   // Touch support
   const onGridTouchStart = useCallback((e: React.TouchEvent) => {
     const info = getCellFromEvent(e)
-    if (!info || isCellBlocked(info.col)) return
-
-    setPopupPos(null)
-    isDragging.current = true
-    dragStartCol.current = info.col
-    dragStartRow.current = info.row
-    dragCurrentCol.current = info.col
-    dragCurrentRow.current = info.row
-    setSelectedCells([info])
+    const tr = touchRef.current
+    if (tr.timer) clearTimeout(tr.timer)
+    tr.active = true
+    tr.dragging = false
+    tr.moved = false
+    tr.cell = info && !isCellBlocked(info.col) ? info : null
+    if (!tr.cell) return
+    const t = e.touches[0]
+    tr.x = t.clientX
+    tr.y = t.clientY
+    tr.timer = setTimeout(() => {
+      if (!tr.cell || tr.moved) return
+      tr.dragging = true
+      isDragging.current = true
+      dragStartCol.current = tr.cell.col
+      dragStartRow.current = tr.cell.row
+      dragCurrentCol.current = tr.cell.col
+      dragCurrentRow.current = tr.cell.row
+      setPopupPos(null)
+      setSelectedCells([tr.cell])
+      navigator.vibrate?.(10)
+    }, 350)
   }, [dayHeaders])
 
   const onGridTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging.current) return
-    e.preventDefault()
+    const tr = touchRef.current
+    const t = e.touches[0]
+    if (!tr.dragging) {
+      // Le doigt bouge avant l'appui long : c'est un défilement
+      if (Math.abs(t.clientX - tr.x) > 8 || Math.abs(t.clientY - tr.y) > 8) {
+        tr.moved = true
+        if (tr.timer) { clearTimeout(tr.timer); tr.timer = null }
+      }
+      return
+    }
     const info = getCellFromEvent(e)
     if (!info) return
     if (info.col !== dragCurrentCol.current || info.row !== dragCurrentRow.current) {
@@ -593,30 +622,66 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
     }
   }, [dayHeaders])
 
-  const onGridTouchEnd = useCallback(() => {
-    if (!isDragging.current) return
-    isDragging.current = false
-    if (dragCurrentCol.current !== null && dragCurrentRow.current !== null) {
-      setTimeout(() => {
-        if (dragCurrentCol.current !== null && dragCurrentRow.current !== null) {
-          showPopupNear(dragCurrentCol.current, dragCurrentRow.current)
-        }
-      }, 0)
+  const onGridTouchEnd = useCallback((e: React.TouchEvent) => {
+    const tr = touchRef.current
+    if (tr.timer) { clearTimeout(tr.timer); tr.timer = null }
+    setTimeout(() => { tr.active = false }, 600)
+    if (tr.dragging) {
+      tr.dragging = false
+      isDragging.current = false
+    } else if (!tr.moved && tr.cell) {
+      // Appui court : sélectionne le créneau touché. preventDefault évite les
+      // événements souris émulés qui relanceraient une sélection.
+      e.preventDefault()
+      dragCurrentCol.current = tr.cell.col
+      dragCurrentRow.current = tr.cell.row
+      setSelectedCells([tr.cell])
+    } else {
+      return
     }
+    setTimeout(() => {
+      if (dragCurrentCol.current !== null && dragCurrentRow.current !== null) {
+        showPopupNear(dragCurrentCol.current, dragCurrentRow.current)
+      }
+    }, 0)
   }, [titles])
+
+  // Pendant un glissé après appui long, la page ne doit pas défiler :
+  // il faut un écouteur non passif (ceux de React le sont pour touchmove).
+  useEffect(() => {
+    const el = gridRef.current
+    if (!el) return
+    const block = (e: TouchEvent) => { if (touchRef.current.dragging) e.preventDefault() }
+    el.addEventListener('touchmove', block, { passive: false })
+    return () => el.removeEventListener('touchmove', block)
+  }, [view])
 
   // ===== CONTEXT MENU (notes) =====
 
-  function onCellContextMenu(e: React.MouseEvent, col: number, row: number) {
-    e.preventDefault()
+  function openNote(col: number, row: number, anchor: DOMRect) {
     const key = cellKey(col, row)
     setNoteTarget({ col, row })
     setNoteText(notes[key] || '')
-    const rect = (e.target as HTMLElement).getBoundingClientRect()
     setNotePopupPos({
-      x: Math.min(rect.right + 8, window.innerWidth - 240),
-      y: Math.max(rect.top - 20, 10),
+      x: Math.min(anchor.right + 8, window.innerWidth - 240),
+      y: Math.max(anchor.top - 20, 10),
     })
+  }
+
+  function onCellContextMenu(e: React.MouseEvent, col: number, row: number) {
+    e.preventDefault()
+    // Sur mobile, l'appui long sert à sélectionner : la note passe par la fenêtre du créneau
+    if (touchRef.current.active) return
+    openNote(col, row, (e.target as HTMLElement).getBoundingClientRect())
+  }
+
+  function openNoteFromPopup() {
+    const cell = selectedCells[0]
+    if (!cell) return
+    const el = gridRef.current?.querySelector(`[data-col="${cell.col}"][data-row="${cell.row}"]`) as HTMLElement | null
+    setPopupPos(null)
+    setSelectedCells([])
+    openNote(cell.col, cell.row, el?.getBoundingClientRect() ?? new DOMRect(16, 120, 0, 0))
   }
 
   function saveNoteAction() {
@@ -756,7 +821,7 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
     const statusLabel = csStatus === 'available' ? 'disponible' : 'indisponible'
     setCsFeedback({
       type: 'success',
-      msg: `${DAY_NAMES[dayCol]} ${csStart} - ${csEnd} : marque comme ${statusLabel} (${affectedCount} creneau${affectedCount > 1 ? 'x' : ''})`,
+      msg: `${DAY_NAMES[dayCol]} ${csStart} - ${csEnd} : marqué comme ${statusLabel} (${affectedCount} créneau${affectedCount > 1 ? 'x' : ''})`,
     })
     setTimeout(() => setCsFeedback(null), 4000)
   }
@@ -1058,6 +1123,7 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
     const diffDays = Math.round((targetMonday.getTime() - currentMonday.getTime()) / (1000 * 60 * 60 * 24))
     const weekDiff = Math.round(diffDays / 7)
     setWeekOffset(weekDiff)
+    setMobileDay((target.getDay() + 6) % 7)
     setView('week')
   }
 
@@ -1084,7 +1150,7 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
         {/* HEADER */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           {/* Week navigation */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 max-[600px]:w-full max-[600px]:justify-between">
             <button
               onClick={() => navigateWeek(-1)}
               className="w-9 h-9 flex items-center justify-center rounded-[var(--radius-sm)] border border-[var(--gray-200)] bg-white hover:bg-[var(--gray-100)] transition-colors"
@@ -1125,7 +1191,7 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
               <button
                 onClick={() => setShowSettings(p => !p)}
                 className="w-9 h-9 flex items-center justify-center rounded-[var(--radius-sm)] border border-[var(--gray-200)] bg-white hover:bg-[var(--gray-100)] transition-colors"
-                title="Parametres"
+                title="Paramètres" aria-label="Paramètres"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
@@ -1184,7 +1250,7 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
               style={{ background: 'var(--green)' }}
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
-              {publishing ? 'Publication...' : 'Publier'}
+              {publishing ? 'Publication…' : 'Publier'}
             </button>
           </div>
         </div>
@@ -1193,7 +1259,8 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
         {view === 'week' && (
           <div className="flex items-start gap-2 px-3 py-2.5 rounded-[var(--radius-sm)] mb-3 text-xs" style={{ background: 'var(--gray-100)', color: 'var(--gray-500)' }}>
             <svg className="w-4 h-4 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
-            Cliquez sur un creneau ou glissez pour selectionner plusieurs creneaux, puis choisissez le statut dans le menu contextuel. Clic droit pour ajouter une note.
+            <span className="max-[600px]:hidden">Cliquez sur un créneau ou glissez pour en sélectionner plusieurs, puis choisissez le statut. Clic droit pour ajouter une note.</span>
+            <span className="hidden max-[600px]:inline">Touchez un créneau pour le modifier. Maintenez puis glissez pour en sélectionner plusieurs.</span>
           </div>
         )}
 
@@ -1215,14 +1282,31 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
         {/* ===== WEEK VIEW ===== */}
         {view === 'week' && (
           <>
+            {/* Mobile : choix du jour affiché */}
+            <div role="group" aria-label="Jour affiché" className="hidden max-[600px]:grid grid-cols-7 gap-1 mb-3">
+              {dayHeaders.map((dh, i) => {
+                const rows = Array.from({ length: TOTAL_ROWS }, (_, r) => getCellStatus(i, r))
+                const dot = dh.isBlocked ? 'bg-[var(--gray-300)]' : rows.includes('available') ? 'bg-[var(--green)]' : rows.includes('unavailable') ? 'bg-[var(--red)]' : 'bg-transparent'
+                const active = mobileDay === i
+                return (
+                  <button
+                    key={i}
+                    onClick={() => { setMobileDay(i); setSelectedCells([]); setPopupPos(null) }}
+                    aria-pressed={active}
+                    aria-label={`${dh.name} ${dh.num}`}
+                    className={`flex flex-col items-center gap-0.5 py-2 rounded-xl border-none cursor-pointer transition-colors ${active ? 'bg-[var(--dark)] text-white' : dh.isToday ? 'bg-[rgba(232,112,10,0.1)] text-[var(--orange)]' : 'bg-[var(--gray-50)] text-[var(--dark)]'}`}
+                  >
+                    <span className={`text-[11px] font-semibold ${active ? 'text-white/70' : 'text-[var(--gray-500)]'}`}>{DAY_NAMES_SHORT[i]}</span>
+                    <span className="text-base font-bold leading-none">{dh.num}</span>
+                    <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full ${dot}`} />
+                  </button>
+                )
+              })}
+            </div>
             <div className="overflow-x-auto -mx-5 px-5 max-[600px]:-mx-3 max-[600px]:px-3">
               <div
                 ref={gridRef}
-                className="grid select-none"
-                style={{
-                  gridTemplateColumns: '56px repeat(7, 1fr)',
-                  minWidth: 600,
-                }}
+                className="grid select-none [-webkit-touch-callout:none] grid-cols-[56px_repeat(7,1fr)] min-w-[600px] max-[600px]:grid-cols-[52px_1fr] max-[600px]:min-w-0"
                 onMouseDown={onGridMouseDown}
                 onMouseMove={onGridMouseMove}
                 onTouchStart={onGridTouchStart}
@@ -1230,11 +1314,11 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
                 onTouchEnd={onGridTouchEnd}
               >
                 {/* Header row */}
-                <div className="sticky top-0 z-10 bg-white border-b border-[var(--gray-200)]" />
+                <div className="sticky top-0 z-10 bg-white border-b border-[var(--gray-200)] max-[600px]:hidden" />
                 {dayHeaders.map((dh, i) => (
                   <div
                     key={i}
-                    className={`sticky top-0 z-10 text-center py-2 border-b border-[var(--gray-200)] bg-white text-xs font-semibold
+                    className={`sticky top-0 z-10 text-center py-2 border-b border-[var(--gray-200)] bg-white text-xs font-semibold max-[600px]:hidden
                       ${dh.isToday ? 'text-[var(--orange)]' : ''}
                       ${dh.isBlocked ? 'opacity-50' : ''}
                     `}
@@ -1280,7 +1364,7 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
                             key={`${col}-${row}`}
                             data-col={col}
                             data-row={row}
-                            className={`relative cursor-pointer transition-colors
+                            className={`relative cursor-pointer transition-colors ${col !== mobileDay ? 'max-[600px]:hidden' : ''}
                               ${isHourStart ? 'border-t border-t-[var(--gray-200)]' : ''}
                               ${tl.isHalf ? 'border-b border-b-[var(--gray-100)]' : 'border-b border-b-[var(--gray-200)]'}
                               border-r border-r-[var(--gray-100)]
@@ -1364,7 +1448,7 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm border border-[var(--gray-200)]" />
-                Non defini
+                Non défini
               </div>
             </div>
 
@@ -1376,11 +1460,11 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
                 style={{ color: 'var(--orange)' }}
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                Ajouter un creneau personnalise
+                Ajouter un créneau personnalisé
               </button>
               {showCustomSlot && (
                 <div className="mt-3 p-4 rounded-[var(--radius-sm)] border border-[var(--gray-200)]" style={{ background: 'var(--gray-100)' }}>
-                  <div className="text-sm font-semibold mb-3" style={{ color: 'var(--dark)' }}>Creneau personnalise</div>
+                  <div className="text-sm font-semibold mb-3" style={{ color: 'var(--dark)' }}>Créneau personnalisé</div>
                   <div className="flex flex-wrap items-end gap-3">
                     <div>
                       <label className="block text-xs mb-1" style={{ color: 'var(--gray-500)' }}>Jour</label>
@@ -1389,7 +1473,7 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs mb-1" style={{ color: 'var(--gray-500)' }}>Debut</label>
+                      <label className="block text-xs mb-1" style={{ color: 'var(--gray-500)' }}>Début</label>
                       <input type="time" value={csStart} onChange={e => setCsStart(e.target.value)} min="08:00" max="17:30" className="h-9 px-2 rounded-[var(--radius-sm)] border border-[var(--gray-200)] text-sm" />
                     </div>
                     <div>
@@ -1491,12 +1575,13 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
       {popupPos && (
         <div
           ref={popupRef}
-          className="fixed z-50 bg-white rounded-[var(--radius)] border border-[var(--gray-200)] shadow-xl p-3 w-[240px]"
+          className="fixed z-50 bg-white rounded-[var(--radius)] border border-[var(--gray-200)] shadow-xl p-3 w-[240px] max-[600px]:fixed! max-[600px]:left-0! max-[600px]:top-auto! max-[600px]:right-0 max-[600px]:bottom-0 max-[600px]:w-full max-[600px]:z-[60] max-[600px]:rounded-b-none max-[600px]:p-4 max-[600px]:pb-[calc(16px+env(safe-area-inset-bottom))] max-[600px]:shadow-[0_-12px_40px_rgba(0,0,0,0.18)] max-[600px]:[&_button]:py-3 max-[600px]:[&_button]:text-sm max-[600px]:[&_input]:h-11 max-[600px]:[&_input]:text-base"
           style={{ left: popupPos.x, top: popupPos.y, position: 'absolute' }}
         >
+          <div aria-hidden="true" className="hidden max-[600px]:block mx-auto -mt-1 mb-3 h-1 w-10 rounded-full bg-[var(--gray-300)]" />
           <div className="flex items-center gap-1.5 text-xs font-semibold mb-2" style={{ color: 'var(--dark)' }}>
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-            Definir le creneau
+            Définir le créneau
           </div>
           <input
             type="text"
@@ -1551,6 +1636,14 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
             <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>
             Affecter un employé
           </button>
+          <button
+            onClick={openNoteFromPopup}
+            className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded-[var(--radius-sm)] hover:bg-[var(--gray-100)] transition-colors"
+            style={{ color: 'var(--dark)' }}
+          >
+            <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+            {notes[cellKey(selectedCells[0]?.col ?? 0, selectedCells[0]?.row ?? 0)] ? 'Modifier la note' : 'Ajouter une note'}
+          </button>
           <div className="border-t border-[var(--gray-200)] my-1.5" />
           <button
             onClick={() => applyPopupState('clear')}
@@ -1560,6 +1653,13 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
             <span className="w-2.5 h-2.5 rounded-full border border-[var(--gray-300)]" />
             Effacer
           </button>
+          <button
+            onClick={() => { setPopupPos(null); setSelectedCells([]) }}
+            className="hidden max-[600px]:flex items-center justify-center w-full mt-2 rounded-full bg-[var(--gray-100)] font-semibold"
+            style={{ color: 'var(--dark)' }}
+          >
+            Fermer
+          </button>
         </div>
       )}
 
@@ -1567,7 +1667,7 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
       {notePopupPos && noteTarget && (
         <div
           ref={notePopupRef}
-          className="fixed z-50 bg-white rounded-[var(--radius)] border border-[var(--gray-200)] shadow-xl p-3 w-[220px]"
+          className="fixed z-50 bg-white rounded-[var(--radius)] border border-[var(--gray-200)] shadow-xl p-3 w-[220px] max-[600px]:left-0! max-[600px]:top-auto! max-[600px]:right-0 max-[600px]:bottom-0 max-[600px]:w-full max-[600px]:z-[60] max-[600px]:rounded-b-none max-[600px]:p-4 max-[600px]:pb-[calc(16px+env(safe-area-inset-bottom))] max-[600px]:shadow-[0_-12px_40px_rgba(0,0,0,0.18)] max-[600px]:[&_textarea]:text-base max-[600px]:[&_button]:py-2.5 max-[600px]:[&_button]:px-4 max-[600px]:[&_button]:text-sm"
           style={{ left: notePopupPos.x, top: notePopupPos.y }}
         >
           <textarea
@@ -1586,8 +1686,8 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
 
       {/* ===== AFFECTATION POPUP ===== */}
       {affPopup.open && (
-        <div className="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center" onMouseDown={e => { if (e.target === e.currentTarget) closeAff() }}>
-          <div className="bg-white rounded-2xl p-7 w-[440px] max-w-[90vw] max-h-[85vh] overflow-y-auto shadow-[0_20px_60px_rgba(0,0,0,0.15)] max-[600px]:p-5 max-[600px]:w-[95vw]">
+        <div className="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center max-[600px]:items-end" onMouseDown={e => { if (e.target === e.currentTarget) closeAff() }}>
+          <div role="dialog" aria-modal="true" aria-label={affPopup.editId ? "Modifier l'affectation" : 'Nouvelle affectation'} className="dialog-sheet bg-white rounded-2xl p-7 w-[440px] max-w-[90vw] max-h-[85vh] overflow-y-auto shadow-[0_20px_60px_rgba(0,0,0,0.15)] max-[600px]:p-5 max-[600px]:w-full max-[600px]:max-w-none max-[600px]:rounded-b-none max-[600px]:max-h-[92dvh] max-[600px]:pb-[calc(20px+env(safe-area-inset-bottom))]">
             <div className="font-sora text-lg font-bold mb-5 flex items-center gap-2.5">
               <svg className="w-5 h-5 text-[var(--orange)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
               {affPopup.editId ? "Modifier l'affectation" : 'Nouvelle affectation'}
@@ -1596,12 +1696,12 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
             <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Titre du chantier *</label>
             <input type="text" placeholder="Ex: Rénovation salle de bain" value={affPopup.data.titre}
               onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, titre: e.target.value } }))}
-              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
 
             <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Employé *</label>
             <select value={affPopup.data.employe_id}
               onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, employe_id: e.target.value } }))}
-              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]">
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]">
               <option value="">Sélectionner un employé</option>
               {employees.map(emp => (
                 <option key={emp.id} value={emp.id}>{emp.prenom}{emp.nom ? ' ' + emp.nom : ''}</option>
@@ -1613,20 +1713,20 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
                 <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Date</label>
                 <input type="date" value={affPopup.data.date}
                   onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, date: e.target.value } }))}
-                  className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
+                  className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Début</label>
                   <input type="time" value={affPopup.data.heure_debut}
                     onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, heure_debut: e.target.value } }))}
-                    className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
+                    className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Fin</label>
                   <input type="time" value={affPopup.data.heure_fin}
                     onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, heure_fin: e.target.value } }))}
-                    className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
+                    className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
                 </div>
               </div>
             </div>
@@ -1634,17 +1734,17 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
             <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Adresse</label>
             <input type="text" placeholder="Rue, ville (optionnel)" value={affPopup.data.adresse}
               onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, adresse: e.target.value } }))}
-              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
 
             <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Notes</label>
             <textarea placeholder="Instructions, matériel nécessaire..." value={affPopup.data.notes}
               onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, notes: e.target.value } }))}
-              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 resize-y min-h-[60px] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 resize-y min-h-[60px] focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]" />
 
             <label className="block text-xs font-semibold text-[var(--gray-600)] mb-1">Lier à une demande</label>
             <select value={affPopup.data.demande_id}
               onChange={e => setAffPopup(p => ({ ...p, data: { ...p.data, demande_id: e.target.value } }))}
-              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]">
+              className="w-full px-3.5 py-2.5 border border-[var(--gray-200)] rounded-[10px] text-[13px] max-[600px]:text-base mb-3.5 focus:outline-none focus:border-[var(--orange)] focus:shadow-[0_0_0_3px_rgba(232,112,10,0.08)]">
               <option value="">Aucune demande liée</option>
               {activeDemandes.map(d => (
                 <option key={d.id} value={d.id}>{(d.client_nom || 'Client') + ' — ' + (d.message || '').substring(0, 30)}</option>
@@ -1756,7 +1856,7 @@ export default function DashAgenda({ userId, profile }: AgendaProps) {
           <div className="bg-white rounded-[var(--radius)] p-6 w-full max-w-[520px] mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="font-sora text-lg font-bold mb-1" style={{ color: 'var(--dark)' }}>Bloquer des jours</div>
             <div className="text-xs mb-4" style={{ color: 'var(--gray-500)' }}>
-              Selectionnez les jours de la semaine en cours a bloquer, ou definissez une plage de dates.
+              Sélectionnez les jours de la semaine en cours à bloquer, ou définissez une plage de dates.
             </div>
 
             {/* Week days grid */}

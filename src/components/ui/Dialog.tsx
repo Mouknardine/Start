@@ -10,6 +10,8 @@ type Props = {
   labelledBy: string
   /** Classes du panneau (largeur, hauteur…) */
   className?: string
+  /** « sheet » : feuille qui monte du bas sur mobile, fenêtre centrée dès 600px */
+  variant?: 'center' | 'sheet'
   children: ReactNode
 }
 
@@ -18,7 +20,7 @@ type Props = {
  * fond pour fermer, focus gardé dans la fenêtre puis rendu à l'élément
  * d'origine, défilement de la page bloqué. À monter conditionnellement.
  */
-export default function Dialog({ onClose, labelledBy, className = '', children }: Props) {
+export default function Dialog({ onClose, labelledBy, className = '', variant = 'center', children }: Props) {
   const panelRef = useRef<HTMLDivElement>(null)
   const onCloseRef = useRef(onClose)
   useEffect(() => { onCloseRef.current = onClose })
@@ -57,9 +59,10 @@ export default function Dialog({ onClose, labelledBy, className = '', children }
     }
   }, [])
 
+  const sheet = variant === 'sheet'
   return (
     <div
-      className="fixed inset-0 z-[200] bg-black/50 flex items-center justify-center p-4"
+      className={`fixed inset-0 z-[200] bg-black/50 flex justify-center ${sheet ? 'items-end min-[600px]:items-center min-[600px]:p-4' : 'items-center p-4'}`}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
@@ -68,9 +71,12 @@ export default function Dialog({ onClose, labelledBy, className = '', children }
         aria-modal="true"
         aria-labelledby={labelledBy}
         tabIndex={-1}
-        className={`bg-white rounded-[var(--radius)] w-full outline-none ${className}`}
-        style={{ animation: 'fadeIn 0.2s ease-out both' }}
+        className={sheet
+          ? `dialog-sheet bg-white w-full outline-none rounded-t-[22px] min-[600px]:rounded-[var(--radius)] max-h-[92dvh] overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)] min-[600px]:pb-0 ${className}`
+          : `bg-white rounded-[var(--radius)] w-full outline-none ${className}`}
+        style={sheet ? undefined : { animation: 'fadeIn 0.2s ease-out both' }}
       >
+        {sheet && <div aria-hidden="true" className="mx-auto mt-2.5 h-1 w-10 rounded-full bg-[var(--gray-300)] min-[600px]:hidden" />}
         {children}
       </div>
     </div>

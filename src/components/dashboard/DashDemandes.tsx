@@ -32,9 +32,11 @@ type Props = {
   avis: Avis[]
   setAvis: (fn: (prev: Avis[]) => Avis[]) => void
   userId: string
+  /** Ouvre l'éditeur de devis pré-rempli avec le client de la demande */
+  onCreateDevis?: (d: Demande) => void
 }
 
-export default function DashDemandes({ demandes, setDemandes, avis, setAvis, userId }: Props) {
+export default function DashDemandes({ demandes, setDemandes, avis, setAvis, userId, onCreateDevis }: Props) {
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
 
   // Detail modal
@@ -323,15 +325,15 @@ export default function DashDemandes({ demandes, setDemandes, avis, setAvis, use
                     <div className="flex gap-1.5 shrink-0 flex-wrap max-[600px]:w-full">
                       {d.statut === 'nouvelle' && (
                         <>
-                          <button onClick={() => acceptDemande(d.id)} className="text-xs font-bold py-2 px-3.5 rounded-lg bg-[var(--green)] text-white border-none cursor-pointer hover:brightness-110 transition-all">Accepter</button>
-                          <button onClick={() => setRefuseTarget({ id: d.id, name: d.client_nom || 'Client' })} className="text-xs font-bold py-2 px-3.5 rounded-lg bg-[var(--red-light)] text-[var(--red)] border-none cursor-pointer hover:bg-[rgba(211,47,47,0.12)] transition-colors">Refuser</button>
+                          <button onClick={() => acceptDemande(d.id)} className="text-xs font-bold py-2 px-3.5 rounded-lg bg-[var(--green)] text-white border-none cursor-pointer hover:brightness-110 transition-all max-[600px]:flex-1 max-[600px]:py-3 max-[600px]:text-[13px]">Accepter</button>
+                          <button onClick={() => setRefuseTarget({ id: d.id, name: d.client_nom || 'Client' })} className="text-xs font-bold py-2 px-3.5 rounded-lg bg-[var(--red-light)] text-[var(--red)] border-none cursor-pointer hover:bg-[rgba(211,47,47,0.12)] transition-colors max-[600px]:flex-1 max-[600px]:py-3 max-[600px]:text-[13px]">Refuser</button>
                         </>
                       )}
                       {(d.statut === 'confirmee' || d.statut === 'acceptee') && (
-                        <button onClick={() => completeDemande(d.id)} className="text-xs font-bold py-2 px-3.5 rounded-lg bg-[#2E7D32] text-white border-none cursor-pointer hover:brightness-110 transition-all">Terminer</button>
+                        <button onClick={() => completeDemande(d.id)} className="text-xs font-bold py-2 px-3.5 rounded-lg bg-[#2E7D32] text-white border-none cursor-pointer hover:brightness-110 transition-all max-[600px]:flex-1 max-[600px]:py-3 max-[600px]:text-[13px]">Terminer</button>
                       )}
-                      <button onClick={() => openDetail(d)} className="text-xs font-bold py-2 px-3.5 rounded-lg bg-[var(--gray-100)] text-[var(--gray-700)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors">Ouvrir</button>
-                      <button onClick={() => setDeleteTarget(d)} aria-label={`Supprimer la demande de ${d.client_nom || 'ce client'}`} className="text-xs font-bold py-2 px-3 rounded-lg bg-transparent text-[var(--gray-500)] border border-[var(--gray-200)] cursor-pointer hover:text-[var(--red)] hover:border-[var(--red)] transition-colors">
+                      <button onClick={() => openDetail(d)} className="text-xs font-bold py-2 px-3.5 rounded-lg bg-[var(--gray-100)] text-[var(--gray-700)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors max-[600px]:py-3 max-[600px]:text-[13px]">Ouvrir</button>
+                      <button onClick={() => setDeleteTarget(d)} aria-label={`Supprimer la demande de ${d.client_nom || 'ce client'}`} className="text-xs font-bold py-2 px-3 max-[600px]:px-3.5 rounded-lg bg-transparent text-[var(--gray-500)] border border-[var(--gray-200)] cursor-pointer hover:text-[var(--red)] hover:border-[var(--red)] transition-colors">
                         <svg aria-hidden="true" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
                       </button>
                     </div>
@@ -504,17 +506,23 @@ export default function DashDemandes({ demandes, setDemandes, avis, setAvis, use
             </div>
 
             {/* Modal footer */}
-            <div className="p-4 border-t border-[var(--gray-200)] shrink-0 flex gap-2 justify-end">
+            <div className="p-4 border-t border-[var(--gray-200)] shrink-0 flex flex-wrap gap-2 justify-end">
+              {onCreateDevis && ['nouvelle', 'acceptee', 'confirmee'].includes(selectedDemande.statut) && (
+                <button onClick={() => { const d = selectedDemande; setSelectedDemande(null); onCreateDevis(d) }} className="inline-flex items-center justify-center gap-2 py-2.5 px-5 rounded-full text-sm font-semibold bg-[rgba(232,112,10,0.1)] text-[var(--orange-dark)] border-none cursor-pointer hover:bg-[rgba(232,112,10,0.18)] transition-colors max-[600px]:basis-full max-[600px]:py-3 min-[600px]:mr-auto">
+                  <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                  Faire un devis
+                </button>
+              )}
               {selectedDemande.statut === 'nouvelle' && (
                 <>
-                  <button onClick={() => { setRefuseTarget({ id: selectedDemande.id, name: selectedDemande.client_nom || 'Client' }); setSelectedDemande(null) }} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--gray-100)] text-[var(--gray-500)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors">Refuser</button>
-                  <button onClick={() => acceptDemande(selectedDemande.id)} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--green)] text-white border-none cursor-pointer hover:brightness-110 transition-all">Accepter</button>
+                  <button onClick={() => { setRefuseTarget({ id: selectedDemande.id, name: selectedDemande.client_nom || 'Client' }); setSelectedDemande(null) }} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--gray-100)] text-[var(--gray-500)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors max-[600px]:flex-1 max-[600px]:py-3">Refuser</button>
+                  <button onClick={() => acceptDemande(selectedDemande.id)} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--green)] text-white border-none cursor-pointer hover:brightness-110 transition-all max-[600px]:flex-1 max-[600px]:py-3">Accepter</button>
                 </>
               )}
               {(selectedDemande.statut === 'confirmee' || selectedDemande.statut === 'acceptee') && (
-                <button onClick={() => completeDemande(selectedDemande.id)} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[#2E7D32] text-white border-none cursor-pointer hover:brightness-110 transition-all">Marquer comme terminé</button>
+                <button onClick={() => completeDemande(selectedDemande.id)} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[#2E7D32] text-white border-none cursor-pointer hover:brightness-110 transition-all max-[600px]:flex-1 max-[600px]:py-3">Marquer comme terminé</button>
               )}
-              <button onClick={() => setSelectedDemande(null)} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--gray-100)] text-[var(--gray-500)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors">Fermer</button>
+              <button onClick={() => setSelectedDemande(null)} className="py-2.5 px-5 rounded-full text-sm font-semibold bg-[var(--gray-100)] text-[var(--gray-500)] border-none cursor-pointer hover:bg-[var(--gray-200)] transition-colors max-[600px]:hidden">Fermer</button>
             </div>
         </Dialog>
       )}
